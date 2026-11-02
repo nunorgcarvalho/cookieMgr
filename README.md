@@ -84,7 +84,7 @@ the page. [See every page with a screenshot](#pages).
 <td width="50%" valign="top">
 <b>Payback</b><br>
 <img src="docs/readme/payback.png" alt="The Payback page" width="100%">
-<ul><li>An exact payback period for every building and upgrade</li><li>The Auto buyer: a queue ranked by one 0–100 priority score, profiles with rules, and savings (bank reserve, Lucky! banks) ranked in the same queue</li><li>Payback measured by CpS, clicking, or what you actually took in over a window you set (30 min by default; 15 min, 1 h, 3 h, since your last ascension or any time)</li><li>Buy all upgrades in one click, ranked in the queue by its own payback period</li></ul>
+<ul><li>An exact payback period for every building and upgrade</li><li>The Auto buyer: a queue ranked by one 0–100 priority score, profiles with rules, and savings (bank reserve, Lucky! banks) ranked in the same queue</li><li>Payback measured by CpS, clicking, or what you actually took in over a window you set (30 min by default; 15 min, 1 h, 3 h, since your last ascension or any time)</li><li>Buy all upgrades in one click, ranked in the queue by its own payback period</li><li>A purchase history of the Auto buyer's last 100 buys: price, CpS added and payback period</li></ul>
 </td>
 <td width="50%" valign="top">
 <b>Garden</b><br>
