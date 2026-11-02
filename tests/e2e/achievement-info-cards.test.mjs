@@ -1,7 +1,7 @@
 // Achievement info cards: an achievement still to collect on the Stats page's Misc tab shows a card like
 // the upgrade one on hover — won or not, the game's description, where you stand on what it counts, what
 // the buildings it takes cost, how long the cookies take at your actual income (your CpS until it's recorded), and the milk it adds (with the
-// kitten it brings closer). Won ones say so and nothing more; shadow ones add no milk.
+// kitten it brings closer) and the CpS that milk adds through the kittens you own. Won ones say so and nothing more; shadow ones add no milk.
 import { boot, sleep, makeAssert } from '../harness/game.mjs';
 
 const { assert, done } = makeAssert();
@@ -47,6 +47,20 @@ assert(r.Farms === `${fa} of 50`, `farms: ${JSON.stringify(r)}`);
 const cost = Object.keys(r).find((k) => /more cost$/.test(k));
 assert(cost === `${50 - fa} more cost` && r[cost] === CA.Format.beautify(CA.Payback.sumPrice(Game.Objects.Farm, 50 - fa)) && d.querySelector('.ca-uptip-row b.ca-pp-red'), `what the farms cost, in red (${cost} ${r[cost]})`);
 assert(r.Milk === '+4% (unlocks Kitten helpers)', `milk, the kitten it unlocks (13th achievement): ${r.Milk}`);
+assert(r.Adds === 'no CpS (no kittens yet)', `no kitten owned: its milk adds no CpS (${r.Adds})`);
+// with a kitten, the CpS that milk adds (measured: CA.Payback.achievementWorth) beside the milk
+{
+  const real = Game.CalculateGains;
+  kitten.bought = 1;
+  Game.UpgradesOwned = (Game.UpgradesOwned || 0) + 1; // as buying it would (the measurements are kept until then)
+  Game.unbuffedCps = 1e4;
+  Game.CalculateGains = () => (Game.cookiesPs = Game.unbuffedCps = 1e4 * (1 + (Game.AchievementsOwned / 25) * 0.1) / (1 + (12 / 25) * 0.1));
+  const add = rows('Reap what you sow').r.Adds;
+  assert(add === `+${CA.Format.beautify(1e4 * (0.004 / 1.048))}/s (0.38%)` && Game.cookiesPs === 1e4 && !farms.won, `kitten: +0.38% (${add}); the game put back`);
+  kitten.bought = 0;
+  Game.UpgradesOwned--;
+  Game.CalculateGains = real;
+}
 Game.AchievementsOwned = 10;
 assert(rows('Reap what you sow').r.Milk === '+4% (3 more for Kitten helpers)', `3 more for the kitten: ${rows('Reap what you sow').r.Milk}`);
 

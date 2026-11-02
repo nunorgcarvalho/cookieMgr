@@ -272,13 +272,13 @@ CA.Payback = (() => {
   // the full table (the colors, the Payback page) for every building at ×1, ×10 and ×100 — Cookie
   // Monster's color scale ranks all sixty. Whatever has been measured is kept until the state changes.
   let gens = 0; // caches made so far (a mode's results are kept for one)
-  let cache = null; // { key, t, cps, b: { 'name|n': income }, bx: { 'name|n': { raw, mouse } }, u: { name: { bonus, raw, mouse, won } }, won: { 'name|n': [...] }, all: { 'name|name…': { bonus, raw, mouse, won } } }
+  let cache = null; // { key, t, cps, b: { 'name|n': income }, bx: { 'name|n': { raw, mouse } }, u: { name: { bonus, raw, mouse, won } }, won: { 'name|n': [...] }, all: { 'name|name…': { bonus, raw, mouse, won } }, a: { achievement: { bonus, raw, unbuffed, share, won } } }
 
   function fresh() {
     const k = structKey();
     const moved = cache ? Math.abs((Game.cookiesPs || 0) - cache.cps) / Math.max(1e-9, Math.abs(cache.cps)) : 1;
     // a real change of CpS (a god, an aura, a lump…): now; a drift (the god of Ages wobbles it every frame): once a second
-    if (!cache || cache.key !== k || moved > 1e-3 || (moved > 0 && Date.now() - cache.t > 1000)) cache = { key: k, t: Date.now(), gen: ++gens, cps: Game.cookiesPs, b: {}, bx: {}, u: {}, won: {}, all: {} };
+    if (!cache || cache.key !== k || moved > 1e-3 || (moved > 0 && Date.now() - cache.t > 1000)) cache = { key: k, t: Date.now(), gen: ++gens, cps: Game.cookiesPs, b: {}, bx: {}, u: {}, won: {}, all: {}, a: {} };
     return cache;
   }
   let calls = 0; // CpS computations so far (for the tests' and the simulator's benefit)
@@ -568,6 +568,23 @@ CA.Payback = (() => {
     const w = { kind: 'upgrade', name: u.name, n: 1, bonus: e.bonus, raw: e.raw, mouse: e.mouse, won: e.won };
     w.gain = cpsGain(w);
     return w;
+  }
+
+  /**
+   * What winning an achievement adds: its milk, through the kittens you own (and any CpS milestone or
+   * achievement it tips over), measured like a purchase — won in one hypothetical, the CpS read,
+   * undone. { kind 'achievement', name, bonus, raw, unbuffed, share, won } (share: of your unbuffed
+   * CpS) or null for one already won or not a real achievement.
+   */
+  function achievementWorth(name, c = fresh()) {
+    const a = Game.Achievements && Game.Achievements[name];
+    if (!a || a.won) return null;
+    if (!(name in c.a)) {
+      const [base, r] = measureAll([(win) => (win(name), () => {})]);
+      calls += 2;
+      c.a[name] = { bonus: r.cps - base.cps, raw: r.raw - base.raw, unbuffed: r.unbuffed - base.unbuffed, share: base.unbuffed > 0 ? r.unbuffed / base.unbuffed - 1 : 0, won: r.won.filter((n) => n !== name) };
+    }
+    return { kind: 'achievement', name, ...c.a[name] };
   }
 
   /**
@@ -1082,7 +1099,7 @@ CA.Payback = (() => {
     V('actualIncome', 'cookies a second you actually took in over about the last seconds of play (at least 5 minutes; NaN: too little recorded)', ['seconds'], (p) => (actualIncome(Number(p) || 0) || { actual: NaN }).actual);
   }
 
-  return { init, modes, mode: currentMode, actualWindow, actualWindowText, setActualWindow, windowText, ACTUAL_PRESETS, SINCE_ASCENSION, modeOf, income, bank, parts, ppOf, buildingWorth, actualRatio, clicksOver, incomeOver, isSwitch, ppActual, actualIncome, calls: () => calls, table, ranking, best, buy, buyBuilding, buyUpgrade, buyUpgrades, buildingBonus, upgradeWorth, upgradesWorth, allUpgrades, pp, timeTo, sumPrice, clickRate, nextAchievement, storeUpgrades, measureAll, effectBoost, effectLeft, effectWait, waitingOut, unbuffedPrice, upgradeCost, COLOURS, BULKS,
+  return { init, modes, mode: currentMode, actualWindow, actualWindowText, setActualWindow, windowText, ACTUAL_PRESETS, SINCE_ASCENSION, modeOf, income, bank, parts, ppOf, buildingWorth, actualRatio, clicksOver, incomeOver, isSwitch, ppActual, actualIncome, calls: () => calls, table, ranking, best, buy, buyBuilding, buyUpgrade, buyUpgrades, buildingBonus, upgradeWorth, upgradesWorth, achievementWorth, allUpgrades, pp, timeTo, sumPrice, clickRate, nextAchievement, storeUpgrades, measureAll, effectBoost, effectLeft, effectWait, waitingOut, unbuffedPrice, upgradeCost, COLOURS, BULKS,
     // the count achievements of the game's own checks, [[count, name]] (features/achievementInfo.js reads them too)
     ACHIEVS: { cursor: CURSOR_ACHIEVS, min: MIN_ACHIEVS, total: TOTAL_ACHIEVS, upgrades: UPGRADE_ACHIEVS } };
 })();
