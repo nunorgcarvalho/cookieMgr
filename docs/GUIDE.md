@@ -730,8 +730,8 @@ the timers, wrinklers and what's still to collect:
 - **Still to collect** — the upgrades, cookies, heavenly upgrades and achievements you're missing, each season's
   drops, the garden's rare drops — as icons (hover an upgrade for its info card: what it does, costs, would add, its
   payback period and how the game unlocks it; hover an achievement for its card: the game's description, where you
-  stand on what it counts, what the buildings it takes cost or how long its cookies take at your CpS, and the milk it
-  adds with the kitten it brings closer).
+  stand on what it counts, what the buildings it takes cost or how long its cookies take by your actual income (at
+  your CpS until a minute of play is recorded), and the milk it adds with the kitten it brings closer).
 
 ### In the game's own minigames
 
