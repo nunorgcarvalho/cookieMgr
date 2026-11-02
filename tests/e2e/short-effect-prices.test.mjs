@@ -95,6 +95,45 @@ const knobs = CA.GardenLayers.get('gardener', 'tulipRounds').data.knobs;
 assert(knobs.waitOutEffects && !('waitOutUpTo' in knobs), 'the gardener’s waitOutEffects follows the option (no knob of its own)');
 assert(CA.Script.compile(CA.GardenLayers.get('gardener', 'tulipRounds').data.rules).errors.length === 0, 'the gardener compiles');
 
+// ---- a short effect beside a long one (Oiled-up's 44 s inside an hour of Frenzy): each counts on its own
+const boosts = (list) => {
+  Game.buffs = Object.fromEntries(list.map(([name, mult, secs]) => [name, { multCpS: mult, time: secs * fps }]));
+  Game.CalculateGains();
+  Game.cookies += 1;
+};
+boosts([['Frenzy', 7, 3600], ['Oiled-up', 88, 44]]);
+assert(P.waitingOut() && near(P.shortBoost(), 88) && near(value('payback.shortBoost'), 88), `the Oiled-up alone is waited out (short boost ${P.shortBoost()})`);
+assert(near(CA.Garden.layoutCost(), 7 * layout), `Garden replant priced with the Frenzy, without the Oiled-up (${CA.Garden.layoutCost() / layout}×)`);
+c = P.upgradeCost(amber);
+assert(near(c.price, 60 * 7 * Game.unbuffedCps) && c.waits, `ambergris: the Frenzy's price, and it waits the Oiled-up out (${c.price})`);
+// the Auto buyer: no garden bank kept, no seeds bought while it runs
+B.update('payback', { banks: ['garden', 'gardenRounds'], kinds: { building: true, upgrade: true, garden: true } });
+Game.cookies = 1;
+q = B.queue('payback');
+assert(!q.items.concat(q.held).some((x) => x.kind === 'bank') && B.reserveParts('payback').length === 0, `a short boost: the garden banks keep nothing (${B.reserveParts('payback').map((x) => x.id)})`);
+assert(!q.items.some((x) => x.kind === 'garden') && (!q.wait || q.wait.kind !== 'bank'), 'no seeds bought, not saving for the garden');
+assert(q.held.filter((x) => x.kind === 'garden').every((x) => x.why), `the seeds are held (${q.held.filter((x) => x.kind === 'garden').map((x) => x.why)})`);
+// the gardener waits it out too
+assert(/payback\.shortBoost\(\) <= 1/.test(CA.GardenLayers.get('gardener', 'tulipRounds').data.rules), 'the gardener asks payback.shortBoost()');
+// the Oiled-up over, the hour of Frenzy left: the banks are back, at the Frenzy's prices
+boosts([['Frenzy', 7, 3600]]);
+q = B.queue('payback');
+assert(!P.waitingOut() && B.reserveParts('payback').map((x) => x.id).join() === 'garden,gardenRounds', 'only a long Frenzy: the garden banks are back');
+assert(near(B.reserveParts('payback').find((x) => x.id === 'garden').amount, 7 * layout), 'at today’s price');
+// Everything must go (buildings 5% off, no CpS): not a CpS boost, nothing waited out; buildings stay buyable beside a short one
+Game.buffs = { 'Everything must go': { time: 8 * fps } };
+Game.CalculateGains();
+Game.cookies += 1;
+assert(!P.waitingOut() && B.reserveParts('payback').length === 2, 'Everything must go alone: no wait, the garden banks as usual');
+boosts([['Oiled-up', 88, 44]]);
+Game.buffs['Everything must go'] = { time: 8 * fps };
+Game.cookies = 1e30;
+q = B.queue('payback');
+assert(!q.held.some((x) => x.kind === 'building' && /waits it out/.test(x.why || '')), 'buildings are never waited out (their prices don’t scale with CpS)');
+assert(!q.items.concat(q.held).some((x) => x.kind === 'bank'), 'and nothing is kept for the garden ahead of them');
+boosts([]);
+B.update('payback', { banks: [], kinds: { building: true, upgrade: true, garden: false } });
+
 // ---- the option on the Payback page
 frenzy(60);
 CA.UI.Menu.openPage('payback');

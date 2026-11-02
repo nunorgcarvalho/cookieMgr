@@ -164,7 +164,7 @@ replantAtTick = true   # when a new clover round is planted — true: fertilizer
 plantWindow = 15   # (replantAtTick only) the last seconds before the tick, when the new clover round is planted
 wholeRounds = true   # start a round only once the bank covers all of it (garden.roundCost) — false: plant what it can afford
 tulipsFirst = true   # no clover round while a tulip round is due (it waits for the tulips to go down)
-waitOutEffects = true   # no new round while an effect makes seeds more expensive and ends within the Payback page's "Wait out effects up to" (10 m: payback.effectWait()); one with longer left (frenzies back to back) isn't waited out: it plants at today's price
+waitOutEffects = true   # no new round while an effect makes seeds more expensive and ends within the Payback page's "Wait out effects up to" (10 m: payback.effectWait(); payback.shortBoost() is what those add), even beside a longer one; one with longer left (frenzies back to back) isn't waited out: it plants at that price
 unlockNewSeeds = true   # a seed you haven't unlocked yet: let it grow, harvest it once mature (that unlocks it)
 if unlockNewSeeds:
   garden.harvestNew()
@@ -173,7 +173,7 @@ for tile in garden.tiles():
   if garden.wantAt(tile) != "" and garden.isOff(tile) and not garden.isEmpty(tile) and not (unlockNewSeeds and garden.isNew(tile)):
     garden.harvest(tile)
 # whether a round may go down now: no effect on the prices, and the cookies for all of it
-pricesOk = not waitOutEffects or garden.priceBoost() <= 1 or garden.priceBoostLeft() > payback.effectWait()
+pricesOk = not waitOutEffects or payback.shortBoost() <= 1
 # the tulips: a new round is due once none is growing and fewer than tulipReplantBelow are mature
 tulipDue = garden.seedYoung(tulip) == 0 and garden.seedMature(tulip) < tulipReplantBelow * garden.seedTiles(tulip)
 tulipReady = pricesOk and (not wholeRounds or cookies >= garden.roundCost(tulip))

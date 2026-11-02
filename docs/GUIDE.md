@@ -527,11 +527,13 @@ effect makes seeds more expensive, and the clovers wait while the nursetulips ha
 
 **Prices that scale with CpS.** Seeds, the Golden switch, the garden drops' cookies and Wrinkler ambergris cost minutes
 of the CpS the game shows, effects counted: a Frenzy makes them 7 times more expensive. An effect that ends within
-**Wait out effects up to** (the Payback page's options, 600 s: 10 m) is priced away: payback periods, the store's colors, the
-Garden replant and Garden rounds banks and the queue count the price once it's over, and the Auto buyer and the
-gardener wait it out (the queue says *an effect makes it more expensive: waits it out*; Buy all upgrades leaves such
-an upgrade out). One with longer left — frenzies back to back in long combos — is part of the price: they're priced
-and bought at today's. Words: `payback.effectBoost()` (CpS ÷ unbuffed CpS), `payback.effectLeft()` (seconds),
+**Wait out effects up to** (the Payback page's options, 600 s: 10 m) is priced away: payback periods, the store's colors
+and the queue count the price once it's over, and the Auto buyer and the gardener wait it out (the queue says *an
+effect makes it more expensive: waits it out*; Buy all upgrades leaves such an upgrade out). While one runs the Auto
+buyer buys no seeds and keeps no garden bank (Garden replant, Garden rounds): they're back once it's over. Buildings aren't priced in CpS, so they're bought as usual (an Everything must go's 5% off included). One with
+longer left — frenzies back to back in long combos — is part of the price: they're priced and bought at today's. Each
+effect counts on its own: an Oiled-up with 44 s left is waited out even during an hour of Frenzy, whose ×7 stays in the
+price (`payback.shortBoost()`: what the short ones alone add). Words: `payback.effectBoost()` (CpS ÷ unbuffed CpS), `payback.effectLeft()` (seconds),
 `payback.effectWait()` and `payback.waitingOut()`.
 Then the active **Profile**: what it buys (buildings, upgrades, Buy all upgrades, garden), the building bulk, save up or skip,
 what it **keeps** (minutes of unbuffed CpS, plus any of the **Lucky!**, **Conjure**, **Frenzy Lucky!**, **Garden
@@ -908,8 +910,8 @@ The gardeners:
   effect makes seeds more expensive (`waitOutEffects`: a seed costs minutes of the CpS the game shows, so a Frenzy makes it 7
   times more expensive — `garden.priceBoost()`) and ends within the Payback page's **Wait out effects up to** (600 s;
   `payback.waitingOut()`, `garden.priceBoostLeft()`). One with
-  longer left — frenzies back to back in long combos — isn't waited out: it plants at today's price, and the Garden
-  rounds bank keeps today's price too. The tulips go first (`tulipsFirst`): no clover round starts while a tulip
+  longer left — frenzies back to back in long combos — isn't waited out: it plants at that price, and the Garden
+  rounds bank keeps that price too; a short one beside it is still waited out. The tulips go first (`tulipsFirst`): no clover round starts while a tulip
   round is due. `garden.roundCost(seed)` is what a round costs. While a round is still growing it fills its empty
   tiles (a weed cleared, cookies short at the time), even with part of it mature already.
 - **Weed collector** — keeps the garden bare (with *Always fertilizer*: the most weeds), so meddleweed and fungi

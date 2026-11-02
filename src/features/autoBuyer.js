@@ -76,6 +76,8 @@ CA.AutoBuyer = (() => {
   const GM = () => CA.GoldenMath;
   /** The Garden rounds bank's default margin (features/garden.js roundsReserve): × a golden clover round. */
   const ROUNDS_MARGIN = 1.25;
+  /** The thresholds kept for the garden: what garden things may spend into (none kept while a short effect runs). */
+  const GARDEN_BANKS = ['garden', 'gardenRounds'];
   /** The banks a profile may keep on top of its minutes of CpS (the bank warnings' own banks, and the garden's). */
   const BANKS = [
     { id: 'lucky', label: 'Lucky!', tip: 'what a Lucky! needs to pay its most (bank.lucky)', get: () => GM().lucky().bank },
@@ -341,7 +343,9 @@ CA.AutoBuyer = (() => {
     const at = (id) => cleanAt((p.at || {})[id]);
     const parts = [];
     if (p.reserve > 0) parts.push({ id: 'cps', label: `${p.reserve} min of CpS`, amount: reserveOf(p.reserve), at: at('cps') });
-    BANKS.filter((b) => p.banks.includes(b.id)).forEach((b) => {
+    // while a short effect runs nothing goes into the garden (seeds wait it out), so its banks keep nothing
+    const shortEffect = P().waitingOut();
+    BANKS.filter((b) => p.banks.includes(b.id) && !(shortEffect && GARDEN_BANKS.includes(b.id))).forEach((b) => {
       const v = Number(b.get(p));
       parts.push({ id: b.id, label: b.label, amount: Number.isFinite(v) ? Math.max(0, v) : 0, at: at(b.id) });
     });
@@ -492,8 +496,6 @@ CA.AutoBuyer = (() => {
       });
     return walk(p, out, held, bestOk);
   }
-  /** The thresholds kept for the garden: what garden things may spend into. */
-  const GARDEN_BANKS = ['garden', 'gardenRounds'];
   /** Whether a threshold row of the queue holds a thing back (the garden's own banks don't hold garden things). */
   const holdsBack = (bank, x) => bank.kind === 'bank' && !(x && x.kind === 'garden' && GARDEN_BANKS.includes(bank.name));
   /**
@@ -510,12 +512,13 @@ CA.AutoBuyer = (() => {
     // CpS + clicking without the effects running now (a Frenzy's ×7 is golden cookie income too)
     const base = P().income('cpsClicking') / G.priceBoost();
     const golden = Math.max(0, P().income('actualIncome') - base);
-    const dear = G.priceBoost() > 1.001 && !G.pricesStayUp();
+    // a short effect (ending within "Wait out effects up to", even beside a long one): seeds wait it out
+    const dear = P().waitingOut();
     const tulips = list.some((x) => x.first);
     return list.map((x) => {
       const gain = golden * (x.freq - 1) + base * (x.cps - 1);
       // an effect that ends soon: priced as once it's over (it's waited out)
-      const price = dear ? x.price / G.priceBoost() : x.price;
+      const price = dear ? x.price / P().shortBoost() : x.price;
       const t = { kind: 'garden', name: x.seed, n: x.n, label: `${x.round ? 'Replant' : 'Plant'} ${x.n} ${x.name}`, icon: x.icon, round: x.round, price, gain, bonus: gain, pp: gain > 0 ? price / gain : Infinity };
       t.key = thingKey(t);
       const why = !Number.isFinite(golden) ? 'waits for a minute of Actual income (what golden cookies bring in)' : dear ? 'an effect makes seeds more expensive: waits it out' : tulips && !x.first ? 'the nursetulips go first' : '';
