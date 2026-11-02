@@ -56,7 +56,7 @@ the page. [See every page with a screenshot](#pages).
 | Page | What it's for |
 | --- | --- |
 | **Events** | A log of in-game events, like golden cookies, purchases, ascensions, etc. |
-| **Stats** | Charts and numbers: cookies per second, actual income, where your cookies come from, golden cookie odds, prestige |
+| **Stats** | Charts and numbers: cookies per second, actual income, where your cookies come from, golden cookie odds, prestige, upgrades and achievements |
 | **Payback** | What each building and upgrade is worth, and the Auto buyer that buys the best one |
 | **Garden**, **Stock market**, **Pantheon**, **Grimoire**, **Dragon** | A page per minigame, each with its own automation |
 | **Statistics** | What the store's tooltips show, and statistics you write yourself |
@@ -77,7 +77,7 @@ the page. [See every page with a screenshot](#pages).
 <td width="50%" valign="top">
 <b>Stats</b><br>
 <img src="docs/readme/stats.png" alt="The Stats page" width="100%">
-<ul><li>Cookies per second, where every cookie came from, your bank and prestige, charted and kept between sessions</li><li>Zoom and look back, or since your last ascension (ascensions are marked on every chart); Frenzy and other effects shaded behind it</li><li>Your actual income, charted over any window, and your income outside CpS, by source</li><li>Golden cookie odds, Lucky! banks, what-ifs for spirits and auras, what's left to collect</li></ul>
+<ul><li>Cookies per second, where every cookie came from, your bank and prestige, charted and kept between sessions</li><li>Zoom and look back, or since your last ascension (ascensions are marked on every chart); Frenzy and other effects shaded behind it</li><li>Your actual income, charted over any window, and your income outside CpS, by source</li><li>Golden cookie odds, Lucky! banks, what-ifs for spirits and auras</li><li>Every upgrade and achievement in one place: what you own, what's in the store and what's still to get</li></ul>
 </td>
 </tr>
 <tr>
