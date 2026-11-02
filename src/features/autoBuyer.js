@@ -62,8 +62,9 @@
 //   buyer.buyNext(profile)        (action) buys the front when the budget covers it
 //   buyer.profile(profile)        (action) makes a profile the active one
 //   buy.allUpgrades()             (action) the game's "Buy all upgrades" (Inspired checklist), without needing it
-// What it bought last (buyer.buyNext, or pp.buy of what buyer.next named) is kept: recentBought(), newest first —
-// the Manager widget's Auto buyer row (ui/buyerRow.js).
+// What it bought (buyer.buyNext, or pp.buy of what buyer.next named) is kept, the last 100, in the save:
+// recentBought(), newest first — the Manager widget's Auto buyer row (ui/buyerRow.js) and the Payback page's
+// Purchase history (ui/autoBuyerCard.js).
 // A thing is "building:Cursor", "upgrade:Kitten helpers" or "allUpgrades" — what pp.best returns; pp.kind, pp.price,
 // pp.of and pp.buy take it (features/autoBuy.js). A threshold in the queue is "bank:<id>": pp.price gives what
 // it keeps; it can't be bought.
@@ -585,9 +586,10 @@ CA.AutoBuyer = (() => {
     const p = find(x);
     const f = next(x);
     if (!p || !f || f.price > budget(p.id) || f.price > (Game.cookies || 0)) return 0;
+    const pre = before(p);
     const got = P().buy(f);
     memo = null;
-    if (got > 0) noteBought(f, p);
+    if (got > 0) noteBought(f, p, pre);
     return got > 0 ? 1 : 0;
   }
   /** Why a thing is where it is in the queue, in words: its score, a rule, cheap ×100, a threshold's place. */
@@ -599,17 +601,52 @@ CA.AutoBuyer = (() => {
     const best = q && q.items.find((y) => y.kind !== 'bank' && !y.first) === f;
     return best ? 'the best payback period in the queue' : 'the best score of what it may buy now';
   }
-  // what it bought last (the widgets' corner): [{ t, key, kind, name, n, label, names, price, pp, gain, profile }], newest first
-  const BOUGHT_MAX = 8;
+  // what it bought, newest first — the widgets' corner (the last three) and the Payback page's Purchase history
+  // (all of it): [{ t, key, kind, name, n, label, names, icon, round, price, pp, gain, cps, income, mode, profile }].
+  // Kept in the save (section 'buyerHistory'), so a refresh doesn't wipe it. cps and income are just before
+  // buying: the game's CpS and the income of the payback mode (mode) its pp and gain were worked out in —
+  // gain ÷ income is the boost it gave.
+  const BOUGHT_MAX = 100;
   let bought = [];
   /** Keeps a thing of its queue as just bought (buyer.buyNext, or pp.buy of what buyer.next named). */
-  function noteBought(f, p0) {
+  function noteBought(f, p0, pre) {
     const p = p0 || find();
-    const { key, kind, name, n, label, names, price, pp, gain } = f;
-    bought = [{ t: Date.now(), key, kind, name, n, label, names, price, pp, gain, profile: p ? p.name : '' }].concat(bought).slice(0, BOUGHT_MAX);
+    const { key, kind, name, n, label, names, icon, round, price, pp, gain } = f;
+    const { cps, income, mode } = pre || before(p);
+    const x = { t: Date.now(), key, kind, name, n, label, names, icon, round, price, pp, gain, cps, income, mode, profile: p ? p.name : '' };
+    bought = [x].concat(bought).slice(0, BOUGHT_MAX);
   }
-  /** What the Auto buyer bought last, newest first. */
+  /** Just before buying with a profile (none: the active one): CpS, the income of its payback mode and that mode's id — noteBought's `pre`. */
+  function before(x) {
+    const p = find(x);
+    const m = P().modeOf(p && p.mode ? p.mode : '');
+    return { cps: Game.cookiesPs || 0, income: m ? P().income(m.id) : NaN, mode: m ? m.id : '' };
+  }
+  /** What the Auto buyer bought last, newest first (the last 100, kept across refreshes). */
   const recentBought = () => bought.slice();
+  /** Forgets what it bought (the Purchase history's Clear). */
+  function clearBought() {
+    bought = [];
+  }
+  // the save keeps numbers as JSON can: Infinity (never pays back) as null, NaN (not known) left out
+  const NUMS = ['price', 'pp', 'gain', 'cps', 'income'];
+  const num = (v) => (typeof v === 'number' ? v : v === null ? Infinity : NaN);
+  function loadBought(data) {
+    bought = (Array.isArray(data) ? data : [])
+      .filter((x) => x && typeof x === 'object' && typeof x.key === 'string' && Number.isFinite(x.t))
+      .map((x) => ({ ...x, ...Object.fromEntries(NUMS.map((k) => [k, num(x[k])])), names: Array.isArray(x.names) ? x.names : undefined }))
+      .slice(0, BOUGHT_MAX);
+  }
+  function serializeBought() {
+    return bought.map((x) => {
+      const o = { ...x };
+      NUMS.forEach((k) => {
+        if (x[k] === Infinity) o[k] = null;
+        else if (!Number.isFinite(x[k])) delete o[k];
+      });
+      return o;
+    });
+  }
   /** For buttons: what the buyer buys next, and whether it can now (`upgrade`: the upgrade it names, to show with its icon). */
   function readiness(x) {
     const p = find(x);
@@ -715,6 +752,8 @@ CA.AutoBuyer = (() => {
 
   function init() {
     CA.Settings.registerSection('buyer', { serialize: () => ({ profiles, active, seeded: SEEDS.map((s) => s.id) }), load, event: 'buyer' });
+    // what it bought: mirrored with the rest every 30 s and as the page goes (a refresh), not on each purchase
+    CA.Settings.registerSection('buyerHistory', { serialize: serializeBought, load: loadBought });
     const V = (id, desc, params, get, more) => CA.Script.defineValue({ id, desc, params, get, group: 'Auto buyer', ...(more || {}) });
     V('buyer.queue', 'a list: the Auto buyer’s queue, front first — what a profile (id or name; none: the active one) would buy, in order', ['profile'], (x) => queue(x).items.map((i) => i.key), { list: true });
     V('buyer.next', 'the front of a profile’s queue (none: the active one): what the Auto buyer buys next ("": nothing)', ['profile'], (x) => (next(x) || { key: '' }).key);
@@ -810,5 +849,5 @@ CA.AutoBuyer = (() => {
     },
   });
 
-  return { init, allUpgrades, buyAllUpgrades, list, find, use, create, update, remove, addRule, setRule, removeRule, moveRule, activeProfile, queue, next, waitingFor, whyText, buyNext, noteBought, recentBought, readiness, budget, keepOf, keepFirst, reserveParts, thingOf, ruleText, whatText, effectText, whenProblem, reserveOf, scoreOf, ippOf, WHATS, EFFECTS, BULKS, BANKS, THRESHOLDS, PLACES, SEEDS, BULK_RULE, GARDEN_BANKS, holdsBack };
+  return { init, allUpgrades, buyAllUpgrades, list, find, use, create, update, remove, addRule, setRule, removeRule, moveRule, activeProfile, queue, next, waitingFor, whyText, buyNext, noteBought, before, recentBought, clearBought, BOUGHT_MAX, readiness, budget, keepOf, keepFirst, reserveParts, thingOf, ruleText, whatText, effectText, whenProblem, reserveOf, scoreOf, ippOf, WHATS, EFFECTS, BULKS, BANKS, THRESHOLDS, PLACES, SEEDS, BULK_RULE, GARDEN_BANKS, holdsBack };
 })();

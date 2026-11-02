@@ -7,11 +7,14 @@
 //                garden replant… — as rows of their own, in their place), payback period in its color,
 //                implied payback period, score (0–100), price, when, the rules that touched it — the first
 //                ten (all on "show all"), then what's held back, grayed, with why
+//   Purchase history  what the Auto buyer bought, newest first (the last 100, kept in the save; scrolls):
+//                when, what, price, the CpS it added, that as a boost to your income, its payback period then,
+//                the profile
 //   Profile      the active profile: name, what it buys, the bulk, cheap ×100, save up or skip, what it keeps
 //                (minutes of CpS and banks) and each one's priority (first, or a score), what it ranks by,
 //                and its rules (what → does, when …), reordered with ↑ ↓
 //
-// The first two follow the game every second (sync); the profile editor redraws only when it changes,
+// The first three follow the game every second (sync); the profile editor redraws only when it changes,
 // so typing into it isn't interrupted.
 
 CA.UI = CA.UI || {};
@@ -307,13 +310,77 @@ CA.UI.AutoBuyerCard = (() => {
     );
   }
 
-  const html = () => buyerCard() + queueCard() + editorCard();
+  // ---- what it bought ----
+
+  /** The boost a purchase gave: its gain as a share of the income just before ("+0.42%"). */
+  function boostText(x) {
+    const r = x.gain / (Number.isFinite(x.income) && x.income > 0 ? x.income : x.cps);
+    if (!Number.isFinite(r) || r < 0) return '';
+    const pct = r * 100;
+    return pct === 0 ? '+0%' : pct < 0.01 ? '<0.01%' : `+${pct < 10 ? pct.toFixed(2) : pct < 100 ? pct.toFixed(1) : F().beautify(Math.round(pct))}%`;
+  }
+  const modeName = (id) => {
+    const m = id ? P().modeOf(id) : null;
+    return m ? m.label || m.key || id : id || '';
+  };
+  const dayOf = (t) => new Date(t).toDateString();
+  function historyRow(x) {
+    const today = dayOf(Date.now()) === dayOf(x.t);
+    const at = `${today ? '' : `${new Date(x.t).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} `}${F().clock(x.t, true)}`;
+    const ago = `${F().span((Date.now() - x.t) / 1000)} ago`;
+    const boost = boostText(x);
+    const mode = modeName(x.mode);
+    const ppTip = `its payback period when bought${mode ? `, in the ${mode} payback mode` : ''}`;
+    const boostTip = boost ? `adds ${F().beautify(x.gain)}/s to ${F().beautify(Number.isFinite(x.income) && x.income > 0 ? x.income : x.cps)}/s${mode ? ` (${mode})` : ''}` : '';
+    return (
+      '<tr>' +
+      `<td data-tip="${esc(ago)}">${esc(at)}</td>` +
+      `<td>${thingName(x)}</td>` +
+      `<td class="n">${Number.isFinite(x.price) ? F().short(x.price) : dash}</td>` +
+      `<td class="n">${Number.isFinite(x.gain) ? `+${F().short(x.gain)}/s` : dash}</td>` +
+      `<td class="n"${boostTip ? ` data-tip="${esc(boostTip)}"` : ''}>${boost ? esc(boost) : dash}</td>` +
+      `<td class="n" data-tip="${esc(ppTip)}">${Number.isFinite(x.pp) || x.pp === Infinity ? esc(ppText(x.pp)) : dash}</td>` +
+      `<td class="ca-hint">${esc(x.profile || '')}</td></tr>`
+    );
+  }
+  function historyHtml() {
+    const done = B().recentBought();
+    const tips = {
+      cps: 'the CpS it added when bought (in its payback mode: what that mode counts — the golden cookie income a garden round adds)',
+      boost: 'what it added as a share of your income just before',
+      pp: 'its payback period when bought: the time to afford it plus the time to earn its price back',
+    };
+    return (
+      `<table class="ca-ab-queue ca-ab-hist"><thead><tr><th>When</th><th>What</th><th class="n">Price</th><th class="n" data-tip="${esc(tips.cps)}">CpS</th><th class="n" data-tip="${esc(tips.boost)}">Boost</th><th class="n" data-tip="${esc(tips.pp)}">PP</th><th>Profile</th></tr></thead><tbody>` +
+      (done.length ? done.map(historyRow).join('') : '<tr><td colspan="7" class="ca-hint">Nothing bought yet — what the Auto buyer buys shows here, newest first.</td></tr>') +
+      '</tbody></table>'
+    );
+  }
+  function historyMeta() {
+    const n = B().recentBought().length;
+    return n ? `${n === B().BOUGHT_MAX ? `the last ${n}` : `${n} bought`}, newest first · kept in your save` : `the last ${B().BOUGHT_MAX} purchases, kept in your save`;
+  }
+  function historyCard() {
+    return (
+      '<div class="ca-card">' +
+      C().cardHead(
+        'Purchase history',
+        'clock',
+        `<div class="ca-card-meta"><span class="ca-hint" data-ab-hmeta>${historyMeta()}</span>${C().button('Clear', 'data-ab-act="clear-history" data-arm-label="Clear?"', 'ca-btn-small ca-btn-off ca-ab-hist-clear')}</div>`
+      ) +
+      `<div class="ca-ab-scroll ca-ab-hist-scroll" data-ab-hist>${historyHtml()}</div></div>`
+    );
+  }
+
+  const html = () => buyerCard() + queueCard() + historyCard() + editorCard();
 
   function sync(root) {
     [
       ['[data-ab-buyer]', buyerHtml],
       ['[data-ab-queue]', queueHtml],
       ['[data-ab-qmeta]', queueMeta],
+      ['[data-ab-hist]', historyHtml],
+      ['[data-ab-hmeta]', historyMeta],
       ['[data-ab-keep]', () => (B().find() ? keepHtml(B().find()) : '')],
     ].forEach(([sel, fn]) => {
       const el = root.querySelector(sel);
@@ -366,6 +433,9 @@ CA.UI.AutoBuyerCard = (() => {
       CA.Util.sound(n ? 'snd/buy1.mp3' : 'snd/tick.mp3');
     } else if (d.abAct === 'all-rows') {
       showAll = !showAll;
+    } else if (d.abAct === 'clear-history') {
+      if (!CA.UI.Dom.armed(t)) return true;
+      B().clearBought();
     }
     redraw();
     return true;
