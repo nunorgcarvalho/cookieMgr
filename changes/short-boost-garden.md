@@ -7,3 +7,4 @@ bump: patch
   (`payback.shortBoost()`: what the short ones add).
 - **Auto buyer:** while a short CpS effect runs it buys no seeds and keeps no garden bank (Garden replant, Garden
   rounds): it no longer switches to saving for the garden; the banks come back once the effect is over.
+  Buildings are bought as usual meanwhile (an Everything must go's 5% off included).

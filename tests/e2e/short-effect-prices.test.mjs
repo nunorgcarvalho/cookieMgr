@@ -120,6 +120,17 @@ boosts([['Frenzy', 7, 3600]]);
 q = B.queue('payback');
 assert(!P.waitingOut() && B.reserveParts('payback').map((x) => x.id).join() === 'garden,gardenRounds', 'only a long Frenzy: the garden banks are back');
 assert(near(B.reserveParts('payback').find((x) => x.id === 'garden').amount, 7 * layout), 'at today’s price');
+// Everything must go (buildings 5% off, no CpS): not a CpS boost, nothing waited out; buildings stay buyable beside a short one
+Game.buffs = { 'Everything must go': { time: 8 * fps } };
+Game.CalculateGains();
+Game.cookies += 1;
+assert(!P.waitingOut() && B.reserveParts('payback').length === 2, 'Everything must go alone: no wait, the garden banks as usual');
+boosts([['Oiled-up', 88, 44]]);
+Game.buffs['Everything must go'] = { time: 8 * fps };
+Game.cookies = 1e30;
+q = B.queue('payback');
+assert(!q.held.some((x) => x.kind === 'building' && /waits it out/.test(x.why || '')), 'buildings are never waited out (their prices don’t scale with CpS)');
+assert(!q.items.concat(q.held).some((x) => x.kind === 'bank'), 'and nothing is kept for the garden ahead of them');
 boosts([]);
 B.update('payback', { banks: [], kinds: { building: true, upgrade: true, garden: false } });
 

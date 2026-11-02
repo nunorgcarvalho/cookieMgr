@@ -530,7 +530,7 @@ of the CpS the game shows, effects counted: a Frenzy makes them 7 times more exp
 **Wait out effects up to** (the Payback page's options, 600 s: 10 m) is priced away: payback periods, the store's colors
 and the queue count the price once it's over, and the Auto buyer and the gardener wait it out (the queue says *an
 effect makes it more expensive: waits it out*; Buy all upgrades leaves such an upgrade out). While one runs the Auto
-buyer buys no seeds and keeps no garden bank (Garden replant, Garden rounds): they're back once it's over. One with
+buyer buys no seeds and keeps no garden bank (Garden replant, Garden rounds): they're back once it's over. Buildings aren't priced in CpS, so they're bought as usual (an Everything must go's 5% off included). One with
 longer left — frenzies back to back in long combos — is part of the price: they're priced and bought at today's. Each
 effect counts on its own: an Oiled-up with 44 s left is waited out even during an hour of Frenzy, whose ×7 stays in the
 price (`payback.shortBoost()`: what the short ones alone add). Words: `payback.effectBoost()` (CpS ÷ unbuffed CpS), `payback.effectLeft()` (seconds),
