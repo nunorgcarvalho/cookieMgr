@@ -1,9 +1,11 @@
 // What an achievement asks and how far along you are — the facts behind cookieMgr's achievement
 // info card (ui/achievementTip.js):
 //
-//   progress   for an achievement that counts something, where you stand: [{ what, have, need, b, rate }]
+//   progress   for an achievement that counts something, where you stand: [{ what, have, need, b, rate, actual }]
 //              — one line per count (Polymath counts buildings and upgrades), b the building to buy when
-//              buying more of one wins it, rate how fast `have` grows by itself (cookies per second) —
+//              buying more of one wins it, rate how fast `have` grows by itself (cookies per second: your
+//              actual income over the Actual income window, like the tooltips' — your CpS until a minute is
+//              recorded; actual true when it is) —
 //              from main.js: the cookies-baked and CpS thresholds (Game.BankAchievements, Game.CpsAchievements), each building's count, production and
 //              level achievements (tieredAchievs, productionAchievs, levelAchiev10), the game's own checks
 //              (handmade cookies, golden cookies, wrinklers, reindeer, ascensions, sugar lumps, buildings
@@ -54,19 +56,35 @@ CA.AchievementInfo = (() => {
     'Hide & seek champion': [['easter eggs found', eggs, () => (Game.easterEggs || []).length]],
   };
 
-  /** Where you stand on a counting achievement: [{ what, have, need, b, rate }] ([] for one that doesn't count). */
+  /** Your actual income over the Actual income window: { actual, cps (the game's CpS, averaged) } — null with under a minute recorded. */
+  function actual() {
+    const P = CA.Payback;
+    const a = P && typeof P.incomeOver === 'function' ? P.incomeOver(P.actualWindow()) : null;
+    if (!a || !(a.actual > 0)) return null;
+    const r = CA.Recorder.recent(a.window);
+    return { actual: a.actual, cps: r && r.cps > 0 ? r.cps : NaN };
+  }
+  /** Cookies baked a second: your actual income (clicks, golden cookies… all of it) — your CpS until it's recorded. */
+  const baked = () => (actual() || { actual: Game.cookiesPs }).actual;
+  /** A building's CpS now times how much its CpS was boosted on average over the window (buffs come and go) — 1 until recorded. */
+  function buffs() {
+    const x = actual();
+    return x && x.cps > 0 && Game.cookiesPs > 0 ? x.cps / Game.cookiesPs : 1;
+  }
+
+  /** Where you stand on a counting achievement: [{ what, have, need, b, rate, actual }] ([] for one that doesn't count). */
   function progress(name) {
     const a = typeof name === 'object' ? name : named(name);
     if (!a) return [];
     const n = a.name;
-    const line = (what, have, need, b, rate) => [{ what, have, need, b: b || null, rate: rate || 0 }];
-    if ((Game.BankAchievements || []).includes(a)) return line('baked this ascension', Game.cookiesEarned || 0, a.threshold, null, Game.cookiesPs);
+    const line = (what, have, need, b, rate) => [{ what, have, need, b: b || null, rate: rate || 0, actual: !!rate && actual() !== null }];
+    if ((Game.BankAchievements || []).includes(a)) return line('baked this ascension', Game.cookiesEarned || 0, a.threshold, null, baked());
     if ((Game.CpsAchievements || []).includes(a)) return line('cookies per second (unbuffed)', Game.cookiesPsRaw || 0, a.threshold);
     for (const b of objects()) {
       const t = Object.values(b.tieredAchievs || {}).find((x) => x === a);
       if (t && Game.Tiers && Game.Tiers[t.tier]) return line(lower(b), b.amount, Game.Tiers[t.tier].achievUnlock, b);
       const p = (b.productionAchievs || []).find((x) => x.achiev === a);
-      if (p) return line(`cookies made by ${lower(b)}`, b.totalCookies || 0, p.pow, null, (b.storedTotalCps || 0) * (Game.globalCpsMult || 0));
+      if (p) return line(`cookies made by ${lower(b)}`, b.totalCookies || 0, p.pow, null, (b.storedTotalCps || 0) * (Game.globalCpsMult || 0) * buffs());
       if (b.levelAchiev10 === a) return line(`${b.dname || b.name} level`, b.level || 0, 10);
     }
     const A = CA.Payback.ACHIEVS;
@@ -78,10 +96,10 @@ CA.AchievementInfo = (() => {
     if (total) return line('buildings', buildings(), total[0]);
     const up = A.upgrades.find(([, x]) => x === n);
     if (up) return line('upgrades', upgrades(), up[0]);
-    if (n in MIXED) return MIXED[n].map(([what, have, need]) => ({ what, have: have(), need: typeof need === 'function' ? need() : need, b: null, rate: 0 }));
+    if (n in MIXED) return MIXED[n].map(([what, have, need]) => ({ what, have: have(), need: typeof need === 'function' ? need() : need, b: null, rate: 0, actual: false }));
     for (const [what, have, list] of COUNTS) {
       const hit = list.find(([, x]) => x === n);
-      if (hit) return line(what, have(), hit[0], null, list === FORFEIT ? Game.cookiesPs : 0);
+      if (hit) return line(what, have(), hit[0], null, list === FORFEIT ? baked() : 0);
     }
     return [];
   }

@@ -2,7 +2,8 @@
 // add-on shows an achievement (the Stats page's achievements still to collect…): its icon and name,
 // won or not (and shadow), what it asks (the game's own description), and for one not won yet: where
 // you stand on what it counts (features/achievementInfo.js), what the buildings it takes cost or how
-// long the cookies take at your CpS, and the milk it adds — with the kitten it brings closer.
+// long the cookies take at your actual income (the
+// tooltips' window; your CpS until a minute is recorded), and the milk it adds — with the kitten it brings closer.
 //
 //   html(name)   the card
 //   ref(name)    an achievement as a hoverable name — CA.AchievementInfo.ref
@@ -53,7 +54,11 @@ CA.UI.AchievementTip = (() => {
           if (p.b) {
             const price = CA.Payback.sumPrice(p.b, p.need - p.have);
             row(`${F().beautify(p.need - p.have)} more cost`, F().beautify(price), CA.Payback.timeTo(price) <= 0 ? 'ca-pp-green' : 'ca-pp-red');
-          } else if (p.rate > 0) row('At your CpS', `${F().units((p.need - p.have) / p.rate)} <small>to go</small>`);
+          } else if (p.rate > 0) {
+            const left = `${F().units((p.need - p.have) / p.rate)} <small>to go</small>`;
+            if (p.actual) row('By actual income', `${left} <small>(${esc(CA.Payback.actualWindowText())})</small>`);
+            else row('At your CpS', left);
+          }
         });
       if (shadow) row('Milk', 'none <small>(a shadow achievement)</small>');
       else {
