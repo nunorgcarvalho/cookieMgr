@@ -19,6 +19,10 @@ assert(ls.map((l) => l.label).join() === 'Strongest combos 0%,Regular combos 100
 assert(Math.abs(ls[0].v - cost) < 1e-9 && Math.abs(ls[1].v - G.magicM) < 1e-9, `at the spell's cost and the full bar (${ls.map((l) => l.v)})`);
 assert(ls[0].color === '#f2cf73' && ls[1].color === '#c9a6ff' && ls[0].labelColor === ls[0].color, 'in the tiers’ colors, as on the Cast tiers card');
 
+// the axis ends at a full bar: no headroom above the maximum
+const sc = plot().last().scale;
+assert(sc.yMin === 0 && Math.abs(sc.yMax - G.magicM) < 1e-9 && sc.ticks[sc.ticks.length - 1] === G.magicM, `the y axis tops out at the maximum (${sc.yMin}–${sc.yMax}, ticks ${sc.ticks})`);
+
 // a tier at 50%: halfway between the cost and the full bar
 T.addTier(T.current().id); // "Tier 3" at 50%
 assert(await waitFor(() => lines().length === 3, 3000), 'the lines follow a new tier at once');

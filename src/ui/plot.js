@@ -373,6 +373,7 @@ CA.UI.Plot = (() => {
    *                what it multiplies (mults, else value) and, two or more, all of them combined;
    *                tip() is the lane's own details, a section of the readout while it's hovered
    *                markers: [{ x, color, line, tip() }], empty: 'text', zero: true,
+   *                fitTop: true — a linear axis from 0 ends at the highest value (no headroom),
    *                xAxis: { x0, x1, labels: [{ x, label }], head(bar, x) } — an x axis in other units
    *                (e.g. garden ticks) for the bars, lines and markers this build returns }
    *   stats(v, data) → HTML (tiles above the chart), footer(v, data) → HTML (below the legend)
@@ -667,6 +668,14 @@ CA.UI.Plot = (() => {
         yMin = 0;
         yMax = 10;
         ticks = [0, 5, 10];
+      } else if (minV >= 0 && data.zero !== false && data.fitTop && maxV > 0) {
+        // the axis ends at the highest value, no headroom (magic: a full bar at the very top); nice ticks
+        // below it, and the top value itself labeled when it isn't crowding the last of them
+        const step = CA.UI.Chart.niceStep(maxV / 4);
+        yMin = 0;
+        yMax = maxV;
+        for (let t = 0; t <= yMax * 1.0001; t += step) ticks.push(t);
+        if (yMax - ticks[ticks.length - 1] > step * 0.3) ticks.push(yMax);
       } else if (minV >= 0 && data.zero !== false) {
         const top = maxV > 0 ? maxV * 1.08 : 10;
         const step = CA.UI.Chart.niceStep(top / 4);

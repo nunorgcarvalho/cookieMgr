@@ -214,6 +214,7 @@ CA.UI.WizardPage = (() => {
             magicMax: CA.UI.Plot.linePoints(bars, (b) => b.v.magicMax),
           },
           hlines: tierLines(),
+          fitTop: true, // a full bar sits at the very top
           markers: CA.EventLog.list(['spell'])
             .filter((ev) => {
               const x = v.active ? ev.a : ev.t;
