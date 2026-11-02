@@ -4673,7 +4673,7 @@ replantAtTick = true   # when a new clover round is planted — true: fertilizer
 plantWindow = 15   # (replantAtTick only) the last seconds before the tick, when the new clover round is planted
 wholeRounds = true   # start a round only once the bank covers all of it (garden.roundCost) — false: plant what it can afford
 tulipsFirst = true   # no clover round while a tulip round is due (it waits for the tulips to go down)
-waitOutEffects = true   # no new round while an effect makes seeds more expensive and ends within the Payback page's "Wait out effects up to" (10 m: payback.effectWait(); payback.shortBoost() is what those add), even beside a longer one; one with longer left (frenzies back to back) isn't waited out: it plants at that price
+waitOutEffects = true   # no new round while an effect makes seeds more expensive and ends within the Payback page's "Wait out effects up to" (10 m: payback.effectWait()); one with longer left (frenzies back to back) isn't waited out: it plants at today's price
 unlockNewSeeds = true   # a seed you haven't unlocked yet: let it grow, harvest it once mature (that unlocks it)
 if unlockNewSeeds:
   garden.harvestNew()
@@ -4682,7 +4682,7 @@ for tile in garden.tiles():
   if garden.wantAt(tile) != "" and garden.isOff(tile) and not garden.isEmpty(tile) and not (unlockNewSeeds and garden.isNew(tile)):
     garden.harvest(tile)
 # whether a round may go down now: no effect on the prices, and the cookies for all of it
-pricesOk = not waitOutEffects or payback.shortBoost() <= 1
+pricesOk = not waitOutEffects or garden.priceBoost() <= 1 or garden.priceBoostLeft() > payback.effectWait()
 # the tulips: a new round is due once none is growing and fewer than tulipReplantBelow are mature
 tulipDue = garden.seedYoung(tulip) == 0 and garden.seedMature(tulip) < tulipReplantBelow * garden.seedTiles(tulip)
 tulipReady = pricesOk and (not wholeRounds or cookies >= garden.roundCost(tulip))
@@ -5623,9 +5623,10 @@ CA.Garden = (() => {
     const M = minigame();
     if (!M || typeof M.getCost !== 'function') return 0;
     const p = active();
+    const unbuffed = !pricesStayUp();
     return tilesOf(M).reduce((sum, [x, y]) => {
       const me = M.plants[wantAt(p, x, y)];
-      return me ? sum + seedPrice(M, me, true) : sum;
+      return me ? sum + seedPrice(M, me, unbuffed) : sum;
     }, 0);
   }
 
@@ -5659,19 +5660,15 @@ CA.Garden = (() => {
   /**
    * Whether seeds are more expensive now for a while yet: an effect raises their price and has longer left than
    * the Payback page's "Wait out effects up to" (10 m; frenzies back to back, in long combos) — so they're
-   * bought at that price. One that ends sooner is waited out (CA.Payback.waitingOut), even beside a long one.
+   * bought at today's price. One that ends sooner is waited out (CA.Payback.waitingOut).
    */
-  const pricesStayUp = () => priceBoost() / CA.Payback.shortBoost() > 1.001;
-  /**
-   * A seed's price (M.getCost) — with `unbuffed`, once the short effects are over (CA.Payback.shortBoost:
-   * those ending within "Wait out effects up to"; a long one stays in the price).
-   */
+  const pricesStayUp = () => priceBoost() > 1.001 && !CA.Payback.waitingOut();
+  /** A seed's price (M.getCost) — with `unbuffed`, at the unbuffed CpS (the price once the effects are over). */
   function seedPrice(M, me, unbuffed) {
     const c = typeof M.getCost === 'function' ? M.getCost(me) : 0;
-    const short = unbuffed ? CA.Payback.shortBoost() : 1;
-    if (short === 1) return c;
-    // the short effects' CpS part divided out; the floor (costM) stays
-    return Math.max(c / short, Math.min(c, me.costM || 0));
+    if (!unbuffed || priceBoost() === 1) return c;
+    // the CpS part divided out; the floor (costM) stays
+    return Math.max(c / priceBoost(), Math.min(c, me.costM || 0));
   }
   /**
    * Cookies to plant a whole round of one seed: every tile the layout has it for, from scratch (none:
@@ -5708,9 +5705,10 @@ CA.Garden = (() => {
     tilesOf(M).forEach(([x, y]) => wantAt(p, x, y) && seeds.add(wantAt(p, x, y)));
     let keep = 0;
     seeds.forEach((k) => {
-      // at the prices once the short effects are over (a long one stays in the price)
-      if (!FIRST_SEEDS.includes(k)) keep += Math.max(0, Number(margin) || 0) * roundCost(k, true);
-      else if (layoutCensus(k).planted < layoutCensus(k).tiles) keep += roundCost(k, true);
+      // at the prices once the effects are over — or today's, while they stay up for longer than it waits
+      const unbuffed = !pricesStayUp();
+      if (!FIRST_SEEDS.includes(k)) keep += Math.max(0, Number(margin) || 0) * roundCost(k, unbuffed);
+      else if (layoutCensus(k).planted < layoutCensus(k).tiles) keep += roundCost(k, unbuffed);
     });
     return keep;
   }
@@ -8055,53 +8053,31 @@ CA.Payback = (() => {
   // Seeds, the Golden switch, the garden drops' cookies, Wrinkler ambergris cost minutes of the CpS the
   // game shows, effects counted: a Frenzy makes them 7 times more expensive. An effect that ends within
   // the "Wait out effects" option (10 m) is priced away (the price once it's over) and waited out; one
-  // with longer left (frenzies back to back, in long combos) is part of the price. Each effect counts on
-  // its own: an hour of Frenzy keeps its ×7 in the price, a 44 s Oiled-up beside it is still priced away.
+  // with longer left (frenzies back to back, in long combos) is part of the price.
 
   /** How much effects raise CpS-scaled prices now: CpS ÷ unbuffed CpS (1: none; a Frenzy 7, a Clot 0.5). */
   function effectBoost() {
     const u = Game.unbuffedCps || 0;
     return u > 0 && Game.cookiesPs > 0 ? Game.cookiesPs / u : 1;
   }
-  /** The effects running now that raise CpS: [{ mult, left (seconds) }]. */
-  function boosts() {
-    const fps = Game.fps || 30;
-    return Object.values(Game.buffs || {})
-      .filter((b) => b && b.multCpS !== undefined && b.multCpS > 1)
-      .map((b) => ({ mult: b.multCpS, left: (b.time || 0) / fps }));
-  }
   /** Seconds until the effects that raise CpS are over (0: none running). */
-  const effectLeft = () => boosts().reduce((m, b) => Math.max(m, b.left), 0);
+  function effectLeft() {
+    const fps = Game.fps || 30;
+    return Object.values(Game.buffs || {}).reduce((m, b) => (b && b.multCpS !== undefined && b.multCpS > 1 ? Math.max(m, (b.time || 0) / fps) : m), 0);
+  }
   /** The longest an effect may have left to be waited out (the option, seconds). */
   const EFFECT_WAIT = 600;
   const effectWait = () => {
     const v = Number(CA.Settings && CA.Settings.get('ppEffectWait'));
     return Number.isFinite(v) && v >= 0 ? v : EFFECT_WAIT;
   };
-  /**
-   * How much the short effects alone raise CpS-scaled prices: all of the boost but the effects with longer
-   * left than effectWait() (an Oiled-up's 44 s inside an hour of Frenzy too). Each effect counts on its own,
-   * so a long one running beside a short one doesn't make the short one part of the price.
-   */
-  function shortBoost() {
-    const all = effectBoost();
-    if (all <= 1.001) return 1;
-    const wait = effectWait();
-    const lasting = boosts().reduce((m, b) => (b.left > wait ? m * b.mult : m), 1);
-    return Math.max(1, all / lasting);
-  }
-  /** Seconds until the short effects are over (0: none running). */
-  const shortLeft = () => {
-    const wait = effectWait();
-    return effectBoost() > 1.001 ? boosts().reduce((m, b) => (b.left <= wait ? Math.max(m, b.left) : m), 0) : 0;
-  };
-  /** Whether a short effect raises CpS-scaled prices now (they're priced without it, and wait for it to end). */
-  const waitingOut = () => shortBoost() > 1.001;
-  /** What `price()` gives once the short effects are over: the game's own price function, asked at the CpS without them. */
+  /** Whether an effect raises CpS-scaled prices now and ends soon enough to wait out (they're priced without it). */
+  const waitingOut = () => effectBoost() > 1.001 && effectLeft() <= effectWait();
+  /** What `price()` gives once the effects are over: the game's own price function, asked at the unbuffed CpS. */
   function unbuffedPrice(price) {
     const keep = Game.cookiesPs;
     try {
-      Game.cookiesPs = keep / shortBoost();
+      Game.cookiesPs = Game.unbuffedCps || keep;
       return price();
     } finally {
       Game.cookiesPs = keep;
@@ -9090,7 +9066,6 @@ CA.Payback = (() => {
     PV('payback.effectBoost', 'how much effects raise what costs minutes of CpS (seeds, the Golden switch…): CpS ÷ unbuffed CpS (1: none; a Frenzy 7)', [], () => Math.round(effectBoost() * 1000) / 1000);
     PV('payback.effectLeft', 'seconds until the effects that raise CpS are over (0: none running)', [], () => Math.round(effectLeft() * 10) / 10);
     PV('payback.effectWait', 'the longest an effect may have left to be waited out, in seconds (the Payback page’s “Wait out effects up to”, 600)', [], effectWait);
-    PV('payback.shortBoost', 'how much the short effects alone (ending within payback.effectWait()) raise what costs minutes of CpS: they’re priced away and waited out (1: none)', [], () => Math.round(shortBoost() * 1000) / 1000);
     PV('payback.waitingOut', 'true while an effect raises what costs minutes of CpS and ends within payback.effectWait(): it’s priced as once the effect is over, and waited out', [], waitingOut);
     PV('payback.bank', 'cookies that count as the bank for payback periods: in hand, plus your wrinklers’ when that’s chosen', [], bank);
     PV('payback.clickRate', 'clicks a second, averaged as the CpS + clicking mode counts them (the option’s window)', [], () => clicksOver(clickWindow()));
@@ -9109,7 +9084,7 @@ CA.Payback = (() => {
     V('actualIncome', 'cookies a second you actually took in over about the last seconds of play (at least 5 minutes; NaN: too little recorded)', ['seconds'], (p) => (actualIncome(Number(p) || 0) || { actual: NaN }).actual);
   }
 
-  return { init, modes, mode: currentMode, actualWindow, actualWindowText, setActualWindow, windowText, ACTUAL_PRESETS, SINCE_ASCENSION, modeOf, income, bank, parts, ppOf, buildingWorth, actualRatio, clicksOver, incomeOver, isSwitch, ppActual, actualIncome, calls: () => calls, table, ranking, best, buy, buyBuilding, buyUpgrade, buyUpgrades, buildingBonus, upgradeWorth, upgradesWorth, achievementWorth, allUpgrades, pp, timeTo, sumPrice, clickRate, nextAchievement, storeUpgrades, measureAll, effectBoost, effectLeft, effectWait, shortBoost, shortLeft, waitingOut, unbuffedPrice, upgradeCost, COLOURS, BULKS,
+  return { init, modes, mode: currentMode, actualWindow, actualWindowText, setActualWindow, windowText, ACTUAL_PRESETS, SINCE_ASCENSION, modeOf, income, bank, parts, ppOf, buildingWorth, actualRatio, clicksOver, incomeOver, isSwitch, ppActual, actualIncome, calls: () => calls, table, ranking, best, buy, buyBuilding, buyUpgrade, buyUpgrades, buildingBonus, upgradeWorth, upgradesWorth, achievementWorth, allUpgrades, pp, timeTo, sumPrice, clickRate, nextAchievement, storeUpgrades, measureAll, effectBoost, effectLeft, effectWait, waitingOut, unbuffedPrice, upgradeCost, COLOURS, BULKS,
     // the count achievements of the game's own checks, [[count, name]] (features/achievementInfo.js reads them too)
     ACHIEVS: { cursor: CURSOR_ACHIEVS, min: MIN_ACHIEVS, total: TOTAL_ACHIEVS, upgrades: UPGRADE_ACHIEVS } };
 })();
@@ -11121,8 +11096,6 @@ CA.AutoBuyer = (() => {
   const GM = () => CA.GoldenMath;
   /** The Garden rounds bank's default margin (features/garden.js roundsReserve): × a golden clover round. */
   const ROUNDS_MARGIN = 1.25;
-  /** The thresholds kept for the garden: what garden things may spend into (none kept while a short effect runs). */
-  const GARDEN_BANKS = ['garden', 'gardenRounds'];
   /** The banks a profile may keep on top of its minutes of CpS (the bank warnings' own banks, and the garden's). */
   const BANKS = [
     { id: 'lucky', label: 'Lucky!', tip: 'what a Lucky! needs to pay its most (bank.lucky)', get: () => GM().lucky().bank },
@@ -11388,9 +11361,7 @@ CA.AutoBuyer = (() => {
     const at = (id) => cleanAt((p.at || {})[id]);
     const parts = [];
     if (p.reserve > 0) parts.push({ id: 'cps', label: `${p.reserve} min of CpS`, amount: reserveOf(p.reserve), at: at('cps') });
-    // while a short effect runs nothing goes into the garden (seeds wait it out), so its banks keep nothing
-    const shortEffect = P().waitingOut();
-    BANKS.filter((b) => p.banks.includes(b.id) && !(shortEffect && GARDEN_BANKS.includes(b.id))).forEach((b) => {
+    BANKS.filter((b) => p.banks.includes(b.id)).forEach((b) => {
       const v = Number(b.get(p));
       parts.push({ id: b.id, label: b.label, amount: Number.isFinite(v) ? Math.max(0, v) : 0, at: at(b.id) });
     });
@@ -11541,6 +11512,8 @@ CA.AutoBuyer = (() => {
       });
     return walk(p, out, held, bestOk);
   }
+  /** The thresholds kept for the garden: what garden things may spend into. */
+  const GARDEN_BANKS = ['garden', 'gardenRounds'];
   /** Whether a threshold row of the queue holds a thing back (the garden's own banks don't hold garden things). */
   const holdsBack = (bank, x) => bank.kind === 'bank' && !(x && x.kind === 'garden' && GARDEN_BANKS.includes(bank.name));
   /**
@@ -11557,13 +11530,12 @@ CA.AutoBuyer = (() => {
     // CpS + clicking without the effects running now (a Frenzy's ×7 is golden cookie income too)
     const base = P().income('cpsClicking') / G.priceBoost();
     const golden = Math.max(0, P().income('actualIncome') - base);
-    // a short effect (ending within "Wait out effects up to", even beside a long one): seeds wait it out
-    const dear = P().waitingOut();
+    const dear = G.priceBoost() > 1.001 && !G.pricesStayUp();
     const tulips = list.some((x) => x.first);
     return list.map((x) => {
       const gain = golden * (x.freq - 1) + base * (x.cps - 1);
       // an effect that ends soon: priced as once it's over (it's waited out)
-      const price = dear ? x.price / P().shortBoost() : x.price;
+      const price = dear ? x.price / G.priceBoost() : x.price;
       const t = { kind: 'garden', name: x.seed, n: x.n, label: `${x.round ? 'Replant' : 'Plant'} ${x.n} ${x.name}`, icon: x.icon, round: x.round, price, gain, bonus: gain, pp: gain > 0 ? price / gain : Infinity };
       t.key = thingKey(t);
       const why = !Number.isFinite(golden) ? 'waits for a minute of Actual income (what golden cookies bring in)' : dear ? 'an effect makes seeds more expensive: waits it out' : tulips && !x.first ? 'the nursetulips go first' : '';
@@ -29332,7 +29304,7 @@ CA.UI.PaybackPage = (() => {
       `<div class="ca-row ca-row-option"><span class="ca-row-ico">${I('building', 16)}</span><div class="ca-row-text"><div class="ca-row-name">Minimum bulk</div><div class="ca-row-desc">What the buyers (an Auto buyer profile on auto bulk, buy.best) buy a building in — with Round to multiples on, up to the next multiple of it. Auto: ×10 with Round to multiples, else ×1. Now: ×${CA.Shop.minBulk()}${CA.Shop.roundUp() ? ', rounded up' : ''}.</div></div><span class="ca-pp-chips">${CA.Shop.MIN_BULKS.map(bulkChip).join('')}</span></div>` +
       `<div class="ca-row ca-row-option"><span class="ca-row-ico">${I('dollar', 16)}</span><div class="ca-row-text"><div class="ca-row-name">Best = what you can afford</div><div class="ca-row-desc">The green building is the best you can buy now; what you can’t afford yet shows red.</div></div>${C().toggle(!!S.get('ppOnlyBuyable'), 'data-pp-opt="ppOnlyBuyable"', 'Best = what you can afford')}</div>` +
       `<div class="ca-row ca-row-option"><span class="ca-row-ico">${I('clock', 16)}</span><div class="ca-row-text"><div class="ca-row-name">Cheap enough to just buy</div><div class="ca-row-desc">Anything costing less than this many seconds of CpS shows blue (0: off).</div></div><input type="number" min="0" step="1" class="ca-pp-num" data-pp-num="ppSecondsLowerLimit" value="${Number(S.get('ppSecondsLowerLimit')) || 0}"></div>` +
-      `<div class="ca-row ca-row-option"><span class="ca-row-ico">${I('clock', 16)}</span><div class="ca-row-text"><div class="ca-row-name">Wait out effects up to</div><div class="ca-row-desc">What costs minutes of CpS (seeds, the Golden switch, the garden drops’ cookies) costs more in a Frenzy. An effect ending within this many seconds is priced away and waited out; one with longer left (frenzies back to back) is part of the price. While one runs, the Auto buyer buys no seeds and keeps no garden bank.${P().waitingOut() ? ` Now: waiting one out (${CA.Format.span(P().shortLeft())} left).` : ''}</div></div><input type="number" min="0" step="10" class="ca-pp-num" data-pp-num="ppEffectWait" value="${P().effectWait()}"> s</div>` +
+      `<div class="ca-row ca-row-option"><span class="ca-row-ico">${I('clock', 16)}</span><div class="ca-row-text"><div class="ca-row-name">Wait out effects up to</div><div class="ca-row-desc">What costs minutes of CpS (seeds, the Golden switch, the garden drops’ cookies) costs more in a Frenzy. An effect ending within this many seconds is priced away and waited out; one with longer left (frenzies back to back) is part of the price.${P().waitingOut() ? ` Now: waiting one out (${CA.Format.span(P().effectLeft())} left).` : ''}</div></div><input type="number" min="0" step="10" class="ca-pp-num" data-pp-num="ppEffectWait" value="${P().effectWait()}"> s</div>` +
       '</div>' +
       `<div class="ca-card-note">The store’s ${C().link('Best buy', 'settings:store')} sort and the ${C().link('Auto buyer', 'clickers')} use these numbers too.</div>` +
       '</div>'
