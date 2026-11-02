@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 4.35.1 — 2026-11-02
+
+- **README:** the Payback tile mentions the purchase history.
+
 ## 4.35.0 — 2026-11-02
 
 - **Purchase history:** a card on the Payback page, below the Queue, lists the last 100 things the Auto buyer bought,
