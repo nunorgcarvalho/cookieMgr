@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 4.31.1 — 2026-11-02
+
+- **Guide:** the achievement card's time to go is by actual income.
+
 ## 4.31.0 — 2026-11-02
 
 - **Achievement info cards:** the time to go for cookies baked (and cookies made by a building) now reads your
