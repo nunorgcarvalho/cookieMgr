@@ -55,7 +55,7 @@ assert(CA.Recorder.timeAt(mid.a) === mid.t && CA.Recorder.activeAt(mid.t) === mi
 CA.UI.Menu.openPage('graphs');
 await sleep(50);
 const subtabs = [...doc.querySelectorAll('[data-graph-tab]')].map((b) => b.dataset.graphTab);
-assert(subtabs.join() === 'cookies,income,prestige,golden,whatif,misc', `sub-tabs (${subtabs})`);
+assert(subtabs.join() === 'cookies,income,prestige,golden,whatif,collection,misc', `sub-tabs (${subtabs})`);
 const plotsOn = () => [...doc.querySelectorAll('[data-plot]')].map((p) => p.dataset.plot).join();
 assert(plotsOn() === 'cps,actual,ledgerCum', `Cookies tab plots (${plotsOn()})`);
 CA.UI.Graphs.tick();
