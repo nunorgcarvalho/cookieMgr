@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 4.33.1 — 2026-11-02
+
+- **README:** the Stats picture and tile show the Upgrades & achievements tab.
+
 ## 4.33.0 — 2026-11-02
 
 - **Stats → Upgrades & achievements:** a new tab listing every upgrade (regular, cookies, heavenly) and every achievement
