@@ -68,31 +68,53 @@ CA.Payback = (() => {
   // Seeds, the Golden switch, the garden drops' cookies, Wrinkler ambergris cost minutes of the CpS the
   // game shows, effects counted: a Frenzy makes them 7 times more expensive. An effect that ends within
   // the "Wait out effects" option (10 m) is priced away (the price once it's over) and waited out; one
-  // with longer left (frenzies back to back, in long combos) is part of the price.
+  // with longer left (frenzies back to back, in long combos) is part of the price. Each effect counts on
+  // its own: an hour of Frenzy keeps its ×7 in the price, a 44 s Oiled-up beside it is still priced away.
 
   /** How much effects raise CpS-scaled prices now: CpS ÷ unbuffed CpS (1: none; a Frenzy 7, a Clot 0.5). */
   function effectBoost() {
     const u = Game.unbuffedCps || 0;
     return u > 0 && Game.cookiesPs > 0 ? Game.cookiesPs / u : 1;
   }
-  /** Seconds until the effects that raise CpS are over (0: none running). */
-  function effectLeft() {
+  /** The effects running now that raise CpS: [{ mult, left (seconds) }]. */
+  function boosts() {
     const fps = Game.fps || 30;
-    return Object.values(Game.buffs || {}).reduce((m, b) => (b && b.multCpS !== undefined && b.multCpS > 1 ? Math.max(m, (b.time || 0) / fps) : m), 0);
+    return Object.values(Game.buffs || {})
+      .filter((b) => b && b.multCpS !== undefined && b.multCpS > 1)
+      .map((b) => ({ mult: b.multCpS, left: (b.time || 0) / fps }));
   }
+  /** Seconds until the effects that raise CpS are over (0: none running). */
+  const effectLeft = () => boosts().reduce((m, b) => Math.max(m, b.left), 0);
   /** The longest an effect may have left to be waited out (the option, seconds). */
   const EFFECT_WAIT = 600;
   const effectWait = () => {
     const v = Number(CA.Settings && CA.Settings.get('ppEffectWait'));
     return Number.isFinite(v) && v >= 0 ? v : EFFECT_WAIT;
   };
-  /** Whether an effect raises CpS-scaled prices now and ends soon enough to wait out (they're priced without it). */
-  const waitingOut = () => effectBoost() > 1.001 && effectLeft() <= effectWait();
-  /** What `price()` gives once the effects are over: the game's own price function, asked at the unbuffed CpS. */
+  /**
+   * How much the short effects alone raise CpS-scaled prices: all of the boost but the effects with longer
+   * left than effectWait() (an Oiled-up's 44 s inside an hour of Frenzy too). Each effect counts on its own,
+   * so a long one running beside a short one doesn't make the short one part of the price.
+   */
+  function shortBoost() {
+    const all = effectBoost();
+    if (all <= 1.001) return 1;
+    const wait = effectWait();
+    const lasting = boosts().reduce((m, b) => (b.left > wait ? m * b.mult : m), 1);
+    return Math.max(1, all / lasting);
+  }
+  /** Seconds until the short effects are over (0: none running). */
+  const shortLeft = () => {
+    const wait = effectWait();
+    return effectBoost() > 1.001 ? boosts().reduce((m, b) => (b.left <= wait ? Math.max(m, b.left) : m), 0) : 0;
+  };
+  /** Whether a short effect raises CpS-scaled prices now (they're priced without it, and wait for it to end). */
+  const waitingOut = () => shortBoost() > 1.001;
+  /** What `price()` gives once the short effects are over: the game's own price function, asked at the CpS without them. */
   function unbuffedPrice(price) {
     const keep = Game.cookiesPs;
     try {
-      Game.cookiesPs = Game.unbuffedCps || keep;
+      Game.cookiesPs = keep / shortBoost();
       return price();
     } finally {
       Game.cookiesPs = keep;
@@ -1081,6 +1103,7 @@ CA.Payback = (() => {
     PV('payback.effectBoost', 'how much effects raise what costs minutes of CpS (seeds, the Golden switch…): CpS ÷ unbuffed CpS (1: none; a Frenzy 7)', [], () => Math.round(effectBoost() * 1000) / 1000);
     PV('payback.effectLeft', 'seconds until the effects that raise CpS are over (0: none running)', [], () => Math.round(effectLeft() * 10) / 10);
     PV('payback.effectWait', 'the longest an effect may have left to be waited out, in seconds (the Payback page’s “Wait out effects up to”, 600)', [], effectWait);
+    PV('payback.shortBoost', 'how much the short effects alone (ending within payback.effectWait()) raise what costs minutes of CpS: they’re priced away and waited out (1: none)', [], () => Math.round(shortBoost() * 1000) / 1000);
     PV('payback.waitingOut', 'true while an effect raises what costs minutes of CpS and ends within payback.effectWait(): it’s priced as once the effect is over, and waited out', [], waitingOut);
     PV('payback.bank', 'cookies that count as the bank for payback periods: in hand, plus your wrinklers’ when that’s chosen', [], bank);
     PV('payback.clickRate', 'clicks a second, averaged as the CpS + clicking mode counts them (the option’s window)', [], () => clicksOver(clickWindow()));
@@ -1099,7 +1122,7 @@ CA.Payback = (() => {
     V('actualIncome', 'cookies a second you actually took in over about the last seconds of play (at least 5 minutes; NaN: too little recorded)', ['seconds'], (p) => (actualIncome(Number(p) || 0) || { actual: NaN }).actual);
   }
 
-  return { init, modes, mode: currentMode, actualWindow, actualWindowText, setActualWindow, windowText, ACTUAL_PRESETS, SINCE_ASCENSION, modeOf, income, bank, parts, ppOf, buildingWorth, actualRatio, clicksOver, incomeOver, isSwitch, ppActual, actualIncome, calls: () => calls, table, ranking, best, buy, buyBuilding, buyUpgrade, buyUpgrades, buildingBonus, upgradeWorth, upgradesWorth, achievementWorth, allUpgrades, pp, timeTo, sumPrice, clickRate, nextAchievement, storeUpgrades, measureAll, effectBoost, effectLeft, effectWait, waitingOut, unbuffedPrice, upgradeCost, COLOURS, BULKS,
+  return { init, modes, mode: currentMode, actualWindow, actualWindowText, setActualWindow, windowText, ACTUAL_PRESETS, SINCE_ASCENSION, modeOf, income, bank, parts, ppOf, buildingWorth, actualRatio, clicksOver, incomeOver, isSwitch, ppActual, actualIncome, calls: () => calls, table, ranking, best, buy, buyBuilding, buyUpgrade, buyUpgrades, buildingBonus, upgradeWorth, upgradesWorth, achievementWorth, allUpgrades, pp, timeTo, sumPrice, clickRate, nextAchievement, storeUpgrades, measureAll, effectBoost, effectLeft, effectWait, shortBoost, shortLeft, waitingOut, unbuffedPrice, upgradeCost, COLOURS, BULKS,
     // the count achievements of the game's own checks, [[count, name]] (features/achievementInfo.js reads them too)
     ACHIEVS: { cursor: CURSOR_ACHIEVS, min: MIN_ACHIEVS, total: TOTAL_ACHIEVS, upgrades: UPGRADE_ACHIEVS } };
 })();

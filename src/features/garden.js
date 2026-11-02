@@ -395,10 +395,9 @@ CA.Garden = (() => {
     const M = minigame();
     if (!M || typeof M.getCost !== 'function') return 0;
     const p = active();
-    const unbuffed = !pricesStayUp();
     return tilesOf(M).reduce((sum, [x, y]) => {
       const me = M.plants[wantAt(p, x, y)];
-      return me ? sum + seedPrice(M, me, unbuffed) : sum;
+      return me ? sum + seedPrice(M, me, true) : sum;
     }, 0);
   }
 
@@ -432,15 +431,19 @@ CA.Garden = (() => {
   /**
    * Whether seeds are more expensive now for a while yet: an effect raises their price and has longer left than
    * the Payback page's "Wait out effects up to" (10 m; frenzies back to back, in long combos) — so they're
-   * bought at today's price. One that ends sooner is waited out (CA.Payback.waitingOut).
+   * bought at that price. One that ends sooner is waited out (CA.Payback.waitingOut), even beside a long one.
    */
-  const pricesStayUp = () => priceBoost() > 1.001 && !CA.Payback.waitingOut();
-  /** A seed's price (M.getCost) — with `unbuffed`, at the unbuffed CpS (the price once the effects are over). */
+  const pricesStayUp = () => priceBoost() / CA.Payback.shortBoost() > 1.001;
+  /**
+   * A seed's price (M.getCost) — with `unbuffed`, once the short effects are over (CA.Payback.shortBoost:
+   * those ending within "Wait out effects up to"; a long one stays in the price).
+   */
   function seedPrice(M, me, unbuffed) {
     const c = typeof M.getCost === 'function' ? M.getCost(me) : 0;
-    if (!unbuffed || priceBoost() === 1) return c;
-    // the CpS part divided out; the floor (costM) stays
-    return Math.max(c / priceBoost(), Math.min(c, me.costM || 0));
+    const short = unbuffed ? CA.Payback.shortBoost() : 1;
+    if (short === 1) return c;
+    // the short effects' CpS part divided out; the floor (costM) stays
+    return Math.max(c / short, Math.min(c, me.costM || 0));
   }
   /**
    * Cookies to plant a whole round of one seed: every tile the layout has it for, from scratch (none:
@@ -477,10 +480,9 @@ CA.Garden = (() => {
     tilesOf(M).forEach(([x, y]) => wantAt(p, x, y) && seeds.add(wantAt(p, x, y)));
     let keep = 0;
     seeds.forEach((k) => {
-      // at the prices once the effects are over — or today's, while they stay up for longer than it waits
-      const unbuffed = !pricesStayUp();
-      if (!FIRST_SEEDS.includes(k)) keep += Math.max(0, Number(margin) || 0) * roundCost(k, unbuffed);
-      else if (layoutCensus(k).planted < layoutCensus(k).tiles) keep += roundCost(k, unbuffed);
+      // at the prices once the short effects are over (a long one stays in the price)
+      if (!FIRST_SEEDS.includes(k)) keep += Math.max(0, Number(margin) || 0) * roundCost(k, true);
+      else if (layoutCensus(k).planted < layoutCensus(k).tiles) keep += roundCost(k, true);
     });
     return keep;
   }
