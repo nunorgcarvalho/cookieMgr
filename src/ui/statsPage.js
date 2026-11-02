@@ -6,6 +6,7 @@
 //   Prestige  Prestige (above the target and the charts)
 //   What if   What if
 //   Misc      Timers, Wrinklers, Still to collect
+//   Upgrades & achievements   every upgrade and achievement in the game
 //
 //   Bank          what golden cookies and spells pay at their most, and the bank each needs: a meter
 //                 per one (your bank against it — wrinklers counted when Payback says so), how long
@@ -18,6 +19,9 @@
 //   What if       every spirit in each Pantheon slot, every dragon aura — the CpS each would bring
 //   Timers        the sugar lump, magic, the autosave, the effects running
 //   Collection    what's left: upgrades, achievements, season drops, the garden's rare drops
+//   Upgrades,     everything there is, the ones you have lit up: upgrades bought this ascension (ones in the
+//   Achievements  store ringed), achievements won (they stay through ascensions); a chip shows only the
+//                 ones you don't have yet. Each icon's info card on hover.
 
 CA.UI = CA.UI || {};
 
@@ -179,6 +183,73 @@ CA.UI.StatsPage = (() => {
     );
   }
 
+  // ---- upgrades & achievements ------------------------------------------------------------------------
+
+  const ALL_SEEN = 'collectionMissing'; // the option: only the ones you don't have yet
+  const STATE_TIP = { owned: '', store: ' in-store', locked: ' off' };
+  function allIcon(it, kind) {
+    const sheet = typeof it.icon[2] === 'string' ? it.icon[2] : CA.Util.res('img/icons.png');
+    const pos = `${-it.icon[0] * 48}px ${-it.icon[1] * 48}px`;
+    return (
+      `<span class="ca-all-ico${STATE_TIP[it.state]}" data-all-state="${it.state}" ${kind === 'achievement' ? CA.AchievementInfo.attrs(it.name) : CA.UpgradeInfo.attrs(it.name)}>` +
+      `<span class="ca-pp-ico" style="background-image:url(${sheet});background-position:${pos}"></span></span>`
+    );
+  }
+  function allGroup(title, items, kind, note) {
+    const owned = items.filter((x) => x.state === 'owned').length;
+    const shown = CA.Settings.get(ALL_SEEN) ? items.filter((x) => x.state !== 'owned') : items;
+    const all = owned === items.length;
+    return (
+      `<div class="ca-all-group" data-all-group="${esc(title)}">` +
+      `<div class="ca-all-head"><b>${esc(title)}</b><span class="ca-all-count${all ? ' done' : ''}">${owned} of ${items.length}${all ? ' ✓' : ''}</span>` +
+      (note ? `<span class="ca-hint">${esc(note)}</span>` : '') +
+      '</div>' +
+      (shown.length ? `<div class="ca-all-grid">${shown.map((x) => allIcon(x, kind)).join('')}</div>` : `<div class="ca-card-note">${items.length ? 'All of them — nothing left here.' : 'None in this game.'}</div>`) +
+      '</div>'
+    );
+  }
+  function allUpgradesHtml() {
+    const u = CA.Collection.everything().upgrades;
+    return allGroup('Upgrades', u.regular, 'upgrade') + allGroup('Cookies', u.cookie, 'upgrade') + allGroup('Heavenly upgrades', u.prestige, 'upgrade', 'bought with heavenly chips, kept through ascensions');
+  }
+  function allAchievementsHtml() {
+    const a = CA.Collection.everything().achievements;
+    return allGroup('Achievements', a.normal, 'achievement') + allGroup('Shadow achievements', a.shadow, 'achievement', 'no milk');
+  }
+  function allBarHtml() {
+    const on = !!CA.Settings.get(ALL_SEEN);
+    const e = CA.Collection.everything();
+    const n = (groups) => {
+      const l = [].concat(...Object.values(groups));
+      return `${l.filter((x) => x.state === 'owned').length} of ${l.length}`;
+    };
+    return (
+      `<button type="button" class="ca-chip${on ? ' on' : ''}" aria-pressed="${on}" data-ca="option" data-key="${ALL_SEEN}" data-pressed-key="${ALL_SEEN}" data-tip="Hide the upgrades you bought and the achievements you won">` +
+      `${CA.UI.Icons.html('check', 12)} Only ones not unlocked yet</button>` +
+      `<span class="ca-all-sum">Upgrades <b>${n(e.upgrades)}</b> · Achievements <b>${n(e.achievements)}</b></span>` +
+      '<span class="ca-all-key"><span class="ca-all-sw"></span>owned<span class="ca-all-sw in-store"></span>in the store<span class="ca-all-sw off"></span>not yet</span>'
+    );
+  }
+  /** What the tab shows depends on: what you own, what's in the store, the filter. */
+  const allSig = () =>
+    [Game.UpgradesOwned, Game.AchievementsOwned, (Game.UpgradesInStore || []).length, CA.Settings.get(ALL_SEEN), Object.keys(Game.Upgrades || {}).length, Object.keys(Game.Achievements || {}).length].join();
+  let allSeen = null;
+  const ALL_PARTS = [
+    ['data-st-all-bar', allBarHtml],
+    ['data-st-all-upgrades', allUpgradesHtml],
+    ['data-st-all-achievements', allAchievementsHtml],
+  ];
+  function syncAll(force) {
+    if (!root || !root.querySelector('[data-st-all-bar]')) return;
+    const sig = allSig();
+    if (!force && sig === allSeen) return;
+    allSeen = sig;
+    ALL_PARTS.forEach(([attr, fn]) => {
+      const el = root.querySelector(`[${attr}]`);
+      if (el) CA.UI.Dom.morph(el, fn());
+    });
+  }
+
   // ---- page ------------------------------------------------------------------------------------------
 
   function card(title, icon, body, attr, meta = '') {
@@ -205,8 +276,16 @@ CA.UI.StatsPage = (() => {
       card('Timers', 'clock', timersHtml(), 'class="ca-stats" data-st-timers') +
       card('Wrinklers', 'wrinkler', wrinklersHtml(), 'class="ca-stats" data-st-wrinklers') +
       card('Still to collect', 'trophy', collectionHtml(), 'class="ca-cols" data-st-collection'),
+    collection: () => {
+      allSeen = allSig();
+      return (
+        `<div class="ca-card"><div class="ca-all-bar" data-st-all-bar>${allBarHtml()}</div></div>` +
+        card('Upgrades', 'upgrade', allUpgradesHtml(), 'class="ca-all" data-st-all-upgrades', meta('bought this ascension — hover one for its card')) +
+        card('Achievements', 'trophy', allAchievementsHtml(), 'class="ca-all" data-st-all-achievements', meta('won for good: they stay through ascensions'))
+      );
+    },
   };
-  /** The cards of Stats tab `tab` ('golden' | 'prestige' | 'whatif' | 'misc'). */
+  /** The cards of Stats tab `tab` ('golden' | 'prestige' | 'whatif' | 'misc' | 'collection'). */
   const html = (tab) => (CARDS[tab] ? CARDS[tab]() : '');
 
   function sync() {
@@ -215,6 +294,7 @@ CA.UI.StatsPage = (() => {
       const el = root.querySelector(`[${attr}]`);
       if (el) CA.UI.Dom.morph(el, fn());
     });
+    syncAll();
   }
 
   function mount(el) {
@@ -226,6 +306,7 @@ CA.UI.StatsPage = (() => {
     });
     life = CA.UI.Pages.scope(el)
       .every(SYNC_MS, sync)
+      .add(CA.Events.on('settings', (key) => key === ALL_SEEN && syncAll(true)))
       .on('mousemove', (e) => CA.UI.SpawnView.onMove(e) && spawnNow())
       .on('mouseout', (e) => {
         CA.UI.SpawnView.onLeave(e);
@@ -244,5 +325,5 @@ CA.UI.StatsPage = (() => {
     root = null;
   }
 
-  return { html, mount, unmount, sync };
+  return { html, mount, unmount, sync, ALL_SEEN };
 })();

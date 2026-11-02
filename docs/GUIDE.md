@@ -694,12 +694,12 @@ A **Statistic widget** (on the **Data** shelf of Add a widget, beside Quick stat
 would: about **the best** (the best building, the best upgrade or the best buy, as the statistic is about), or a
 building or store upgrade you pick in its settings. Add as many as you like.
 
-### Stats: Golden cookies, What if, Misc
+### Stats: Golden cookies, What if, Upgrades & achievements, Misc
 
 The **Stats** page's statistics tabs are Cookie Monster's statistics, cookieMgr's way — every figure from the game's own formulas, and
 checked against Cookie Monster in the real game. **Golden cookies** has the Next golden cookie (and
-reindeer), then the Bank meters; **Prestige** (beside its charts) the prestige figures; **What if** the Pantheon and dragon comparisons; **Misc**
-the timers, wrinklers and what's still to collect:
+reindeer), then the Bank meters; **Prestige** (beside its charts) the prestige figures; **What if** the Pantheon and dragon comparisons; **Upgrades & achievements**
+everything there is to collect; **Misc** the timers, wrinklers and what's still to collect:
 
 - **Bank** — a meter for each thing that pays out of your bank: **Lucky!** (15% of the bank, up to 15 minutes of
   CpS), **Lucky! in a Frenzy**, a **cookie chain** (up to 6 hours of CpS), a chain in a Frenzy, **Conjure Baked
@@ -732,6 +732,10 @@ the timers, wrinklers and what's still to collect:
   payback period and how the game unlocks it; hover an achievement for its card: the game's description, where you
   stand on what it counts, what the buildings it takes cost or how long its cookies take by your actual income (at
   your CpS until a minute of play is recorded), the milk it adds with the kitten it brings closer, and the CpS that milk adds through the kittens you own).
+- **Upgrades & achievements** (its own tab) — every upgrade in the game (regular, cookies, heavenly) and every
+  achievement (shadow ones apart), in the game's order, with how many of each group you have. The ones you have are lit
+  up: upgrades bought this ascension (the ones waiting in the store ringed in blue), achievements won — those stay
+  through ascensions. **Only ones not unlocked yet** hides the rest. Hover any icon for its info card, as above.
 
 ### In the game's own minigames
 

@@ -10,6 +10,7 @@
 //   Prestige  the prestige statistics, a target, prestige level if you ascended now, levels gained per hour
 //   Golden    what golden cookies and spells pay and the bank it takes, when the next one comes
 //   What if   every Pantheon spirit and dragon aura, the CpS each would bring
+//   Upgrades & achievements   every one in the game, the ones you have lit up (a chip: only the rest)
 //   Misc      timers, wrinklers, what's still to collect
 //
 // Sources are colored the same everywhere: production, clicking, golden cookies & reindeer, other.
@@ -66,6 +67,7 @@ CA.UI.Graphs = (() => {
     { id: 'prestige', label: 'Prestige', icon: 'ascend', plots: ['prestige', 'prestigeRate'], top: () => cards('prestige') + targetCardHtml() },
     { id: 'golden', label: 'Golden cookies', icon: 'sparkle', plots: [], top: () => cards('golden') },
     { id: 'whatif', label: 'What if', icon: 'pantheon', plots: [], top: () => cards('whatif') },
+    { id: 'collection', label: 'Upgrades & achievements', icon: 'trophy', plots: [], top: () => cards('collection') },
     { id: 'misc', label: 'Misc', icon: 'puzzle', plots: [], top: () => cards('misc') },
   ];
   const tabs = () => ALL_TABS.filter((t) => t.plots.length || SP());
@@ -1007,6 +1009,7 @@ CA.UI.Graphs = (() => {
   function init() {
     CA.Format.notation(); // defines the Numbers setting (Settings → General) before the Settings page draws
     S().defineOption({ key: 'graphTab', group: 'ui', name: 'Stats tab', desc: '', default: 'cookies' });
+    S().defineOption({ key: 'collectionMissing', group: 'ui', name: 'Upgrades & achievements: only ones not unlocked yet', desc: '', default: false });
     S().defineOption({ key: 'prestigeTargetNum', group: 'ui', name: 'Prestige target (number)', desc: '', default: 0 });
     S().defineOption({ key: 'prestigeTargetUnit', group: 'ui', name: 'Prestige target (magnitude)', desc: '', default: 0 });
     S().defineOption({ key: 'actualGains', group: 'plot', name: 'Bank flows: gains', desc: '', default: true });

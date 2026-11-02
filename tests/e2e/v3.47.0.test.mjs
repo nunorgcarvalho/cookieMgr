@@ -25,7 +25,7 @@ Game.shimmerTypes.golden = Object.assign(Game.shimmerTypes.golden || {}, { time:
 // ---- the tabs ----
 CA.UI.Menu.openPage('graphs');
 const tabs = $$('[data-graph-tab]').map((b) => `${b.dataset.graphTab}:${b.textContent}`);
-assert(tabs.join() === 'cookies:Cookies,income:Actual income,prestige:Prestige,golden:Golden cookies,whatif:What if,misc:Misc', `tabs (${tabs})`);
+assert(tabs.join() === 'cookies:Cookies,income:Actual income,prestige:Prestige,golden:Golden cookies,whatif:What if,collection:Upgrades & achievements,misc:Misc', `tabs (${tabs})`);
 const page = () => $('#CookieMgrMenu .ca-page[data-page="graphs"]');
 const open = (id) => {
   w.document.querySelector(`[data-graph-tab="${id}"]`).dispatchEvent(new w.MouseEvent('click', { bubbles: true }));
