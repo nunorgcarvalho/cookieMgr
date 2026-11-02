@@ -367,7 +367,7 @@ CA.UI.Plot = (() => {
    *   log: true|false to offer a log-scale chip (and its default); omit for linear only
    *   build(v) → { series: [{ key, name, color, type: 'bar'|'line'|'area', dash, width }],
    *                bars: [{ x0, x1, parts: { key: value }, … }], lines: { key: [{ x, v }] },
-   *                hlines: [{ v, label, color }],
+   *                hlines: [{ v, label, color, labelColor }],
    *                intervals: [{ x0, x1, color, label, tip(), mults: { CpS: 7, clicks: 777 }, value: 'text' }]
    *                — effects: a lane each; the hover readout lists every one active at its x, with
    *                what it multiplies (mults, else value) and, two or more, all of them combined;
@@ -836,7 +836,7 @@ CA.UI.Plot = (() => {
           ctx.textAlign = right ? 'right' : 'left';
           const above = y - plot.y >= 12;
           ctx.textBaseline = above ? 'bottom' : 'top';
-          ctx.fillStyle = 'rgba(255,255,255,0.8)';
+          ctx.fillStyle = l.labelColor || 'rgba(255,255,255,0.8)';
           ctx.fillText(l.label, right ? plot.x + plot.w - 4 : plot.x + 4, y + (above ? -2 : 2));
         }
         ctx.restore();

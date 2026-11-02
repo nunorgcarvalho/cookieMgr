@@ -374,5 +374,5 @@ CA.UI.CastTiers = (() => {
       .on('dragend', () => onDragEnd(root));
   }
 
-  return { html, sync, onClick, bind };
+  return { html, sync, onClick, bind, colorOf };
 })();
