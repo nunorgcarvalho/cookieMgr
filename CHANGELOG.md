@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+## 4.35.0 — 2026-11-02
+
+- **Purchase history:** a card on the Payback page, below the Queue, lists the last 100 things the Auto buyer bought,
+  newest first, in a scrolling list: when, what, price, the CpS it added, that as a boost (a share of your income just
+  before), its payback period then and the profile. **Clear** (click twice) empties it.
+- **Fixed:** a refresh no longer wipes what the Auto buyer bought: it's kept in your save, so the Manager widget's
+  Auto buyer row still shows the last three after a reload.
+
 ## 4.34.0 — 2026-11-02
 
 - **Grimoire Magic graph:** a dashed line for each cast tier of the profile in use, at the magic its threshold
