@@ -169,6 +169,7 @@ CA.UI.WizardPage = (() => {
     root = el;
     life = CA.UI.Pages.scope(el).on('click', onClick).child(plot);
     CA.UI.CastTiers.bind(life);
+    life.add(CA.Events.on('grimoire', () => plot.tick())); // tier lines follow a tier/profile change at once
     sync();
     life.every(SYNC_MS, sync);
   }
@@ -177,6 +178,17 @@ CA.UI.WizardPage = (() => {
     if (life) life.close();
     life = null;
     root = null;
+  }
+
+  /** Cast tiers of the profile in use: a dashed line each at the magic its threshold needs now. */
+  function tierLines() {
+    const T = CA.CastTiers;
+    const p = T && T.current();
+    if (!p || !T.bar()) return [];
+    return T.ordered(p).map(({ tier, i }) => {
+      const c = CA.UI.CastTiers.colorOf(p, i);
+      return { v: T.magicAt(tier.pct), label: `${tier.name} ${tier.pct}%`, color: c, labelColor: c };
+    });
   }
 
   function createPlot() {
@@ -201,6 +213,8 @@ CA.UI.WizardPage = (() => {
             magic: CA.UI.Plot.linePoints(bars, (b) => b.v.magic),
             magicMax: CA.UI.Plot.linePoints(bars, (b) => b.v.magicMax),
           },
+          hlines: tierLines(),
+          fitTop: true, // a full bar sits at the very top
           markers: CA.EventLog.list(['spell'])
             .filter((ev) => {
               const x = v.active ? ev.a : ev.t;
