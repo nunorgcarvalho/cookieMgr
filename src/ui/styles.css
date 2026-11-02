@@ -6459,6 +6459,19 @@ body.ca-has-storebar #products {
   overflow-x: auto;
   padding: 0 8px 6px;
 }
+#CookieMgrMenu .ca-ab-hist-scroll {
+  max-height: 280px;
+  overflow-y: auto;
+}
+#CookieMgrMenu .ca-ab-hist-clear {
+  margin-left: 10px;
+}
+#CookieMgrMenu .ca-ab-hist thead th {
+  position: sticky;
+  top: 0;
+  background: #2a1d12;
+  z-index: 1;
+}
 #CookieMgrMenu .ca-ab-queue {
   width: 100%;
   border-collapse: collapse;

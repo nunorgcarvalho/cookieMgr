@@ -516,7 +516,10 @@ points), price, when you can afford it, the rules that touched it; what's held b
 profile keeps in the bank is in the queue too, as **priorities** it saves up for: a row each (Lucky! bank, Garden
 replant — with the seeds it plants…), "✓ kept" once the bank covers it. The Auto buyer card says what it's **saving
 for** and what it buys after. **Buy all upgrades** is a row of its own: the upgrades the budget affords, bought at once and
-measured together (so upgrades that multiply each other count as one purchase). Profiles that buy upgrades come with
+measured together (so upgrades that multiply each other count as one purchase). Below the Queue, the **Purchase
+history**: the last 100 things the Auto buyer bought, newest first, in a scrolling list — when, what, price, the CpS it
+added, that as a **boost** (a share of your income just before), its payback period then, the profile; **Clear** (click
+twice) empties it. It's kept in your save, so a refresh keeps it (and the Manager widget's last three). Profiles that buy upgrades come with
 the rule *Buy all upgrades → buy first when `payback.allUpgradesCount(buyer.budget()) >= 20`*: with lots affordable,
 it takes them all at once. With **Garden** on (Golden cookie combos has it), what the gardener plants next is a row
 too: a seed's empty tiles while its round grows (*Plant 9 Golden clover*), or a new round once one is due (*Replant 22

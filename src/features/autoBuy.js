@@ -208,8 +208,9 @@ CA.AutoBuy = (() => {
       return {
         ...queued,
         buy: () => {
+          const pre = CA.AutoBuyer.before();
           const got = P().buy(queued);
-          if (got > 0) CA.AutoBuyer.noteBought(queued);
+          if (got > 0) CA.AutoBuyer.noteBought(queued, null, pre);
           return got;
         },
       };
