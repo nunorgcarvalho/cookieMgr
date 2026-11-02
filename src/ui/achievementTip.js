@@ -3,7 +3,8 @@
 // won or not (and shadow), what it asks (the game's own description), and for one not won yet: where
 // you stand on what it counts (features/achievementInfo.js), what the buildings it takes cost or how
 // long the cookies take at your actual income (the
-// tooltips' window; your CpS until a minute is recorded), and the milk it adds — with the kitten it brings closer.
+// tooltips' window; your CpS until a minute is recorded), and the milk it adds — with the kitten it brings closer —
+// and the CpS that milk adds through the kittens you own (CA.Payback.achievementWorth).
 //
 //   html(name)   the card
 //   ref(name)    an achievement as a hoverable name — CA.AchievementInfo.ref
@@ -37,6 +38,8 @@ CA.UI.AchievementTip = (() => {
     return null;
   }
 
+  const ownsKitten = () => ((Game.UpgradesByPool || {}).kitten || []).some((u) => u.bought);
+
   function card(name) {
     const a = named(name);
     if (!a) return '';
@@ -65,6 +68,10 @@ CA.UI.AchievementTip = (() => {
         const k = nextKitten();
         const toward = !k ? '' : k.more === 1 ? ` <small>(unlocks ${esc(k.u.dname || k.u.name)})</small>` : ` <small>(${k.more} more for ${esc(k.u.dname || k.u.name)})</small>`;
         row('Milk', `+${MILK}%${toward}`);
+        // what that milk is worth through the kittens you own: measured like a purchase
+        const w = CA.Payback.achievementWorth(a.name);
+        if (w && w.bonus > 0) row('Adds', `+${F().beautify(w.bonus)}/s${Game.cookiesPs > 0 ? ` (${((w.bonus / Game.cookiesPs) * 100).toFixed(2)}%)` : ''}`);
+        else if (w) row('Adds', ownsKitten() ? 'no CpS' : 'no CpS <small>(no kittens yet)</small>');
       }
     }
     const st = shadow ? (won ? 'Shadow · won' : 'Shadow') : won ? 'Won' : 'Not won yet';

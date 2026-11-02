@@ -1,7 +1,7 @@
 // Achievement info cards in the real game: every achievement that counts something is matched to its
 // count (features/achievementInfo.js reads main.js's own lists) — the card the Stats page's "Still to
 // collect" shows on hover says where you stand, what the buildings cost, how long the
-// cookies take, and the milk it adds (the card itself: tests/e2e/achievement-info-cards.test.mjs).
+// cookies take, the milk it adds and what that milk is worth through your kittens (the card itself: tests/e2e/achievement-info-cards.test.mjs).
 import { makeAssert } from '../harness/game.mjs';
 import { gameOrSkip } from '../harness/sim.mjs';
 import { createSim } from '../../sim/sim.mjs';
@@ -47,5 +47,19 @@ const [p] = AI.progress(prod.achiev);
 assert(p.need === prod.pow && p.have === Game.Objects.Farm.totalCookies && p.rate > 0, `${prod.achiev.name}: made by farms ${p.have} of ${p.need}`);
 const won = all.find((a) => a.won);
 assert(won && AI.status(won) === 'won' && AI.status(bank) === 'missing', `status: won (${won && won.name}) / missing`);
+
+// what its milk adds through the kittens you own, measured in the real game: none without a kitten…
+const P = CA.Payback;
+assert(P.achievementWorth(farm50.name).bonus === 0, 'no kitten: the milk adds no CpS');
+assert(P.achievementWorth(won.name) === null, 'a won achievement adds nothing');
+// …then Kitten helpers' ×(1 + milk × 0.1): 4% more milk is worth (1 + (m + 0.04) × 0.1) / (1 + m × 0.1)
+Game.Upgrades['Kitten helpers'].earn();
+Game.CalculateGains();
+const m = Game.milkProgress;
+const owned = Game.AchievementsOwned;
+const kw = P.achievementWorth(farm50.name);
+const want4 = (1 + (m + 0.04) * 0.1) / (1 + m * 0.1) - 1;
+assert(Math.abs(kw.share - want4) < 1e-9 && kw.bonus > 0 && !farm50.won, `Kitten helpers: +${(kw.share * 100).toFixed(4)}% (want ${(want4 * 100).toFixed(4)}%), +${kw.bonus}/s; the achievement stays unwon`);
+assert(Game.AchievementsOwned === owned && Math.abs(Game.milkProgress - m) < 1e-12, 'the game is put back');
 
 done();

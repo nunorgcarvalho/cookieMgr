@@ -731,7 +731,7 @@ the timers, wrinklers and what's still to collect:
   drops, the garden's rare drops — as icons (hover an upgrade for its info card: what it does, costs, would add, its
   payback period and how the game unlocks it; hover an achievement for its card: the game's description, where you
   stand on what it counts, what the buildings it takes cost or how long its cookies take by your actual income (at
-  your CpS until a minute of play is recorded), and the milk it adds with the kitten it brings closer).
+  your CpS until a minute of play is recorded), the milk it adds with the kitten it brings closer, and the CpS that milk adds through the kittens you own).
 
 ### In the game's own minigames
 
