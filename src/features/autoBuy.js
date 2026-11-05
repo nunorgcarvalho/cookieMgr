@@ -241,7 +241,7 @@ CA.AutoBuy = (() => {
       const u = upgradeNamed(n);
       return u ? priceOf(u) : NaN;
     }, { params: ['upgrade'] });
-    V('upgrade.owned', 'whether you own an upgrade', (n) => has(n), { params: ['upgrade'], bool: true });
+    V('upgrade.owned', 'whether you have an upgrade: owned, or unlocked (in the store)', (n) => has(n), { params: ['upgrade'], bool: true });
     V('research.next', 'the next research to buy, stopping before stopBefore ("": none)', (stop) => (researchPick(stop) || {}).name || '', { params: ['stopBefore'] });
     V('dragon.canPet', 'whether you can pet the dragon (level 8, “Pet the dragon”)', () => canPet(), { bool: true });
     V('dragon.dropNow', 'whether petting the dragon this quarter-hour can still give a drop you’re missing (learned by petting: its drop, or "?" not tried yet; "": none)', () => {

@@ -28,7 +28,7 @@ assert(drops.macros.bigCookie === 'on' && drops.macros.reindeer === 'on' && drop
 assert(combos.macros.golden === 'on' && combos.macros.wrath === 'on', 'Golden cookie combos clicks them again');
 // the Upgrade unlocker: one switch for Santa, research, the dragon, fortunes and cheap upgrades
 const un = M.get('upgradeUnlocker');
-assert(un && un.mode === 'group' && un.members.join() === 'santa,research,autoDragon,petDragon,fortune,cheapUpgrades', 'the Upgrade unlocker groups them');
+assert(un && un.mode === 'group' && un.members.join() === 'santa,research,autoDragon,petDragon,fortune,cheapUpgrades,goldenUpgrades', 'the Upgrade unlocker groups them');
 M.set('upgradeUnlocker', true, { silent: true });
 assert(un.members.every((id) => M.isOn(id)) && !M.isOn('autoBuyer'), 'switching it on switches them on (not the Auto buyer)');
 M.set('upgradeUnlocker', false, { silent: true });
