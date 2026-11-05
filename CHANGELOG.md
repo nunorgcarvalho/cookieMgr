@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 4.36.1 — 2026-11-05
+
+- **README:** the Upgrade unlocker bullet names the golden cookie upgrades.
+
 ## 4.36.0 — 2026-11-05
 
 - **Golden cookie upgrades** (new macro, in the Upgrade unlocker): pops golden cookies, wrath ones too, until Lucky
