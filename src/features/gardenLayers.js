@@ -332,7 +332,10 @@ else:
     ['everdaisy', 'tidygrass', 'elderwort', '0.2% (3 of each)'], ['wrinklegill', 'crumbspore', 'brownMold', '6%'], ['doughshroom', 'crumbspore', 'crumbspore', '0.5%'],
     ['glovemorel', 'crumbspore', 'thumbcorn', '2%'], ['cheapcap', 'crumbspore', 'shimmerlily', '4%'], ['foolBolete', 'doughshroom', 'greenRot', '4%'],
     ['shriekbulb', 'wrinklegill', 'elderwort', '0.1%'], ['ichorpuff', 'elderwort', 'crumbspore', '0.2%'],
+    ['whiteMildew', 'brownMold', 'brownMold', '50%'],
   ];
+  // seeds a recipe grows as its rare second outcome (Baker's wheat × Gildmillet: Golden clover 0.07% a tick)
+  const ALSO = { goldenClover: 'clover' };
   const one = (id, key, desc) => ({ id, name: NAMES[key], desc, group: 'For their effects', data: () => ({ map: { A: key } }) });
   const SEEDS = [
     { id: 'current', name: 'As planted', desc: 'The seeds of the Current garden: A is the first seed on the plot (left to right, top to bottom), B the next…', live: true, data: () => ({ map: currentLetters().map }) },
@@ -502,6 +505,48 @@ else:
     return Object.values(seeds.data.map || {})
       .filter((key, i, all) => all.indexOf(key) === i && plants[key] && !plants[key].unlocked)
       .map((key) => NAMES[key] || plants[key].name);
+  }
+  /** The seeds (game keys) a profile plants that aren't unlocked yet: [] when none, null with no garden. */
+  function missingKeys(id) {
+    const M = CA.Util.minigame('Farm');
+    if (!M || !M.plot) return null;
+    const plants = M.plants || {};
+    const p = get('profile', id);
+    const seeds = p && get('seeds', p.data.seeds);
+    if (!seeds || seeds.live) return [];
+    return Object.values(seeds.data.map || {}).filter((key, i, all) => all.indexOf(key) === i && plants[key] && !plants[key].unlocked);
+  }
+  /**
+   * The next mutation to breed toward the seeds a profile is missing: { seeds: 'to-<x>', grows: key, for: key } —
+   * the first recipe on the way whose two parents are unlocked (Nursetulip: Whiskerbloom × Whiskerbloom, or
+   * first Whiskerbloom, or first Shimmerlily…) — or null: nothing missing, no garden, or a step only weeds
+   * bring (Brown mold, Meddleweed, Crumbspore: the weed farm's).
+   */
+  function seedHunt(id) {
+    const missing = missingKeys(id);
+    if (!missing || !missing.length) return null;
+    const plants = CA.Util.minigame('Farm').plants || {};
+    const unlocked = (k) => !!(plants[k] && plants[k].unlocked);
+    const stepTo = (key, seen) => {
+      if (seen.includes(key)) return null;
+      const r = RECIPES.find((x) => x[0] === (ALSO[key] || key));
+      if (!r) return null;
+      const locked = [r[1], r[2]].filter((k) => !unlocked(k));
+      if (!locked.length) return { seeds: `to-${r[0]}`, grows: key };
+      return stepTo(locked[0], [...seen, key]);
+    };
+    for (const key of missing) {
+      const s = stepTo(key, []);
+      if (s && has('seeds', s.seeds)) return { ...s, for: key };
+    }
+    return null;
+  }
+  /** Loads a profile with another seeds pick (the Mutation hunt on a recipe of its own), unless it's in already. */
+  function loadWithSeeds(id, seedsId) {
+    if (picked('profile') === id && picked('seeds') === seedsId) return 0;
+    loadProfile(id, { lazy: true });
+    if (has('seeds', seedsId)) S().set(LAYERS.seeds.opt, seedsId);
+    return 1;
   }
   /** Whether the four picks differ from the loaded profile's. */
   function profileChanged() {
@@ -701,6 +746,9 @@ else:
     pick,
     loadProfile,
     missingSeeds,
+    missingKeys,
+    seedHunt,
+    loadWithSeeds,
     profileChanged,
     saveProfile,
     newProfile,

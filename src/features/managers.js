@@ -41,8 +41,9 @@
 //                          income and never dipping below the Lucky! and garden rounds banks (buyer
 //                          profile combos: the nursetulips' round first, then 1.25 × the golden
 //                          clovers' — CpS bought only raises their price), Pantheon golden (no wrinklers left for Scorn), the garden on
-//                          8 nursetulips together + clover combos (the weed farm until their seeds are
-//                          unlocked), FtHoF on combos; the dragon still on drops & flight
+//                          8 nursetulips together + clover combos (until their seeds are unlocked, the
+//                          Mutation hunt breeds them, or the weed farm while only weeds lead on), FtHoF on
+//                          combos; the dragon still on drops & flight
 //   Golden cookie combos   for good: dragon Dragonflight & Harvest
 //
 //   For algorithmic code:
@@ -72,6 +73,7 @@ CA.Managers = (() => {
   const WATCH_MAX = 8;
 
   const WEED_FARM = 'weedFarm';
+  const SEED_HUNT = 'mutationHunt';
   const gardenReady = (id) => {
     const missing = CA.GardenLayers.missingSeeds(id);
     return !!missing && !missing.length;
@@ -116,18 +118,24 @@ CA.Managers = (() => {
       label: 'Garden',
       icon: 'leaf',
       list: () => (CA.GardenLayers ? CA.GardenLayers.list('profile') : []),
-      // a garden that isn't ready for it (no garden yet, or seeds it plants still locked, as after an
-      // ascension): the weed farm meanwhile, which harvests mature weeds and new seeds; the profile goes in
-      // once it's ready
+      // a garden that isn't ready for it (no garden yet, or seeds it plants still locked): meanwhile the
+      // Mutation hunt breeds the next seed on the way to them (Whiskerbloom × Whiskerbloom for Nursetulip…),
+      // or the weed farm when only weeds bring the next one (Brown mold); the profile goes in once it's ready
       isIn: (id) => CA.GardenLayers.picked('profile') === id && !CA.GardenLayers.profileChanged() && gardenReady(id),
       use: (id) => {
         if (gardenReady(id)) return (CA.GardenLayers.loadProfile(id), 1);
-        if (id !== WEED_FARM && CA.GardenLayers.picked('profile') !== WEED_FARM) CA.GardenLayers.loadProfile(WEED_FARM);
+        const hunt = CA.GardenLayers.seedHunt(id);
+        if (hunt) CA.GardenLayers.loadWithSeeds(SEED_HUNT, hunt.seeds);
+        else if (id !== WEED_FARM && CA.GardenLayers.picked('profile') !== WEED_FARM) CA.GardenLayers.loadProfile(WEED_FARM);
         return 0;
       },
       waits: (id) => {
         const missing = CA.GardenLayers.missingSeeds(id);
-        return `${!missing ? 'the garden' : `${missing.join(', ')} unlocked`} (the weed farm meanwhile)`;
+        if (!missing) return 'the garden (the weed farm meanwhile)';
+        const hunt = CA.GardenLayers.seedHunt(id);
+        const N = CA.GardenLayers.NAMES;
+        const meanwhile = !hunt ? 'the weed farm meanwhile' : `breeding ${N[hunt.grows] || hunt.grows}${hunt.grows !== hunt.for ? ` on the way to ${N[hunt.for] || hunt.for}` : ''} meanwhile`;
+        return `${missing.join(', ')} unlocked (${meanwhile})`;
       },
     },
   };
@@ -140,7 +148,7 @@ CA.Managers = (() => {
     {
       id: 'nunixLateGame',
       name: 'Nunix late game',
-      desc: 'Clicks the big cookie from the start, not golden cookies (Scorn makes them all wrath cookies), while it hunts every season’s drops in the Grandmapocalypse, the Auto buyer spending freely and the Upgrade unlocker on, the garden a weed farm (mature weeds and new seeds harvested); then Christmas again for the reindeer cookies with golden cookie combos already, the elders pledged: golden cookies clicked again, the buyer ranks by actual income and keeps the Lucky! and garden rounds banks, the golden Pantheon, the garden on tulip and clover combos (the weed farm until their seeds are unlocked) and Force the Hand of Fate on combos, the dragon still on Mind Over Matter & Dragonflight for the drops; then Dragonflight & Harvest, for good.',
+      desc: 'Clicks the big cookie from the start, not golden cookies (Scorn makes them all wrath cookies), while it hunts every season’s drops in the Grandmapocalypse, the Auto buyer spending freely and the Upgrade unlocker on, the garden a weed farm (mature weeds and new seeds harvested); then Christmas again for the reindeer cookies with golden cookie combos already, the elders pledged: golden cookies clicked again, the buyer ranks by actual income and keeps the Lucky! and garden rounds banks, the golden Pantheon, the garden on tulip and clover combos (until their seeds are unlocked, the Mutation hunt breeding them) and Force the Hand of Fate on combos, the dragon still on Mind Over Matter & Dragonflight for the drops; then Dragonflight & Harvest, for good.',
       scope: 'ascension',
       v: 2,
       stages: [

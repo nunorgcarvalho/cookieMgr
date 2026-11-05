@@ -485,8 +485,10 @@ card puts the widget on the left panel.
    clovers, at unbuffed prices. The buyer spends only what's above it.
 3. **Golden cookie combos**, for good: Dragonflight & Harvest.
 
-A garden profile a manager puts in waits for the garden to be ready for it: while its seeds aren't unlocked yet (or
-there's no garden yet), the **Weed farm** is in instead, and the Manager widget says which seeds it's waiting for.
+A garden profile a manager puts in waits for the garden to be ready for it: while its seeds aren't unlocked yet, the
+**Mutation hunt** breeds them, one recipe at a time on the way (for Nursetulip: Whiskerbloom × Whiskerbloom, and
+Shimmerlily × White chocoroot for the Whiskerbloom first), and the **Weed farm** is in while only weeds bring the next
+seed (Brown mold) or there's no garden yet. The Manager widget says which seeds it's waiting for and what it's breeding.
 
 The Auto buyer buys by payback, so it doesn't buy research or upgrades that give no CpS; the Upgrade unlocker does.
 
