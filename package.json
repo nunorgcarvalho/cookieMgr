@@ -1,6 +1,6 @@
 {
   "name": "cookie-mgr",
-  "version": "4.35.2",
+  "version": "4.36.1",
   "description": "cookieMgr: a Cookie Clicker add-on for automating tasks and visualizing data.",
   "private": true,
   "type": "module",

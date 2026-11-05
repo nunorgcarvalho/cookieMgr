@@ -180,7 +180,8 @@ default brings the original back):
 | Cast … (one per spell) | —           | Once: casts that Grimoire spell                                      |
 | SeasonCompletion       | —           | An algorithmic macro: every season in turn until complete, buying its drops |
 | Santa                  | —           | Levels Santa up during Christmas, to Final Claus                     |
-| Upgrade unlocker       | —           | A group: Santa, Research, Auto dragon, Pet the dragon, Fortunes and Cheap upgrades, one switch |
+| Upgrade unlocker       | —           | A group: Santa, Research, Auto dragon, Pet the dragon, Fortunes, Cheap upgrades and Golden cookie upgrades, one switch |
+| Golden cookie upgrades | —           | Pops golden (and wrath) cookies until Lucky day, Serendipity and Get lucky are unlocked: one click after an ascension |
 | Sugar lump harvester   | —           | Harvests your lump when ripe — or when mature, if you pick that      |
 | Elder Pledge           | —           | Buys the Elder Pledge whenever the Grandmapocalypse is on            |
 | FtHoF on combos        | —           | An algorithmic macro: Force the Hand of Fate when two effects line up |
@@ -469,7 +470,8 @@ card puts the widget on the left panel.
 
 1. **Drops**: the big cookie clicked from the start, and reindeer, but not golden or wrath cookies (Scorn, in the
    Pantheon's Diamond slot, makes every golden cookie a wrath cookie); the Auto buyer, the Upgrade unlocker (Santa,
-   research, Auto dragon, Pet the dragon, Fortunes and cheap upgrades), SeasonCompletion, wrinklers and sugar lumps.
+   research, Auto dragon, Pet the dragon, Fortunes, cheap upgrades, and the one golden cookie click that unlocks Lucky
+   day, Serendipity and Get lucky again), SeasonCompletion, wrinklers and sugar lumps.
    Research goes all the way, the Elder Pact too: it keeps the Grandmapocalypse going (wrinklers come more often at its
    last stage) and puts the Elder Pledge up for sale for Reindeer. The garden isn't ready for combos yet, so it's a
    **Weed farm**: the Auto-gardener harvests mature weeds and any new seed that springs up (a mutation can unlock

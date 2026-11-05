@@ -30,7 +30,8 @@
 //   Drops                  the big cookie clicked from the start, but not golden or wrath cookies (Scorn
 //                          makes them all wrath cookies); reindeer; the Auto buyer spending freely
 //                          (Payback), the Upgrade unlocker (Santa, all the research, the dragon trained and
-//                          petted, fortunes, cheap upgrades), SeasonCompletion, wrinklers and sugar lumps;
+//                          petted, fortunes, cheap upgrades, golden cookies popped until Lucky day,
+//                          Serendipity and Get lucky are unlocked: one click), SeasonCompletion, wrinklers and sugar lumps;
 //                          the garden a weed farm (the Auto-gardener harvests mature weeds and new seeds:
 //                          the garden isn't ready for combos yet); no spells, stocks or Elder Pledge (the
 //                          Grandmapocalypse's wrinklers drop Halloween's cookies); Pantheon wrinklers,
@@ -141,14 +142,14 @@ CA.Managers = (() => {
   };
 
   // Upgrade unlocker: the macros that unlock (and buy the cheap) upgrades, one switch for them all
-  const UNLOCKER = { id: 'upgradeUnlocker', members: ['santa', 'research', 'autoDragon', 'petDragon', 'fortune', 'cheapUpgrades'] };
+  const UNLOCKER = { id: 'upgradeUnlocker', members: ['santa', 'research', 'autoDragon', 'petDragon', 'fortune', 'cheapUpgrades', 'goldenUpgrades'] };
 
   // Nunix late game: stage 1 sets everything up; the stages after it only change a few things
   const SEEDS = [
     {
       id: 'nunixLateGame',
       name: 'Nunix late game',
-      desc: 'Clicks the big cookie from the start, not golden cookies (Scorn makes them all wrath cookies), while it hunts every season’s drops in the Grandmapocalypse, the Auto buyer spending freely and the Upgrade unlocker on, the garden a weed farm (mature weeds and new seeds harvested); then Christmas again for the reindeer cookies with golden cookie combos already, the elders pledged: golden cookies clicked again, the buyer ranks by actual income and keeps the Lucky! and garden rounds banks, the golden Pantheon, the garden on tulip and clover combos (until their seeds are unlocked, the Mutation hunt breeding them) and Force the Hand of Fate on combos, the dragon still on Mind Over Matter & Dragonflight for the drops; then Dragonflight & Harvest, for good.',
+      desc: 'Clicks the big cookie from the start, not golden cookies (Scorn makes them all wrath cookies) beyond the one that unlocks Lucky day, Serendipity and Get lucky again, while it hunts every season’s drops in the Grandmapocalypse, the Auto buyer spending freely and the Upgrade unlocker on, the garden a weed farm (mature weeds and new seeds harvested); then Christmas again for the reindeer cookies with golden cookie combos already, the elders pledged: golden cookies clicked again, the buyer ranks by actual income and keeps the Lucky! and garden rounds banks, the golden Pantheon, the garden on tulip and clover combos (until their seeds are unlocked, the Mutation hunt breeding them) and Force the Hand of Fate on combos, the dragon still on Mind Over Matter & Dragonflight for the drops; then Dragonflight & Harvest, for good.',
       scope: 'ascension',
       v: 2,
       stages: [
@@ -156,7 +157,8 @@ CA.Managers = (() => {
           name: 'Drops',
           macros: {
             autoBuyer: 'on',
-            upgradeUnlocker: 'on', // Santa, research, the dragon trained and petted, fortunes, cheap upgrades
+            upgradeUnlocker: 'on', // Santa, research, the dragon trained and petted, fortunes, cheap upgrades, and
+            // golden cookies popped until Lucky day, Serendipity and Get lucky are unlocked (one click after an ascension)
             seasonCompletion: 'on',
             bigCookie: 'on',
             reindeer: 'on',
@@ -647,12 +649,20 @@ CA.Managers = (() => {
     changed();
     return 1;
   }
-  /** What a manager does, as one short string: its stages' switches, settings, profiles and untils (or its code) — not names or watches. */
+  /**
+   * What a manager does, as one short string: its stages' switches, settings, profiles and untils (or its code) — not names or
+   * watches — and the members of the groups they switch (a macro added to the Upgrade unlocker gets switched on too).
+   */
   function sigOf(m) {
+    const groups = [...new Set([].concat(...m.stages.map((st) => Object.keys(st.macros || {}))))]
+      .map((id) => CA.Macros.get(id))
+      .filter((x) => x && x.mode === 'group')
+      .map((x) => [x.id, x.members]);
     const str = typeof m.code === 'string' ? m.code : JSON.stringify(m.stages.map((st) => [st.macros, st.inputs, st.profiles, st.until]));
+    const all = groups.length ? `${str}|${JSON.stringify(groups)}` : str;
     let h = 0;
-    for (let k = 0; k < str.length; k++) h = (Math.imul(h, 31) + str.charCodeAt(k)) | 0;
-    return `${str.length}:${(h >>> 0).toString(36)}`;
+    for (let k = 0; k < all.length; k++) h = (Math.imul(h, 31) + all.charCodeAt(k)) | 0;
+    return `${all.length}:${(h >>> 0).toString(36)}`;
   }
   /**
    * Before a pass: the manager at work changed since its stage set up (an edit, Revert to default, an update to a
@@ -953,7 +963,7 @@ CA.Managers = (() => {
     CA.Macros.addBuiltin({
       id: UNLOCKER.id,
       name: 'Upgrade unlocker',
-      desc: 'One switch for the macros that unlock upgrades and buy the cheap ones: Santa, Research, Auto dragon, Pet the dragon, Fortunes and Cheap upgrades (the Auto buyer is its own).',
+      desc: 'One switch for the macros that unlock upgrades and buy the cheap ones: Santa, Research, Auto dragon, Pet the dragon, Fortunes, Cheap upgrades and Golden cookie upgrades (the Auto buyer is its own).',
       icon: { ico: 'sparkle' },
       mode: 'group',
       members: UNLOCKER.members,
