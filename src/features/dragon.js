@@ -189,6 +189,25 @@ CA.Dragon = (() => {
     return !!s && s.slots > 0 && s.switches === 0 && s.wanted.some((id) => id > 0);
   };
   const activeProfile = () => (profiles.find((p) => isActive(p)) || { id: '' }).id;
+  /** Whether all of a profile's auras are in (isActive is true as soon as what fits now is in: with one
+   *  slot, its first aura). A manager keeps a profile coming until it's complete, so the second aura
+   *  goes in once the dragon has its second slot. */
+  function isComplete(x) {
+    const p = typeof x === 'object' && x ? x : find(x);
+    if (!p || !ready()) return false;
+    const ids = (p.auras || []).map(auraId).filter((id) => id > 0);
+    const cur = current();
+    return ids.length > 0 && ids.every((id) => cur.includes(id));
+  }
+  /** What a profile that isn't complete waits for: "the second aura slot (dragon level 27)", "Dragon Guts trained"… */
+  function waitsFor(x) {
+    const s = status(x);
+    if (!s) return '';
+    if (!s.slots) return 'an aura slot (dragon level 5)';
+    if (s.untrained.length) return `${s.untrained.join(', ')} trained`;
+    const n = new Set((find(x) || { auras: [] }).auras.map(auraId).filter((id) => id > 0)).size;
+    return n > s.slots ? 'the second aura slot (dragon level 27)' : 'auras';
+  }
 
   /** Uses a profile: the number of slots it switched (0: already in, unknown, or no slot yet). */
   function apply(x) {
@@ -352,5 +371,5 @@ CA.Dragon = (() => {
     },
   });
 
-  return { init, auras, auraId, slots, level, nextCost, nextAction, canTrain, train, setAura, switchCost, list, find, status, isActive, activeProfile, apply, add, update, remove, SEEDS, LAST };
+  return { init, auras, auraId, slots, level, nextCost, nextAction, canTrain, train, setAura, switchCost, list, find, status, isActive, isComplete, waitsFor, activeProfile, apply, add, update, remove, SEEDS, LAST };
 })();
