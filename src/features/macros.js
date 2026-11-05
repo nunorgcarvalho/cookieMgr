@@ -59,6 +59,19 @@ CA.Macros = (() => {
       section: 'autoclickers',
     },
     {
+      // golden cookies clicked (all time) unlock Lucky day (7), Serendipity (27) and Get lucky (77) — main.js's
+      // popFunc, wrath cookies too — so after an ascension one click puts all three back in the store
+      id: 'goldenUpgrades',
+      name: 'Golden cookie upgrades',
+      desc: 'Pops golden cookies, wrath ones too, until Lucky day, Serendipity and Get lucky are unlocked (7, 27 and 77 clicked, all time: after an ascension, one click).',
+      icon: sprite(27, 6),
+      mode: 'flow',
+      every: 100,
+      defaultSource: "# Pop golden cookies (wrath ones too) until the golden cookie upgrades are unlocked: Lucky day,\n# Serendipity and Get lucky come with 7, 27 and 77 clicked, all time (after an ascension: one click).\nforever:\n  if not (upgrade.owned(\"Lucky day\") and upgrade.owned(\"Serendipity\") and upgrade.owned(\"Get lucky\")):\n    for s in shimmers():\n      if shimmer.type(s) == \"golden\":\n        shimmer.pop(s)\n",
+      defaultKey: '',
+      section: 'autoclickers',
+    },
+    {
       id: 'reindeer',
       name: 'Reindeer',
       desc: 'Pops reindeer during the Christmas season.',
