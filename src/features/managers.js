@@ -23,7 +23,7 @@
 // (jumping to a stage runs the blocks before it too, so what they set up is there);
 // manager.profile(kind, id) puts a profile in (the last block's wins), retrying each pass until it's in
 // and then leaving it alone (a Pantheon profile waits for the worship swaps to do it all at once, a
-// dragon one for its aura slots); `if <until>: manager.next()` moves on.
+// dragon one for its aura slots: it's left alone only once all its auras are in); `if <until>: manager.next()` moves on.
 //
 // The built-in macro `manager` runs the active manager's code each second, so it has a switch, a
 // hotkey and macro.set like any other. One seeded manager, Nunix late game:
@@ -99,8 +99,11 @@ CA.Managers = (() => {
       icon: 'dragon',
       list: () => (CA.Dragon ? CA.Dragon.list() : []),
       isIn: (id) => CA.Dragon.isActive(id),
+      // in once what fits is in, but done for the stage only when every aura is: a dragon still
+      // training after an ascension gets the profile's second aura once its second slot opens
+      done: (id) => CA.Dragon.isComplete(id),
       use: (id) => CA.Dragon.apply(id),
-      waits: () => (CA.Dragon.slots() ? 'auras' : 'an aura slot (dragon level 5)'),
+      waits: (id) => CA.Dragon.waitsFor(id),
     },
     grimoire: {
       label: 'Grimoire',
@@ -696,7 +699,7 @@ CA.Managers = (() => {
       if (!p) return;
       try {
         if (!kind.isIn(p.id)) kind.use(p.id);
-        if (kind.isIn(p.id)) {
+        if ((kind.done || kind.isIn)(p.id)) {
           run.put[k] = id;
           delete run.waiting[k];
         } else run.waiting[k] = p.id;
