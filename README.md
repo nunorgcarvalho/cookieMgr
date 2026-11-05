@@ -125,7 +125,7 @@ the page. [See every page with a screenshot](#pages).
 <td width="50%" valign="top">
 <b>Macros</b><br>
 <img src="docs/readme/macros.png" alt="The Macros page" width="100%">
-<ul><li>Autoclickers for the big cookie, golden and wrath cookies, reindeer, fortunes and wrinklers</li><li>The Upgrade unlocker: one switch for Santa, Research, the dragon, fortunes and cheap upgrades</li><li>Alerts, hotkeys and buttons on the left panel</li><li>Write your own macros in cookieMgr's simple code: colored by where each word comes from, and hover any word to see what it is</li></ul>
+<ul><li>Autoclickers for the big cookie, golden and wrath cookies, reindeer, fortunes and wrinklers</li><li>The Upgrade unlocker: one switch for Santa, Research, the dragon, fortunes, cheap upgrades and the golden cookie upgrades</li><li>Alerts, hotkeys and buttons on the left panel</li><li>Write your own macros in cookieMgr's simple code: colored by where each word comes from, and hover any word to see what it is</li></ul>
 </td>
 </tr>
 <tr>
