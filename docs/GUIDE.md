@@ -901,7 +901,8 @@ The gardeners:
   variables `tulip` and `clover`). The tulips are planted all together and replanted all together, at once, once
   fewer than `tulipReplantBelow` (50%) of their tiles hold a mature one — so they're mature at the same time, each
   making the clovers around it stronger. The clovers run their own rounds as the Full-garden replanter does
-  (`replantBelow`, `replantAtTick`, `plantWindow`). Its profile's soil rule, *Tulips grow, then clay*, keeps
+  (`replantBelow`), except that a new clover round is planted at once rather than in the last seconds before the
+  tick (seedlings only grow at the tick, so waiting wouldn't start the round sooner, and the Auto buyer plants at once too). Its profile's soil rule, *Tulips grow, then clay*, keeps
   fertilizer on while any tulip grows (and, with `cloversToo`, while a clover round grows), clay once they're mature:
   the tulips are mature sooner and stay mature longer. Simulated (Farm level 8, 6×5, 8 nursetulips, 1000 h × 3) —
   golden cookies on average · the share of the time at +140% or more · every tulip mature:

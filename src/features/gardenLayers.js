@@ -147,7 +147,7 @@ if garden.layoutYoung() > 0 and garden.layoutMature() == 0:
 # nursetulips (tulip) are replanted all together once fewer than half of them are mature, so they're
 # mature at the same time — each one makes the plants around it stronger, the most when it's mature.
 # The golden clovers (clover) run their own rounds as the Full-garden replanter does, a new round
-# planted just before a quick tick once too few of them are left. The soil rule picks the soil the
+# planted at once, on fertilizer, once too few of them are left. The soil rule picks the soil the
 # rest of the time: "Tulips grow, then clay" (the profile's) keeps fertilizer on while the tulips grow,
 # so they're mature sooner and longer; "Clovers grow together, then clay" follows the clovers only,
 # for the best average. (Simulated, soil by the clovers — the real game, Farm level 8 (6×5),
@@ -160,8 +160,6 @@ tulip = nursetulip   # the seed replanted as one round, apart from the clovers
 clover = goldenClover   # the seed of the clover rounds
 tulipReplantBelow = 0.5   # replant the tulips once fewer than this share of their tiles hold a mature one
 replantBelow = 0.75   # start a new clover round once fewer than this share of their tiles hold a mature one
-replantAtTick = true   # when a new clover round is planted — true: fertilizer first, the old clovers kept working until the next tick, the round planted in its last plantWindow seconds; false: at once
-plantWindow = 15   # (replantAtTick only) the last seconds before the tick, when the new clover round is planted
 wholeRounds = true   # start a round only once the bank covers all of it (garden.roundCost) — false: plant what it can afford
 tulipsFirst = true   # no clover round while a tulip round is due (it waits for the tulips to go down)
 waitOutEffects = true   # no new round while an effect makes seeds more expensive and ends within the Payback page's "Wait out effects up to" (10 m: payback.effectWait(); payback.shortBoost() is what those add), even beside a longer one; one with longer left (frenzies back to back) isn't waited out: it plants at that price
@@ -192,15 +190,14 @@ tulipDue = garden.seedYoung(tulip) == 0 and garden.seedMature(tulip) < tulipRepl
 cloverReady = pricesOk and (not wholeRounds or cookies >= garden.roundCost(clover)) and not (tulipsFirst and tulipDue)
 # …and is due once none is growing and too few are mature
 if cloverReady and garden.seedYoung(clover) == 0 and garden.seedMature(clover) < replantBelow * garden.seedTiles(clover):
-  # fertilizer: the next tick within 3 minutes, and quick ticks while the round grows
+  # fertilizer: quick ticks while the round grows
   garden.soil(fertilizer)
-  # planted now — or, with replantAtTick, in the last seconds before that tick (at once when there's
-  # no clover left to keep working, or no quick tick to wait for)
-  if not replantAtTick or garden.seedMature(clover) == 0 or not garden.soilIs(fertilizer) or garden.tickIn() <= plantWindow:
-    for tile in garden.tiles():
-      if garden.wantAt(tile) == clover and not garden.isEmpty(tile):
-        garden.harvest(tile)
-    garden.plantEmpty(clover)
+  # planted at once, all of it: seedlings only grow at the next tick, so waiting for its last seconds
+  # wouldn't start the round any sooner (and the Auto buyer's garden rows plant at once too)
+  for tile in garden.tiles():
+    if garden.wantAt(tile) == clover and not garden.isEmpty(tile):
+      garden.harvest(tile)
+  garden.plantEmpty(clover)
 else:
   garden.soilRule()
 # while a clover round is still growing, fill any tile it couldn't plant (some of it may be mature)
@@ -224,7 +221,7 @@ if garden.seedYoung(clover) > 0:
       id: 'tulipRounds',
       name: 'Tulip and clover rounds',
       desc: 'Nursetulips and golden clovers, each replanted all together on rounds of its own. The tulips first, once fewer than half are mature, the clovers as the Full-garden replanter does — so the tulips are mature at the same time, boosting the clovers around them. A round goes down whole, once the bank covers it, and it waits out an effect that makes seeds more expensive if it ends within 2 minutes.',
-      data: () => ({ rules: TULIP_GARDENER, knobs: { tulipReplantBelow: PCT, replantBelow: PCT, replantAtTick: TOGGLE, plantWindow: SECONDS, wholeRounds: TOGGLE, tulipsFirst: TOGGLE, waitOutEffects: TOGGLE, unlockNewSeeds: TOGGLE } }),
+      data: () => ({ rules: TULIP_GARDENER, knobs: { tulipReplantBelow: PCT, replantBelow: PCT, wholeRounds: TOGGLE, tulipsFirst: TOGGLE, waitOutEffects: TOGGLE, unlockNewSeeds: TOGGLE } }),
     },
     { id: 'weeds', name: 'Weed collector', desc: 'Keeps the garden bare so weeds and fungi spring up; harvests old meddleweed (for brown mold and crumbspore) and new seeds once mature, clears everything else. Plants nothing.', data: () => ({ rules: WEED_GARDENER, knobs: { oldWeedOver: PCT } }) },
     {

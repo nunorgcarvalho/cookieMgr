@@ -76,17 +76,14 @@ assert(count(TULIPS, (x, y) => at(x, y) === 'nursetulip' && age(x, y) === 0) ===
 assert(M.harvestLog.length - before === 3 && M.harvestLog.slice(before).every((h) => /^nursetulip/.test(h)), 'the 3 still alive harvested, nothing else');
 assert(count(CLOVERS, (x, y) => at(x, y) === 'goldenClover' && age(x, y) === 55) === 22, 'the clovers untouched');
 
-// ---- the clovers: a round due waits for a quick tick, then only the clovers are replanted
+// ---- the clovers: a round due goes down at once on fertilizer (no end-of-tick window), only the clovers replanted
 TULIPS.forEach(([x, y]) => set(x, y, 'nursetulip', 70));
 CLOVERS.forEach(([x, y], i) => set(x, y, i < 10 ? null : 'goldenClover', 60)); // 12 of 22: under 75%
 M.nextSoil = 0;
 tickIn(600);
 before = M.harvestLog.length;
 G.tend();
-assert(soil() === 'fertilizer' && M.harvestLog.length === before && count(CLOVERS, (x, y) => !at(x, y)) === 10, 'a clover round due: fertilizer, the old clovers kept working');
-tickIn(10);
-G.tend();
-assert(count(CLOVERS, (x, y) => at(x, y) === 'goldenClover' && age(x, y) === 0) === 22, '…and the whole clover round planted in the last seconds before the tick');
+assert(soil() === 'fertilizer' && count(CLOVERS, (x, y) => at(x, y) === 'goldenClover' && age(x, y) === 0) === 22, 'a clover round due, 10 minutes before the tick: fertilizer, and the whole clover round planted at once');
 assert(M.harvestLog.length - before === 12 && M.harvestLog.slice(before).every((h) => /^goldenClover/.test(h)), 'only the clovers harvested');
 assert(count(TULIPS, (x, y) => at(x, y) === 'nursetulip' && age(x, y) === 70) === 8, 'the tulips untouched');
 
@@ -101,7 +98,7 @@ assert(count(CLOVERS, (x, y) => at(x, y)) === 22, 'garden.plantEmpty(): the rest
 // ---- the code says why, and its knobs
 const rules = LY.get('gardener', 'tulipRounds').data;
 assert(/\+84\.8%/.test(rules.rules) && /\+83\.6%/.test(rules.rules), 'the gardener’s code gives the real-game numbers');
-assert(rules.knobs.tulipReplantBelow && rules.knobs.replantBelow && rules.knobs.replantAtTick, 'its knobs');
+assert(rules.knobs.tulipReplantBelow && rules.knobs.replantBelow && !rules.knobs.replantAtTick && !rules.knobs.plantWindow, 'its knobs (no end-of-tick window for the clovers)');
 assert(S.compile(rules.rules).errors.length === 0 && S.compile(LY.get('soil', 'clovers').data.rules).errors.length === 0, 'the gardener and soil rule compile');
 
 assert(g.errors.length === 0, 'no runtime errors' + (g.errors.length ? `: ${g.errors.slice(0, 3).join(' | ')}` : ''));
