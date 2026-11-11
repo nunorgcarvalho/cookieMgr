@@ -886,7 +886,8 @@ The gardeners:
   runs the soil rule, and in the last seconds before a tick clears the layout's tiles of what doesn't belong and
   replants mature plants likely to die on the tick. It leaves the tiles the layout keeps empty alone.
 - **Full-garden replanter** — plants the whole layout at once and lets it grow as one round: on fertilizer while it
-  grows, clay once most of it is mature (its soil rule, *Grow together, then clay*, `clayAt` 75%), and it doesn't
+  starts growing, clay once a quarter of it is mature (its soil rule, *Grow together, then clay*, `clayAt` 25%) and
+  until the next round, and it doesn't
   replant plants that die during a round; once fewer than `replantBelow` (75%) of the layout's tiles hold a mature
   plant, a new round: fertilizer first (the next tick within 3 minutes, the old plants working until then), then
   everything harvested and the whole layout replanted in the last `plantWindow` (15) seconds before that tick, so the
@@ -903,17 +904,25 @@ The gardeners:
   making the clovers around it stronger. The clovers run their own rounds as the Full-garden replanter does
   (`replantBelow`), except that a new clover round is planted at once rather than in the last seconds before the
   tick (seedlings only grow at the tick, so waiting wouldn't start the round sooner, and the Auto buyer plants at once too). Its profile's soil rule, *Tulips grow, then clay*, keeps
-  fertilizer on while any tulip grows (and, with `cloversToo`, while a clover round grows), clay once they're mature:
-  the tulips are mature sooner and stay mature longer. Simulated (Farm level 8, 6×5, 8 nursetulips, 1000 h × 3) —
+  fertilizer on while any tulip grows (and, with `cloversToo`, while a clover round starts growing), clay once they're mature:
+  the tulips are mature sooner and stay mature longer. Simulated (Farm level 9, 6×6, 8 nursetulips, 1000 h × 3) —
   golden cookies on average · the share of the time at +140% or more · every tulip mature:
 
   | Soil rule | Average | +140% or more | Tulips mature | CpS |
   | --- | --- | --- | --- | --- |
-  | *Tulips grow, then clay* (`cloversToo`, the profile's) | +69.7% | 17% | 38% | ×0.876 |
-  | *Tulips grow, then clay*, `cloversToo` off (the tulips alone) | +72.5% | 14% | 52% | ×0.824 |
-  | *Clovers grow together, then clay* (the clovers alone) | +84.8% | 12% | 25% | ×0.886 |
+  | *Tulips grow, then clay* (`cloversToo`, the profile's) | +88.8% | 35% | 41% | ×0.863 |
+  | *Tulips grow, then clay*, `cloversToo` off (the tulips alone) | +91.4% | 30% | 47% | ×0.843 |
+  | *Clovers grow together, then clay* (the clovers alone) | +107.0% | 26% | 25% | ×0.881 |
 
-  Golden clover combos: +83.5% on average, never above +113%.
+  Golden clover combos (6×6): +104.8% on average.
+
+  **When the clovers go to clay** (`clayAt`, 25%): a tick on clay lasts five times as long as one on fertilizer, at
+  ×1.25 instead of ×0.75, so a clover is worth about 8 times more per tick of its life on clay. Fertilizer only pays
+  while most of a round is still young: switching at a quarter mature beats switching at 75% (6×6, 1000 h × 3: golden
+  clover combos +104.8% against +98.7%, 8 tulips +107.0% against +100.0%) and buys fewer rounds. Anything from 10% to
+  35% is about the same: the soil's 10-minute cooldown keeps fertilizer on for the round's first 3–4 ticks anyway.
+  Once a round reaches it, the soil stays clay until the next round (a plant of the round gone counts as grown), so
+  clovers dying while a few others still grow don't bring fertilizer back.
   Each round goes down whole or not at all (`wholeRounds`): it waits until the bank covers all of it, and until no
   effect makes seeds more expensive (`waitOutEffects`: a seed costs minutes of the CpS the game shows, so a Frenzy makes it 7
   times more expensive — `garden.priceBoost()`) and ends within the Payback page's **Wait out effects up to** (600 s;
@@ -921,7 +930,9 @@ The gardeners:
   longer left — frenzies back to back in long combos — isn't waited out: it plants at that price, and the Garden
   rounds bank keeps that price too; a short one beside it is still waited out. The tulips go first (`tulipsFirst`): no clover round starts while a tulip
   round is due. `garden.roundCost(seed)` is what a round costs. While a round is still growing it fills its empty
-  tiles (a weed cleared, cookies short at the time), even with part of it mature already.
+  tiles (a weed cleared, cookies short at the time) — a tulip round even with part of it mature already, a clover
+  round only while none of it is mature: later, a clover that died would be replanted while the rest still grow, the
+  round would never end, and its clovers would drift apart (half of them young, the soil kept on fertilizer).
 - **Weed collector** — keeps the garden bare (with *Always fertilizer*: the most weeds), so meddleweed and fungi
   spring up. Meddleweed is left to grow old, then harvested — the older it is, the likelier it leaves brown mold or
   crumbspore behind; anything you haven't unlocked grows until it's mature and is harvested; everything else is

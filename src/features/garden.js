@@ -542,8 +542,8 @@ CA.Garden = (() => {
    * What the gardener would plant now, as purchases — one per seed of the layout:
    *   round   a new round is due (none growing, fewer than its replant share mature): the old ones
    *           harvested, every tile of the seed planted
-   *   fill    tiles of the seed without it while its round is still growing (or nothing of it is
-   *           mature): those tiles planted
+   *   fill    tiles of the seed without it while its round is still growing (a clover round: only while
+   *           none of it is mature yet), or nothing of it is mature: those tiles planted
    * Each { seed, name, icon, n, price (today's), round, first (a seed that goes first), freq, cps }:
    * freq / cps, the garden's golden cookie frequency and CpS once it's grown, × (against what's
    * planted now, grown).
@@ -560,7 +560,10 @@ CA.Garden = (() => {
       const first = FIRST_SEEDS.includes(s.key);
       const below = first ? gardenerNumber('tulipReplantBelow', 0.5) : gardenerNumber('replantBelow', 0.75);
       const round = c.planted > 0 && c.young === 0 && c.mature < below * c.tiles;
-      const fill = !round && s.missing > 0 && (c.young > 0 || c.mature === 0);
+      // a tulip round is filled while any of it grows (it never sits half planted); a clover round only
+      // while none of it is mature: later, a clover that died would be replanted, and the round would
+      // never end — its clovers drifting apart, never all mature at once
+      const fill = !round && s.missing > 0 && (first ? c.young > 0 || c.mature === 0 : c.mature === 0);
       if (!round && !fill) return [];
       const tiles = new Set();
       tilesOf(M).forEach(([x, y]) => {

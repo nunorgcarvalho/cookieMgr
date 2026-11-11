@@ -97,7 +97,7 @@ assert(count(CLOVERS, (x, y) => at(x, y)) === 22, 'garden.plantEmpty(): the rest
 
 // ---- the code says why, and its knobs
 const rules = LY.get('gardener', 'tulipRounds').data;
-assert(/\+84\.8%/.test(rules.rules) && /\+83\.6%/.test(rules.rules), 'the gardener’s code gives the real-game numbers');
+assert(/\+107%/.test(rules.rules) && /CpS ×0\.881/.test(rules.rules), 'the gardener’s code gives the simulated numbers');
 assert(rules.knobs.tulipReplantBelow && rules.knobs.replantBelow && !rules.knobs.replantAtTick && !rules.knobs.plantWindow, 'its knobs (no end-of-tick window for the clovers)');
 assert(S.compile(rules.rules).errors.length === 0 && S.compile(LY.get('soil', 'clovers').data.rules).errors.length === 0, 'the gardener and soil rule compile');
 
