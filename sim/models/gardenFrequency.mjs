@@ -14,7 +14,7 @@
 //   tulips 'cohort'    the nursetulips replanted together, once fewer than half of them are mature
 //   soil 'young'       "Fertilizer, then clay": fertilizer while more than `theta` of the plants are young
 //   soil 'clovers'     "Grow together, then clay", on the clovers only: fertilizer while a round of
-//                      clovers grows, until `clayAt` of them are mature
+//                      clovers grows, until `clayAt` (a quarter, as the add-on's) of them are mature
 //   soil 'both'        as 'clovers', and fertilizer as well while any nursetulip is still growing
 //   soil 'clay'        always clay
 import { stageMult, randomFloor, decayChance, neighbours, bestNurseLayout } from './garden.mjs';
@@ -22,10 +22,13 @@ import { plotAt } from './gardenData.mjs';
 import { makeRng } from '../game/rng.mjs';
 
 export const BIN = 0.05; // the histogram's bins: 5 points of golden cookie frequency each
+export const FINE = 0.01; // the score's bins (models/gardenScore.mjs): 1 point each
 
 /**
  * One garden, `hours` long: { mean (bonus), cps (CpS multiplier), fert (share of the time on
- * fertilizer), bins (share of the time with the bonus in [k·BIN, (k+1)·BIN)), peak, zone: {
+ * fertilizer), bins (share of the time with the bonus in [k·BIN, (k+1)·BIN)), fine (the same in
+ * 1-point bins, each weighed by the CpS multiplier at the time: what models/gardenScore.mjs scores),
+ * peak, zone: {
  * share, stretch (h), first (h), cloversMax (share of the zone's time with every clover mature) },
  * plantings: { G, N } per hour }.
  */
@@ -41,7 +44,7 @@ export function runGarden(
     theta = 0.9,
     dyingOver = 0.5,
     replantBelow = 0.75,
-    clayAt = 0.75,
+    clayAt = 0.25,
     hours = 1000,
     seed = 1,
   }
@@ -110,6 +113,7 @@ export function runGarden(
 
   // the bookkeeping, weighted by time
   const bins = [];
+  const fine = [];
   let sGc = 0;
   let sCps = 0;
   let fertT = 0;
@@ -133,6 +137,8 @@ export function runGarden(
     const d = to - t;
     const b = Math.floor(gc / BIN + 1e-9);
     bins[b] = (bins[b] || 0) + d;
+    const fb = Math.floor(gc / FINE + 1e-9);
+    fine[fb] = (fine[fb] || 0) + d * cps;
     sGc += gc * d;
     sCps += cps * d;
     if (gc > peak) peak = gc;
@@ -198,6 +204,7 @@ export function runGarden(
     fert: fertT / t,
     peak,
     bins: out,
+    fine: Array.from({ length: fine.length }, (_, k) => (fine[k] || 0) / t),
     zone: T.length
       ? {
           share: zoneT / t,
@@ -225,7 +232,7 @@ export function gardeners(w, h, tulips = [4, 8]) {
     {
       id: 'goldenCombos',
       name: 'Golden clover combos',
-      desc: 'Golden clover on every tile, planted and replanted all together (Full-garden replanter); fertilizer while a round grows, clay once 75% of it is mature.',
+      desc: 'Golden clover on every tile, planted and replanted all together (Full-garden replanter); fertilizer while a round starts growing, clay once a quarter of it is mature, until the next round.',
       layout: fill,
       clovers: 'cohort',
       soil: 'clovers',
@@ -293,6 +300,7 @@ export function frequencyStudy(data, { level = 8, hours = 1000, seeds = 3, tulip
       fert: avg((r) => r.fert),
       peak: Math.max(...runs.map((r) => r.peak)),
       bins: Array.from({ length: nBins }, (_, k) => avg((r) => r.bins[k] || 0)),
+      fine: Array.from({ length: Math.max(...runs.map((r) => r.fine.length)) }, (_, k) => avg((r) => r.fine[k] || 0)),
       zone,
       plantings: { G: avg((r) => r.plantings.G), N: avg((r) => r.plantings.N) },
     };

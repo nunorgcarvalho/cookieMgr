@@ -897,3 +897,53 @@ body {
   letter-spacing: 0.3px;
   color: #b9ab93;
 }
+
+/* Garden → Score for your game: the game state's variables and the income curve */
+#CookieMgrMenu .sim-gbuildings {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 6px 14px;
+  padding: 4px 14px 8px;
+}
+#CookieMgrMenu .sim-gbuildings .ca-field {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 6px;
+}
+#CookieMgrMenu .sim-gbuildings input[type='number'] {
+  width: 64px;
+  font: 12px Tahoma, Arial, sans-serif;
+  color: #f0e2c0;
+  background: rgba(0, 0, 0, 0.45);
+  border: 1px solid rgba(255, 220, 150, 0.25);
+  border-radius: 4px;
+  padding: 3px 6px;
+}
+#CookieMgrMenu .sim-gbuildings .sim-changed input,
+#CookieMgrMenu .sim-gstate select:focus {
+  border-color: #ffe08a;
+}
+#CookieMgrMenu .sim-gstate select + select,
+#CookieMgrMenu .sim-gstate span + span select {
+  margin-left: 4px;
+}
+#CookieMgrMenu svg.sim-curve {
+  max-width: 640px;
+  padding: 0 12px;
+  box-sizing: border-box;
+}
+.sim-curve .sim-c-fit {
+  fill: none;
+  stroke: #d9a531;
+  stroke-width: 2;
+}
+.sim-curve .sim-c-err {
+  stroke: rgba(255, 224, 138, 0.6);
+  stroke-width: 1.5;
+}
+.sim-curve .sim-c-dot {
+  fill: #ffe08a;
+  stroke: #000;
+  stroke-width: 1;
+}

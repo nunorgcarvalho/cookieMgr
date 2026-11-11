@@ -68,6 +68,20 @@ pinned in `game/fetch.mjs`.
   (left to grow at their own pace, fertilizer for the clovers only or for the tulips too, or replanted
   together), with their golden zone: how long every nursetulip is fully grown. A fast model
   (`models/gardenFrequency.mjs`, the `garden-frequency` experiment), so thousands of hours take seconds.
+- **Score for your game** (on the Garden page) — paste a save and every gardener gets a score: the income it
+  implies, in multiples of a baseline (unbuffed CpS + its clicks a second), golden cookies clicked as they
+  appear. The save is read as a *game state*, the few variables that income depends on (buildings, clicks a
+  second, a click's share of CpS, dragon auras, Grandmapocalypse, season, Pantheon, golden cookie upgrades),
+  each one changeable in the form. Then the game's own golden cookies are played at steady frequencies,
+  thousands of hours each, for the game's income curve (`models/goldenIncome.mjs`: it jumps from one event to
+  the next instead of playing every frame, a few minutes in all, kept once done), and each gardener's time at
+  each frequency, CpS cost included, goes through it (`models/gardenScore.mjs`). The same from the command line:
+
+  ```
+  npm run sim -- experiment golden-state --save mysave.txt --out state.json     # the game state, to edit
+  npm run sim -- experiment golden-income --save mysave.txt --set "auras=Reaper of Fields,Radiant Appetite"
+  npm run sim -- experiment garden-score --save mysave.txt --level 9 --tulips 8,10 --state state.json
+  ```
 - **Experiments** — each with its explanation and arguments; its output streams in as it runs.
 - **Vocabulary** — every action, value and condition a strategy can use (cookieMgr's library,
   searchable, click to copy), staging words marked, and the built-in macros.
