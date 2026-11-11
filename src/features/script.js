@@ -1120,6 +1120,55 @@ CA.Script = (() => {
       .sort((a, b) => a.name.localeCompare(b.name))
       .map((g) => ({ name: g.name, uses: [...g.uses], items: [...g.items.values()] }));
   }
+  /**
+   * The fixed lists each call's params pick from (the Lookup's, by call): { id: [{ key, name, items }] }
+   * — spell.cast(spell) → the spells; the code editor's library lists them under the call.
+   */
+  function choiceLists() {
+    const out = {};
+    const put = (id, key, name, items) => {
+      const list = (out[id] = out[id] || []);
+      if (items.length && !list.some((c) => c.key === key)) list.push({ key, name, items });
+    };
+    const itemsOf = (list) => {
+      const seen = new Set();
+      return (list || []).filter((o) => o && o.v != null && o.v !== '' && !seen.has(String(o.v)) && seen.add(String(o.v))).map((o) => ({ v: o.v, label: String(o.label != null ? o.label : o.v), code: litText(o.v) }));
+    };
+    // each call's own choices (the Lookup merges lists that share a name: every family's "Profile")
+    [...CA.Actions.all(), ...CA.Conditions.all()].forEach((d) =>
+      (d.params || []).forEach((p) => {
+        if (p.type !== 'select') return;
+        try {
+          put(d.id, p.key, p.label, itemsOf(typeof p.options === 'function' ? p.options() : p.options));
+        } catch (e) {
+          /* not available yet */
+        }
+      })
+    );
+    lookupsExtra.forEach((l) => {
+      let items;
+      try {
+        items = itemsOf(l.items());
+      } catch (e) {
+        return;
+      }
+      (l.uses || []).forEach((u) => {
+        const m = String(u).match(/^(.+)\((\w+)\)$/);
+        if (m) put(m[1], m[2], l.name, items);
+      });
+    });
+    return out;
+  }
+  /** A call written with one param picked (callWith('spell.cast', 'spell', 'hand of fate') → spell.cast("hand of fate")); the others as the library writes them. */
+  function callWith(id, key, v) {
+    const def = (CA.Actions && CA.Actions.get(id)) || (CA.Conditions && CA.Conditions.get(id));
+    const ps = def ? (def.params || []).map((p) => (typeof p === 'string' ? { key: p } : p)) : ((valueById[id] && valueById[id].params) || [key]).map((p) => ({ key: p }));
+    const has = (p) => p.default !== undefined && p.default !== '';
+    const vals = ps.map((p) => (p.key === key ? litText(v) : has(p) ? paramText(p.default) : p.key));
+    // trailing defaults are left out
+    while (vals.length > 1 && ps[vals.length - 1].key !== key && has(ps[vals.length - 1])) vals.pop();
+    return `${id}(${vals.join(', ')})`;
+  }
   // the values' own names
   defineLookup({ name: 'Building', uses: ['building(name)'], items: () => Object.keys((typeof Game !== 'undefined' && Game.Objects) || {}).map((n) => ({ v: n, label: n })) });
 
@@ -1142,5 +1191,5 @@ CA.Script = (() => {
   }
   const isValue = (id) => !!valueById[id];
 
-  return { compile, evaluate, value: valueOf, resolve, exprText, decompile, library, lookups, defineLookup, litText, defineValue, removeValue, isValue, originOf, ORIGINS, revision: () => rev, runStat, VALUES, KEYWORDS, tokenize };
+  return { compile, evaluate, value: valueOf, resolve, exprText, decompile, library, lookups, choiceLists, callWith, defineLookup, litText, defineValue, removeValue, isValue, originOf, ORIGINS, revision: () => rev, runStat, VALUES, KEYWORDS, tokenize };
 })();

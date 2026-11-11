@@ -10,7 +10,12 @@
 //                                                          colored, its words hover like the editor's;
 //                                                          Enter leaves it (its change event fires)
 //   CA.UI.CodeEditor.libraryHtml(key, { first, mode })     every action / condition / value / keyword,
-//                                                          searchable, ★ to pin; `first`: group names
+//                                                          searchable, ★ to pin (in place: nothing
+//                                                          moves); a call whose param picks from a
+//                                                          fixed list (spell.cast(spell)) opens that
+//                                                          list under its row, each value with what
+//                                                          it is, click one to write the call with it;
+//                                                          `first`: group names
 //                                                          (or prefixes) to list first; mode 'stat': a
 //                                                          statistic's (CA.Script.library)
 //   html(…, { mode: 'stat', item })                        the code is a statistic's (about an item, or
@@ -19,6 +24,8 @@
 //                                                          listens on `root`; onPick may handle a
 //                                                          library click itself (return true), else
 //                                                          the item is inserted into editor `key`
+//                                                          (a possible value picked: item.params has
+//                                                          it, item.insert the call written with it)
 //   CA.UI.CodeEditor.setLive(root, key, { lines, html })   lights up running lines, shows what it does
 //   CA.UI.CodeEditor.legendHtml()                          what the colors mean (under each editor,
 //                                                          atop the Statistics catalog)
@@ -48,6 +55,9 @@ CA.UI.CodeEditor = (() => {
     CA.Settings.set(LIB_FAVS, list.join('\n'));
   }
 
+  const favBtn = (k, on) =>
+    `<button type="button" class="ca-iconbtn ca-lib-fav${on ? ' on' : ''}" data-lib-fav="${esc(k)}" data-tip="${on ? 'Unpin' : 'Pin: a copy waits in Pinned, at the top'}">${I(on ? 'star' : 'starOutline', 11)}</button>`;
+
   let lookItems = []; // the Lookup's names, by index (data-lib-lit)
   /** The Lookup tab: every list of names that go inside ( ), click one to write it where the cursor is. */
   function lookupHtml() {
@@ -72,17 +82,102 @@ CA.UI.CodeEditor = (() => {
       .join('');
   }
 
+  // ---- a call's possible values (spell.cast(spell) → the spells), listed under its row ----------
+
+  let libChoices = {}; // call id → [{ key, name, items }] (CA.Script.choiceLists), for the library on show
+  const choicesOf = (it) => (it && (it.kind === 'action' || it.kind === 'condition' || it.kind === 'value') && libChoices[it.id]) || [];
+  const plural = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`;
+  // "9 spells", "21 auras"; a list named by a question ("How", "Which") or by several words: "3 choices"
+  const countOf = (c) => {
+    const w = String(c.name).toLowerCase();
+    return /^[a-z]+$/.test(w) && !/(s|h|x)$/.test(w) && !['how', 'what', 'where', 'which', 'is', 'of'].includes(w) ? plural(c.items.length, w) : plural(c.items.length, 'choice');
+  };
+  /** What one possible value is, in a line: its word's card (a spell's effect…), else nothing. */
+  function optDesc(it, c, o) {
+    if (!CA.ScriptWords) return ''; // the simulator's GUI has no ScriptWords
+    const src = CA.Script.callWith(it.id, c.key, o.v);
+    const at = src.lastIndexOf(o.code);
+    let info = null;
+    try {
+      info = at >= 0 ? CA.ScriptWords.explain(src, 1, at) : null;
+    } catch (e) {
+      info = null;
+    }
+    if (!info || info.kind === 'choice' || info.kind === 'param') return '';
+    const d = String(info.desc || '').trim();
+    return d && d !== o.label ? d : '';
+  }
+  /** The list under a row: each possible value of each of its lists, click one to write the call with it. */
+  function optsHtml(i) {
+    const it = libItems[i];
+    return (
+      `<div class="ca-lib-opts" data-lib-opts="${i}">` +
+      choicesOf(it)
+        .map(
+          (c, ci) =>
+            `<div class="ca-lib-ophead">${esc(c.name)} <span class="ca-lib-uses">${esc(c.key)} · ${plural(c.items.length, 'choice')} · click one to write it</span></div>` +
+            c.items
+              .map((o, oi) => {
+                const d = optDesc(it, c, o);
+                return (
+                  `<button type="button" class="ca-lib-opt" data-lib-opt="${i}:${ci}:${oi}" data-lib-text="${esc(`${o.code} ${o.label}`.toLowerCase())}"${d ? ` data-tip="${esc(d)}"` : ''}>` +
+                  `<code>${esc(o.code)}</code>` +
+                  (o.label !== String(o.v) ? `<span class="ca-lib-opt-label">${esc(o.label)}</span>` : '') +
+                  (d ? `<span class="ca-lib-opt-desc">${esc(d)}</span>` : '') +
+                  '</button>'
+                );
+              })
+              .join('')
+        )
+        .join('') +
+      '</div>'
+    );
+  }
+  /** Opens (or closes) the possible values under a row; `open` forces it. */
+  function toggleOpts(row, open) {
+    const i = Number(row.querySelector('[data-lib-insert]').dataset.libInsert);
+    const btn = row.querySelector('[data-lib-open]');
+    let box = row.nextElementSibling && row.nextElementSibling.matches('[data-lib-opts]') ? row.nextElementSibling : null;
+    const want = open !== undefined ? open : !box || box.hidden;
+    if (want && !box) {
+      const tmp = document.createElement('div');
+      tmp.innerHTML = optsHtml(i);
+      box = tmp.firstChild;
+      row.after(box);
+    }
+    if (box) box.hidden = !want;
+    row.classList.toggle('open', want);
+    if (btn) btn.setAttribute('aria-expanded', String(want));
+    return box;
+  }
+
   function libraryHtml(key, opts = {}) {
     libItems = CA.Script.library({ mode: opts.mode });
+    try {
+      libChoices = CA.Script.choiceLists ? CA.Script.choiceLists() : {};
+    } catch (e) {
+      libChoices = {};
+    }
     const pins = favs();
     const fk = (it) => `${it.kind}:${it.id}`;
-    const row = (it, i) =>
-      `<div class="ca-lib-row ca-lib-${it.kind}${it.origin ? ` ca-lib-o-${it.origin}` : ''}" data-lib-text="${esc(`${it.sig} ${it.desc} ${it.group} ${it.origin ? CA.Script.ORIGINS[it.origin].name : ''}`.toLowerCase())}">` +
-      // a word's code is a code view: hovering it shows its card, which links to more
-      `<button type="button" class="ca-lib-ins" data-lib-insert="${i}">${I(it.icon || 'bolt', 12)}<code class="ca-hl"${it.kind === 'value' || it.kind === 'action' || it.kind === 'condition' ? ` data-code-view="${esc(it.sig)}"` : ''}>${it.kind === 'keyword' ? esc(it.sig) : highlightLine(it.sig)}</code></button>` +
-      `<span class="ca-lib-desc">${esc(it.desc)}</span>` +
-      `<button type="button" class="ca-iconbtn ca-lib-fav${pins.includes(fk(it)) ? ' on' : ''}" data-lib-fav="${esc(fk(it))}" data-tip="${pins.includes(fk(it)) ? 'Unpin' : 'Pin it at the top'}">${I(pins.includes(fk(it)) ? 'star' : 'starOutline', 11)}</button>` +
-      '</div>';
+    const row = (it, i) => {
+      const ch = choicesOf(it);
+      const n = ch.reduce((a, c) => a + c.items.length, 0);
+      // its possible values join its search text, so "hand of fate" finds spell.cast
+      const optText = ch.map((c) => c.items.map((o) => `${o.code} ${o.label}`).join(' ')).join(' ');
+      return (
+        `<div class="ca-lib-row ca-lib-${it.kind}${it.origin ? ` ca-lib-o-${it.origin}` : ''}" data-lib-text="${esc(`${it.sig} ${it.desc} ${it.group} ${it.origin ? CA.Script.ORIGINS[it.origin].name : ''}`.toLowerCase())}"${optText ? ` data-lib-opt-text="${esc(optText.toLowerCase())}"` : ''}>` +
+        // a word's code is a code view: hovering it shows its card, which links to more
+        `<button type="button" class="ca-lib-ins" data-lib-insert="${i}">${I(it.icon || 'bolt', 12)}<code class="ca-hl"${it.kind === 'value' || it.kind === 'action' || it.kind === 'condition' ? ` data-code-view="${esc(it.sig)}"` : ''}>${it.kind === 'keyword' ? esc(it.sig) : highlightLine(it.sig)}</code></button>` +
+        `<span class="ca-lib-desc">${esc(it.desc)}${
+          n
+            ? ` <button type="button" class="ca-lib-more" data-lib-open aria-expanded="false" data-tip="${esc(`What ${ch.map((c) => c.key).join(' / ')} can be: each one, what it is — click one to write it`)}"><i class="ca-lib-caret">▸</i>${ch.map((c) => esc(countOf(c))).join(' · ')}</button>`
+            : ''
+        }</span>` +
+        favBtn(fk(it), pins.includes(fk(it))) +
+        '</div>'
+      );
+    };
     const pinned = libItems.map((it, i) => [it, i]).filter(([it]) => pins.includes(fk(it)));
     const groups = {};
     const gname = (it) => (it.kind === 'action' ? `Actions · ${it.group}` : it.group);
@@ -359,8 +454,76 @@ CA.UI.CodeEditor = (() => {
   function onLibSearch(input) {
     const q = input.value.trim().toLowerCase();
     const lib = input.closest('[data-ed-lib]');
-    lib.querySelectorAll('.ca-lib-row').forEach((r) => r.classList.toggle('hidden', !!q && !r.dataset.libText.includes(q)));
+    lib.querySelectorAll('.ca-lib-row').forEach((r) => {
+      const own = !q || r.dataset.libText.includes(q);
+      // found by one of its possible values ("hand of fate" → spell.cast): open them, just the matching ones
+      const byOpt = !own && !!r.dataset.libOptText && r.dataset.libOptText.includes(q);
+      r.classList.toggle('hidden', !own && !byOpt);
+      if (byOpt && !r.classList.contains('open')) {
+        toggleOpts(r, true);
+        r.dataset.libAutoOpen = '1';
+      } else if (!byOpt && r.dataset.libAutoOpen) {
+        delete r.dataset.libAutoOpen;
+        toggleOpts(r, false);
+      }
+      const box = r.nextElementSibling && r.nextElementSibling.matches('[data-lib-opts]') ? r.nextElementSibling : null;
+      if (box) {
+        if (r.classList.contains('hidden')) box.hidden = true;
+        else if (r.classList.contains('open')) box.hidden = false;
+        box.querySelectorAll('[data-lib-opt]').forEach((o) => o.classList.toggle('hidden', byOpt && !o.dataset.libText.includes(q)));
+        // a list none of whose values match: its heading goes too
+        box.querySelectorAll('.ca-lib-ophead').forEach((h) => {
+          let n = h.nextElementSibling;
+          let any = false;
+          for (; n && n.matches('[data-lib-opt]'); n = n.nextElementSibling) any = any || !n.classList.contains('hidden');
+          h.classList.toggle('hidden', !any);
+        });
+      }
+    });
     lib.querySelectorAll('.ca-lib-group').forEach((g) => g.classList.toggle('hidden', !!q && !g.querySelector('.ca-lib-row:not(.hidden)')));
+  }
+
+  /**
+   * ★ on a library row: pins or unpins it without redrawing the library, so nothing moves — the row
+   * stays under the mouse (its copy comes or goes in Pinned, at the top, and the list scrolls to
+   * make up for it).
+   */
+  function pinInPlace(lib, fav) {
+    const k = fav.dataset.libFav;
+    const favOf = (r) => (r.querySelector('[data-lib-fav]') || { dataset: {} }).dataset.libFav;
+    toggleFav(k);
+    const on = favs().includes(k);
+    const body = lib.querySelector('[data-lib-pane="words"]');
+    const pinned = lib.querySelector('.ca-lib-pinned');
+    const row = fav.closest('.ca-lib-row');
+    const inPinned = !!row.closest('.ca-lib-pinned');
+    // what to hold still: the row clicked, or (unpinning from Pinned) the first row below Pinned
+    const anchor = inPinned ? pinned.nextElementSibling : row;
+    const before = anchor ? anchor.getBoundingClientRect().top : 0;
+    lib.querySelectorAll('[data-lib-fav]').forEach((b) => b.dataset.libFav === k && (b.outerHTML = favBtn(k, on)));
+    const copy = [...pinned.querySelectorAll('.ca-lib-row')].find((r) => favOf(r) === k);
+    if (on && !copy) {
+      const src = [...lib.querySelectorAll('.ca-lib-group:not(.ca-lib-pinned) .ca-lib-row')].find((r) => favOf(r) === k);
+      if (src) {
+        const c = src.cloneNode(true);
+        c.classList.remove('open', 'hidden');
+        delete c.dataset.libAutoOpen;
+        const at = (r) => Number(r.querySelector('[data-lib-insert]').dataset.libInsert);
+        // in the library's own order, as a redraw would put it
+        const next = [...pinned.querySelectorAll('.ca-lib-row')].find((r) => at(r) > at(c));
+        const empty = pinned.querySelector('.ca-lib-empty');
+        if (empty) empty.remove();
+        pinned.insertBefore(c, next || null);
+      }
+    } else if (!on && copy) {
+      const box = copy.nextElementSibling && copy.nextElementSibling.matches('[data-lib-opts]') ? copy.nextElementSibling : null;
+      if (box) box.remove();
+      copy.remove();
+      if (!pinned.querySelector('.ca-lib-row')) pinned.insertAdjacentHTML('beforeend', '<div class="ca-lib-empty">★ an item to keep it here</div>');
+    }
+    const s = lib.querySelector('[data-lib-search]');
+    if (s && s.value.trim()) onLibSearch(s);
+    if (anchor && anchor.isConnected && body) body.scrollTop += anchor.getBoundingClientRect().top - before;
   }
 
   /** The editor a library belongs to (same key), within `root`. */
@@ -398,17 +561,33 @@ CA.UI.CodeEditor = (() => {
         if (fav) {
           e.stopPropagation();
           CA.Util.sound('snd/tick.mp3');
-          toggleFav(fav.dataset.libFav);
-          // redraw this library (keeping its search)
-          const q = (lib.querySelector('[data-lib-search]') || {}).value || '';
-          const tmp = document.createElement('div');
-          tmp.innerHTML = libraryHtml(key, { first: (lib.dataset.first || '').split('|').filter(Boolean), mode: lib.dataset.mode });
-          const next = tmp.firstChild;
-          lib.replaceWith(next);
-          const s = next.querySelector('[data-lib-search]');
-          if (s && q) {
-            s.value = q;
-            onLibSearch(s);
+          pinInPlace(lib, fav);
+          return;
+        }
+        const more = t.closest('[data-lib-open]');
+        if (more) {
+          e.stopPropagation();
+          const r = more.closest('.ca-lib-row');
+          delete r.dataset.libAutoOpen;
+          toggleOpts(r);
+          return;
+        }
+        const opt = t.closest('[data-lib-opt]');
+        if (opt) {
+          e.stopPropagation();
+          const [i, ci, oi] = opt.dataset.libOpt.split(':').map(Number);
+          const it = libItems[i];
+          const c = choicesOf(it)[ci];
+          const o = c && c.items[oi];
+          if (!o) return;
+          CA.Util.sound('snd/tick.mp3');
+          // the call, written with this one: like clicking its row, with the value filled in
+          const picked = { ...it, insert: CA.Script.callWith(it.id, c.key, o.v), params: { [c.key]: o.v } };
+          if (handlers.onPick && handlers.onPick(key, picked)) return;
+          const ta = codeFor(root, key);
+          if (ta) {
+            insert(ta, picked.insert);
+            changed(ta);
           }
           return;
         }
