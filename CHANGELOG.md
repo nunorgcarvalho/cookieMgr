@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 4.40.1 — 2026-11-11
+
+- **README:** the Stock market tile shows the Trader card and names the trader profiles; screenshots retaken after the trimmed captions.
+
 ## 4.40.0 — 2026-11-11
 
 - **Fewer labels:** captions, hint lines and kicker labels that only repeated what a card, chart or control already
