@@ -96,7 +96,7 @@ the page. [See every page with a screenshot](#pages).
 <td width="50%" valign="top">
 <b>Stock market</b><br>
 <img src="docs/readme/stock-market.png" alt="The Stock market page" width="100%">
-<ul><li>A stock autobuyer and Sell all</li><li>Trend badges on every stock in the Bank</li><li>Portfolio charts and your trade history</li></ul>
+<ul><li>A stock autobuyer that trades by a trader profile: Trends and prices (built in), Ride the trends, or your own</li><li>Sell all in one click</li><li>Trend badges on every stock in the Bank</li><li>Portfolio charts and your trade history</li></ul>
 </td>
 <td width="50%" valign="top">
 <b>Pantheon</b><br>
