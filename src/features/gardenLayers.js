@@ -105,7 +105,7 @@ if garden.tickIn() <= tickWindow:
   garden.plantEmpty()
 `;
   const COHORT_GARDENER = `# Full-garden replanter: plants the whole layout at once and lets it grow as one round — on
-# fertilizer while it grows, clay once most of it is mature (its soil rule, "Grow together, then
+# fertilizer while it grows, clay once a quarter of it is mature (its soil rule, "Grow together, then
 # clay") — and doesn't replant plants that die during a round. Once too few mature plants are
 # left, a new round: fertilizer first (the next tick within 3 minutes, the old plants working until
 # then), and the plants still alive harvested and the whole layout planted again in the last
@@ -150,9 +150,8 @@ if garden.layoutYoung() > 0 and garden.layoutMature() == 0:
 # planted at once, on fertilizer, once too few of them are left. The soil rule picks the soil the
 # rest of the time: "Tulips grow, then clay" (the profile's) keeps fertilizer on while the tulips grow,
 # so they're mature sooner and longer; "Clovers grow together, then clay" follows the clovers only,
-# for the best average. (Simulated, soil by the clovers — the real game, Farm level 8 (6×5),
-# 8 nursetulips, 1000 h × 3: golden cookies +84.8% on average against +83.6% for golden clover
-# combos, at CpS ×0.886; every nursetulip mature 25% of the time, in stretches of ~1.8 h, up to +149%.)
+# for the best average. (Simulated, Farm level 9 (6×6), 8 nursetulips, 1000 h × 3, soil by the
+# clovers: golden cookies +107% on average, +140% or more 26% of the time, at CpS ×0.881.)
 # Each round goes down whole or not at all: it waits for the cookies to plant all of it, and for
 # effects to end (a seed costs minutes of the CpS the game shows: a Frenzy makes it 7 times more expensive).
 # The tulips go first: no clover round starts while a tulip round is due.
@@ -200,8 +199,10 @@ if cloverReady and garden.seedYoung(clover) == 0 and garden.seedMature(clover) <
   garden.plantEmpty(clover)
 else:
   garden.soilRule()
-# while a clover round is still growing, fill any tile it couldn't plant (some of it may be mature)
-if garden.seedYoung(clover) > 0:
+# while a clover round is still growing and none of it is mature yet, fill any tile it couldn't plant
+# (not enough cookies at the time). Not later: a clover that died would be replanted while the rest
+# still grow, the round would never end, and its clovers would drift apart (never all mature at once)
+if garden.seedYoung(clover) > 0 and garden.seedMature(clover) == 0:
   garden.plantEmpty(clover)
 `;
   const GARDENERS = [
@@ -242,21 +243,26 @@ if garden.youngShare() > ${FERTILIZER_VAR}:
 else:
   garden.soil(clay)
 `;
-  const SOIL_COHORT = `# Grow together, then clay: fertilizer while the layout's plants grow as a round (quick ticks),
-# clay (effects ×1.25) once clayAt of its tiles hold a mature plant.
-clayAt = 0.75   # switch to clay once this share of the layout's tiles hold a mature plant
-if garden.layoutYoung() > 0 and garden.layoutMature() < clayAt * garden.layoutTiles():
+  const SOIL_COHORT = `# Grow together, then clay: fertilizer while a new round of the layout's plants grows (quick ticks),
+# clay (effects ×1.25) once clayAt of its tiles hold a mature plant — and clay from then until the
+# next round (once a plant of the round is gone, the round counts as grown). A tick on clay lasts five
+# times as long at ×1.25 instead of ×0.75, so fertilizer only pays while the round is mostly young:
+# simulated, a golden clover field (6×6), 1000 h × 3: +104.8% golden cookies switching at 25% mature,
+# +98.7% at 75%, and fewer rounds to buy.
+clayAt = 0.25   # switch to clay once this share of the layout's tiles hold a mature plant
+if garden.layoutYoung() > 0 and (garden.layoutMature() == 0 or (garden.layoutMature() < clayAt * garden.layoutTiles() and garden.layoutYoung() + garden.layoutMature() >= garden.layoutTiles())):
   garden.soil(fertilizer)
 else:
   garden.soil(clay)
 `;
   const SOIL_CLOVERS = `# Clovers grow together, then clay: as "Grow together, then clay", counting one seed's plants only
 # (followSeed) — so plants on rounds of their own (nursetulips) don't keep fertilizer on while they
-# grow. (Simulated, 8 nursetulips together at level 8, 1000 h × 3: golden cookies +84.8% on average,
-# +140% or more 12% of the time; "Tulips grow, then clay" trades average for longer peaks.)
+# grow. Clay from clayAt mature until the next round. (Simulated, 8 nursetulips together at level 9,
+# 1000 h × 3: golden cookies +107% on average, +140% or more 26% of the time; "Tulips grow, then
+# clay" trades average for longer peaks.)
 followSeed = goldenClover   # the seed whose rounds pick the soil
-clayAt = 0.75   # switch to clay once this share of its tiles hold a mature plant
-if garden.seedYoung(followSeed) > 0 and garden.seedMature(followSeed) < clayAt * garden.seedTiles(followSeed):
+clayAt = 0.25   # switch to clay once this share of its tiles hold a mature plant
+if garden.seedYoung(followSeed) > 0 and (garden.seedMature(followSeed) == 0 or (garden.seedMature(followSeed) < clayAt * garden.seedTiles(followSeed) and garden.seedYoung(followSeed) + garden.seedMature(followSeed) >= garden.seedTiles(followSeed))):
   garden.soil(fertilizer)
 else:
   garden.soil(clay)
@@ -264,16 +270,16 @@ else:
   const SOIL_TULIPS = `# Tulips grow, then clay: fertilizer (quick ticks) while any nursetulip (followSeed) is still
 # growing, so they're mature sooner and for longer; clay (effects ×1.25) once they're all mature. With
 # cloversToo, fertilizer as well while a round of golden clovers grows (as "Clovers grow together, then
-# clay"). Simulated, 8 nursetulips together at level 8, 1000 h × 3 (golden cookies on average · the share
-# of the time at +140% or more · every tulip mature):
-#   soil by the clovers only        +84.8% · 12% · 25% of the time
-#   by the tulips only              +72.5% · 14% · 52%
-#   by either (cloversToo)          +69.7% · 17% · 38%
+# clay"). Simulated, 8 nursetulips together at level 9 (6×6), 1000 h × 3 (golden cookies on average · the
+# share of the time at +140% or more · every tulip mature):
+#   soil by the clovers only        +107.0% · 26% · 25% of the time
+#   by the tulips only              +91.4% · 30% · 47%
+#   by either (cloversToo)          +88.8% · 35% · 41%
 followSeed = nursetulip   # the seed whose growing keeps fertilizer on
 cloversToo = true   # fertilizer as well while a round of the clovers grows
 cloverSeed = goldenClover   # (cloversToo) the seed of the clover rounds
-clayAt = 0.75   # (cloversToo) a clover round counts as grown once this share of its tiles hold a mature plant
-if garden.seedYoung(followSeed) > 0 or (cloversToo and garden.seedYoung(cloverSeed) > 0 and garden.seedMature(cloverSeed) < clayAt * garden.seedTiles(cloverSeed)):
+clayAt = 0.25   # (cloversToo) a clover round counts as grown once this share of its tiles hold a mature plant, until the next round
+if garden.seedYoung(followSeed) > 0 or (cloversToo and garden.seedYoung(cloverSeed) > 0 and (garden.seedMature(cloverSeed) == 0 or (garden.seedMature(cloverSeed) < clayAt * garden.seedTiles(cloverSeed) and garden.seedYoung(cloverSeed) + garden.seedMature(cloverSeed) >= garden.seedTiles(cloverSeed)))):
   garden.soil(fertilizer)
 else:
   garden.soil(clay)
@@ -289,8 +295,8 @@ else:
   const fixedSoil = (key, why) => `# Always ${key}${why ? ` — ${why}` : ''}.\ngarden.soil(${key})\n`;
   const SOILS = [
     { id: 'effects', name: 'Fertilizer, then clay', desc: 'Fertilizer for a freshly planted garden, clay (effects ×1.25) the rest of the time.', data: () => ({ rules: SOIL_EFFECTS, knobs: { [FERTILIZER_VAR]: PCT } }) },
-    { id: 'cohort', name: 'Grow together, then clay', desc: 'For the Full-garden replanter: fertilizer while a round grows, clay once most of it is mature.', data: () => ({ rules: SOIL_COHORT, knobs: { clayAt: PCT } }) },
-    { id: 'clovers', name: 'Clovers grow together, then clay', desc: 'Fertilizer while a round of golden clovers grows, clay once most of it is mature — the nursetulips don’t count. For Tulip and clover rounds.', data: () => ({ rules: SOIL_CLOVERS, knobs: { clayAt: PCT } }) },
+    { id: 'cohort', name: 'Grow together, then clay', desc: 'For the Full-garden replanter: fertilizer while a round starts growing, clay once a quarter of it is mature, until the next round.', data: () => ({ rules: SOIL_COHORT, knobs: { clayAt: PCT } }) },
+    { id: 'clovers', name: 'Clovers grow together, then clay', desc: 'Fertilizer while a round of golden clovers starts growing, clay once a quarter of it is mature, until the next round — the nursetulips don’t count. For Tulip and clover rounds.', data: () => ({ rules: SOIL_CLOVERS, knobs: { clayAt: PCT } }) },
     { id: 'tulips', name: 'Tulips grow, then clay', desc: 'Fertilizer while any nursetulip grows (and, with cloversToo, while a round of golden clovers grows), clay once they’re mature — the nursetulips mature sooner and stay mature longer: longer peaks, a lower average. For Tulip and clover rounds.', data: () => ({ rules: SOIL_TULIPS, knobs: { cloversToo: TOGGLE, clayAt: PCT } }) },
     { id: 'mutations', name: 'Fertilizer, then wood chips', desc: 'Fertilizer while the layout’s plants grow, wood chips (×3 mutation chances) once they’re mature.', data: () => ({ rules: SOIL_MUTATIONS, knobs: { growingOver: PCT } }) },
     { id: 'fertilizer', name: 'Always fertilizer', desc: 'Quickest ticks, the most weeds (×1.2); effects ×0.75.', data: () => ({ rules: fixedSoil('fertilizer', 'the quickest ticks and the most weeds') }) },

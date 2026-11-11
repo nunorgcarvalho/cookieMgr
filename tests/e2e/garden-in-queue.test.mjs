@@ -3,8 +3,8 @@
 // 22 Golden clover"). Its gain is the golden cookie income the grown plants add (Actual income less CpS +
 // clicking, × the garden's golden cookie frequency gain). Garden things may spend the garden's own banks,
 // wait out effects that make seeds more expensive, and the clovers wait for the nursetulips. And the Tulip and clover
-// rounds gardener fills a round's empty tiles while any of it still grows (a round half mature, half young
-// used to sit half planted).
+// rounds gardener fills a clover round's empty tiles while it grows and none of it is mature yet — not later:
+// a clover that died would be replanted while the rest still grow, and the round would never end.
 import { IDBFactory, IDBKeyRange } from 'fake-indexeddb';
 import { boot, sleep, makeAssert } from '../harness/game.mjs';
 import { cpsModel } from '../harness/cps.mjs';
@@ -43,18 +43,26 @@ const CLOVERS = [];
 for (let y = 1; y <= 5; y++) for (let x = 0; x <= 5; x++) ((y === 2 || y === 4) && x >= 1 && x <= 4 ? TULIPS : CLOVERS).push([x, y]);
 const count = (tiles, f) => tiles.filter(([x, y]) => f(x, y)).length;
 const CLOVER = 7.5e6 * (CPS / 1000); // 125 min of CpS
-/** A clover round stuck half planted: 10 mature, 3 young, 9 empty; the tulips grown. */
+/** A clover round planted short: 13 young, 9 empty (cookies short at the time); the tulips grown. */
 function stuck() {
   TULIPS.forEach(([x, y]) => set(x, y, 'nursetulip', 70));
-  CLOVERS.forEach(([x, y], i) => set(x, y, i < 10 ? 'goldenClover' : i < 13 ? 'goldenClover' : null, i < 10 ? 55 : 10));
+  CLOVERS.forEach(([x, y], i) => set(x, y, i < 13 ? 'goldenClover' : null, 10));
+}
+/** Clovers half mature, half young, a few empty: 10 mature, 3 young, 9 empty. */
+function drifting() {
+  TULIPS.forEach(([x, y]) => set(x, y, 'nursetulip', 70));
+  CLOVERS.forEach(([x, y], i) => set(x, y, i < 13 ? 'goldenClover' : null, i < 10 ? 55 : 10));
 }
 
 // ---- what the gardener plants next ----
 stuck();
 let list = G.plantings();
-assert(list.length === 1 && list[0].seed === 'goldenClover' && list[0].n === 9 && !list[0].round, `half mature, half young, 9 empty: plant the 9 (${JSON.stringify(list)})`);
+assert(list.length === 1 && list[0].seed === 'goldenClover' && list[0].n === 9 && !list[0].round, `13 young, 9 empty: plant the 9 (${JSON.stringify(list)})`);
 assert(Math.abs(list[0].price - 9 * CLOVER) < 1, 'its price: 9 clovers today');
 assert(list[0].freq > 1.15 && list[0].freq < 1.6 && list[0].cps === 1, `golden cookie frequency up (×${list[0].freq.toFixed(3)}), CpS the same`);
+// part of it mature already: the empty tiles wait for the next round (filled, the round would never end)
+drifting();
+assert(G.plantings().length === 0, `10 mature, 3 young, 9 empty: nothing to plant (${JSON.stringify(G.plantings())})`);
 // a round due: none young, under 75% mature
 CLOVERS.forEach(([x, y], i) => set(x, y, i < 12 ? 'goldenClover' : null, 55));
 list = G.plantings();
@@ -63,11 +71,14 @@ assert(list.length === 1 && list[0].round && list[0].n === 22 && Math.abs(list[0
 CLOVERS.forEach(([x, y], i) => set(x, y, i < 18 ? 'goldenClover' : null, 55));
 assert(G.plantings().length === 0, '18 of 22 mature: the round waits, nothing to plant');
 
-// ---- the gardener fills a half-grown round now ----
-stuck();
+// ---- the gardener fills a round planted short, while none of it is mature ----
+drifting();
 Game.cookies = 1e15;
 G.tend();
-assert(count(CLOVERS, (x, y) => at(x, y) === 'goldenClover') === 22, 'the gardener fills the 9 empty tiles of a round still growing');
+assert(count(CLOVERS, (x, y) => at(x, y) === 'goldenClover') === 13, 'part of the round mature: the gardener leaves the 9 empty tiles for the next round');
+stuck();
+G.tend();
+assert(count(CLOVERS, (x, y) => at(x, y) === 'goldenClover') === 22, 'none of it mature: the gardener fills the 9 empty tiles');
 
 // ---- in the queue ----
 stuck();

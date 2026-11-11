@@ -52,12 +52,12 @@ M.soil = 0;
 M.nextStep = Date.now() + 10e3; // (v3.4.2: a round is planted in the last seconds before a tick)
 tend();
 assert(tiles.every(([x, y]) => at(x, y) === 'bakerWheat' && M.plot[y][x][1] === 0) && soil() === 'fertilizer', 'an empty garden: the whole layout planted at once; fertilizer while it grows');
-tiles.slice(0, 8).forEach(([x, y]) => set(x, y, 'bakerWheat', 40)); // 8 of 12 mature: under 75%
+tiles.slice(0, 2).forEach(([x, y]) => set(x, y, 'bakerWheat', 40)); // 2 of 12 mature: under 25%
 tend();
-assert(soil() === 'fertilizer', '8 of 12 mature: still growing, fertilizer');
-tiles.slice(8, 9).forEach(([x, y]) => set(x, y, 'bakerWheat', 40)); // 9 of 12: 75%
+assert(soil() === 'fertilizer', '2 of 12 mature: still growing, fertilizer');
+tiles.slice(2, 3).forEach(([x, y]) => set(x, y, 'bakerWheat', 40)); // 3 of 12: 25%
 tend();
-assert(soil() === 'clay', '9 of 12 (75%) mature: clay');
+assert(soil() === 'clay', '3 of 12 (25%) mature: clay');
 tiles.forEach(([x, y]) => set(x, y, 'bakerWheat', 60)); // all mature
 set(1, 2, null); // two died
 set(2, 2, null);
@@ -130,7 +130,7 @@ assert(!LY.get('gardener', 'cohort').edited && num('replantBelow').value === '75
 
 // ---- the soil rule's knobs
 click(w, q('[data-gp-slot="soil"]'));
-assert(num('clayAt') && num('clayAt').value === '75' && range('clayAt').step === '5', 'the soil rule (Grow together, then clay): clayAt as a percentage');
+assert(num('clayAt') && num('clayAt').value === '25' && range('clayAt').step === '5', 'the soil rule (Grow together, then clay): clayAt as a percentage');
 
 assert(g.errors.length + g2.errors.length === 0, 'no runtime errors' + (g.errors.length ? `: ${g.errors.slice(0, 3).join(' | ')}` : ''));
 done();
