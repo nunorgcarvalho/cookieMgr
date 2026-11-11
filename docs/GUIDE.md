@@ -230,7 +230,10 @@ Delete), the kind of macro as cards — **Repeat**, **When…**, **Once**, **Gro
 then what it does: numbered step cards (an action each, with its options; ▲ ▼ × to move or remove), a "When…"
 macro's conditions, a group's members, or an algorithm's code. Beside it, always, the **library**: every action,
 condition, value and keyword, searchable — click one to insert it (into the code where the cursor is, or as a new
-step), ★ to pin it at the top. Its **Lookup** tab lists the names that go inside the parentheses — spells, effects,
+step), ★ to pin it at the top (the row stays where it is, its copy goes under Pinned). A call that takes one of a
+fixed list (`spell.cast(spell)`, `building(name)`, `season.keep(season)`…) shows how many under its row ("▸ 9
+spells"): click it for every value with what it is, and click a value to insert the call with it; searching a value
+("hand of fate") finds the calls that take it. Its **Lookup** tab lists the names that go inside the parentheses — spells, effects,
 macros, seasons, buildings, soils… — each with where it's used; click one to write it where the cursor is.
 
 **Code is colored by where each word comes from** — in every editor, the library beside it and the Statistics page:
