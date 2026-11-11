@@ -997,6 +997,7 @@ CA.UI.CodeEditor = (() => {
     defineOpen('profile.dragon', prof('dragon', (id) => `[data-dragon-prof="${q(id)}"]`));
     defineOpen('profile.pantheon', prof('pantheon', (id) => `[data-pp-row="${q(id)}"]`));
     defineOpen('profile.grimoire', prof('wizard', (id) => `.ca-ct-prof[data-id="${q(id)}"]`));
+    defineOpen('profile.stocks', prof('stocks', () => '[data-st-card]'));
     defineOpen('spell', () => ({ label: 'Open the Grimoire page', page: 'wizard' }));
     defineOpen('spirit', () => ({ label: 'Open the Pantheon page', page: 'pantheon' }));
     defineOpen('aura', () => ({ label: 'Open the Dragon page', page: 'dragon' }));

@@ -115,11 +115,14 @@ CA.Macros = (() => {
     {
       id: 'stockTrader',
       name: 'Stock market autobuyer',
-      desc: 'Once a second: hires the stockbrokers it can afford (each makes buying cheaper), buys the max it can afford of fast-rising stocks, then slow-rising ones, and sells anything it holds that isn’t rising.',
+      desc: 'Once a second: hires the stockbrokers it can afford (each makes buying cheaper), then buys and sells as its trader profile says (Stock market page): Trends and prices, Ride the trends, or one of yours.',
       icon: sprite(9, 33),
       mode: 'flow',
       every: 1000,
       defaultSource: () => CA.StockTrader.SOURCE,
+      // its code is the trader profile in use (features/stockTrader.js), edited on the Stock market page
+      sourceFrom: () => CA.StockTrader.sourceOf(),
+      editAt: 'stocks',
       inputs: [
         { key: 'buy', label: 'Buy rising stocks', type: 'bool', default: true },
         { key: 'brokers', label: 'Hire stockbrokers when affordable', type: 'bool', default: true },
