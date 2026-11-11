@@ -364,6 +364,9 @@ CA.UI.Menu = (() => {
   });
 
   let mounted = null; // the page whose mount() ran for the current render
+  // the page last drawn while the panel stayed open: only a different one fades in — redrawing the
+  // same page (a click that changes something on it) swaps it in place, no blink to black
+  let shown = null;
 
   function unmountPage() {
     if (mounted) mounted.unmount();
@@ -375,7 +378,7 @@ CA.UI.Menu = (() => {
     return (
       '<div class="close menuClose" data-ca="close">x</div>' +
       '<div id="CookieMgrMenu">' +
-      `<div class="ca-page" data-page="${page.id}">${page.html()}</div>` +
+      `<div class="ca-page${shown === page.id ? '' : ' ca-page-in'}" data-page="${page.id}">${page.html()}</div>` +
       '</div>'
     );
   }
@@ -388,6 +391,7 @@ CA.UI.Menu = (() => {
     const page = CA.UI.Pages.get(currentTab());
     page.mount(menu.querySelector('.ca-page'));
     mounted = page;
+    shown = page.id;
     sync();
   }
 
@@ -582,6 +586,7 @@ CA.UI.Menu = (() => {
       if (!isOpen()) {
         CA.Hotkeys.cancelCapture();
         unmountPage();
+        shown = null; // opened again: the page fades in
       }
       CA.UI.Tab.update();
       return result;

@@ -363,10 +363,10 @@ CA.UI.MacrosPage = (() => {
     if (key !== 'macro' || !draft) return true;
     if (draft.mode === 'flow') return false; // into the code
     if (it.kind === 'action' && draft.mode !== 'group') {
-      draft.steps.push({ action: it.id, params: {} });
+      draft.steps.push({ action: it.id, params: { ...(it.params || {}) } }); // a possible value picked under its row fills its param
       renderEditor();
     } else if (it.kind === 'condition' && draft.mode === 'when') {
-      draft.when.all.push({ cond: it.id, params: {}, not: false });
+      draft.when.all.push({ cond: it.id, params: { ...(it.params || {}) }, not: false });
       renderEditor();
     } else CA.Util.notify('Library', 'That one is for algorithmic macros — switch the kind to Algorithmic to write with it.', CA.ICON, 3);
     return true;
