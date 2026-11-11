@@ -196,7 +196,7 @@ CA.UI.ManagersPage = (() => {
     const onChips = on.map((mc) => (s.macros[mc.id] === 'on' ? chip(m, i, mc, i ? 'on new' : 'on', i ? 'new' : '', i ? 'Undo: not switched on here' : 'Don’t switch it on') : chip(m, i, mc, 'on', '', 'Switch it off from this stage on'))).join('');
     const offChips = offHere.map((mc) => chip(m, i, mc, 'off', '', i ? 'Undo: not switched off here' : 'Don’t switch it off')).join('');
     return (
-      `<div class="ca-mgr-sec"><div class="ca-mgr-sechead">${I('bolt', 11)} At work <span class="ca-hint">${on.length} macro${on.length === 1 ? '' : 's'} · click one in the library to add it</span></div>` +
+      `<div class="ca-mgr-sec"><div class="ca-mgr-sechead">${I('bolt', 11)} At work</div>` +
       `<div class="ca-mgr-chips">${onChips || '<span class="ca-hint">None yet — pick from the library.</span>'}</div>` +
       (offChips ? `<div class="ca-mgr-sechead small">${i ? 'Switched off here' : 'Kept off'}</div><div class="ca-mgr-chips">${offChips}</div>` : '') +
       (stillOff.length ? `<div class="ca-mgr-still">Still off: ${stillOff.map((mc) => `<button type="button" class="ca-mgr-link" data-mgr-act="flip" data-id="${esc(m.id)}" data-i="${i}" data-macro="${esc(mc.id)}" data-tip="Switch it on from here">${esc(mc.name)}</button>`).join(' · ')}</div>` : '') +
@@ -407,8 +407,8 @@ CA.UI.ManagersPage = (() => {
       .join('');
     const add = s.watch.length < 8 ? C().button(`${I('plus', 12)} Watch a value`, `data-mgr-act="addWatch" data-id="${esc(m.id)}" data-i="${i}"`, 'ca-btn-small') : '';
     return (
-      `<details class="ca-mgr-watchbox" data-mgr-watchbox${watchOpen ? ' open' : ''}><summary>${I('widget', 11)} Widget watches <span class="ca-hint">${s.watch.length} · what the Manager widget shows during this stage</span></summary>` +
-      `<div class="ca-mgr-watches">${rows}<div class="ca-mgr-watchfoot">${add}<span class="ca-mgr-watchstar">${C().widgetStar(CA.UI.ManagerWidget.PRESET, 'Manager')} <span class="ca-hint">the Manager widget on the left panel</span></span></div></div></details>`
+      `<details class="ca-mgr-watchbox" data-mgr-watchbox${watchOpen ? ' open' : ''}><summary>${I('widget', 11)} Widget watches <span class="ca-hint">${s.watch.length}</span></summary>` +
+      `<div class="ca-mgr-watches">${rows}<div class="ca-mgr-watchfoot">${add}<span class="ca-mgr-watchstar">${C().widgetStar(CA.UI.ManagerWidget.PRESET, 'Manager')}</span></div></div></details>`
     );
   }
 
@@ -419,7 +419,6 @@ CA.UI.ManagersPage = (() => {
     return (
       '<div class="ca-mgr-panelhead">' +
       `<b class="ca-mgr-num">${i + 1}</b><input type="text" class="ca-gname" maxlength="40" value="${esc(s.name)}" data-mgr-stage-name="${id}" data-i="${i}" aria-label="Stage name">` +
-      `<span class="ca-hint">${i ? `starts from what stage ${i} leaves; here it changes what’s marked` : 'sets things up'}</span>` +
       '<span class="ca-dprof-acts">' +
       C().button('◀', `data-mgr-act="up" data-id="${id}" data-i="${i}" data-tip="Move it earlier"${i ? '' : ' disabled'}`, 'ca-btn-small') +
       C().button('▶', `data-mgr-act="down" data-id="${id}" data-i="${i}" data-tip="Move it later"${last ? ' disabled' : ''}`, 'ca-btn-small') +
@@ -448,7 +447,7 @@ CA.UI.ManagersPage = (() => {
       : `<div class="ca-mgr-ed"><div class="ca-mgr-panel">${panelHtml(m, i)}</div>${libraryHtml(m, i)}</div>`;
     return (
       '<div class="ca-card ca-mgr-edcard" data-mgr-stages>' +
-      C().cardHead(`Stages · ${esc(m.name)}`, 'sortList', `<div class="ca-card-meta"><span class="ca-hint">${mine ? 'its code is yours' : 'stage 1 sets things up; each stage after it changes things, the rest carries over'}</span>${C().widgetStar(CA.UI.ManagerWidget.PRESET, 'Manager')}</div>`) +
+      C().cardHead(`Stages · ${esc(m.name)}`, 'sortList', `<div class="ca-card-meta">${mine ? '' : '<span class="ca-hint">stage 1 sets things up; each after it changes things, the rest carries over</span>'}${C().widgetStar(CA.UI.ManagerWidget.PRESET, 'Manager')}</div>`) +
       tabsHtml(m, i) +
       body +
       '</div>'
@@ -477,10 +476,10 @@ CA.UI.ManagersPage = (() => {
     return (
       `<div class="ca-card ca-editor2" data-edits="${G().MACRO}" data-mgr-code>` +
       C().cardHead(`Code · ${esc(m.name)}`, 'edit', head) +
-      `<div class="ca-hint ca-mgr-codehint">What the Manager macro runs each second. ${mine ? 'You wrote it: the stage editor is off until you go back to the stages.' : 'The stage editor writes it; change it and Save to make it yours.'}</div>` +
+      `<div class="ca-hint ca-mgr-codehint">What the Manager macro runs each second. ${mine ? 'The stage editor is off until you go back to the stages.' : 'Change it and Save to make it yours.'}</div>` +
       (codeError ? `<div class="ca-editor-error">${esc(codeError)}</div>` : '') +
       '<div class="ca-ed-layout"><div class="ca-editor-body">' +
-      CA.UI.CodeEditor.html('manager', src, { title: `${m.name}, as code`, hint: 'a block per stage · manager.arriving(N): stage N’s first pass · manager.profile(kind, id) · manager.next()' }) +
+      CA.UI.CodeEditor.html('manager', src, { title: 'Code', hint: 'a block per stage · manager.arriving(N): stage N’s first pass · manager.profile(kind, id) · manager.next()' }) +
       '</div>' +
       CA.UI.CodeEditor.libraryHtml('manager', { first: ['Managers', 'Macros', 'Values'] }) +
       '</div></div>'

@@ -181,13 +181,13 @@ CA.UI.GardenPage = (() => {
   const L = () => CA.GardenLayers;
   const CE = () => CA.UI.CodeEditor;
   const CK = () => CA.UI.CodeKnobs;
-  const RULES_HINT = 'run from the top every second while the Auto-gardener is on · Tab indents · click the library to insert';
-  const SOIL_HINT = 'run when the gardener calls garden.soilRule() · Tab indents · click the library to insert';
+  const RULES_HINT = 'runs from the top every second';
+  const SOIL_HINT = 'runs when the gardener calls garden.soilRule()';
   const SLOTS = [
-    { layer: 'gardener', label: 'Gardener', icon: 'bolt', what: 'what it does' },
-    { layer: 'soil', label: 'Soil rule', icon: 'drop', what: 'the soil it keeps' },
-    { layer: 'template', label: 'Template', icon: 'widget', what: 'where seeds go' },
-    { layer: 'seeds', label: 'Seeds', icon: 'leaf', what: 'which seed is which letter' },
+    { layer: 'gardener', label: 'Gardener', icon: 'bolt' },
+    { layer: 'soil', label: 'Soil rule', icon: 'drop' },
+    { layer: 'template', label: 'Template', icon: 'widget' },
+    { layer: 'seeds', label: 'Seeds', icon: 'leaf' },
   ];
   const LETTER_COLORS = ['#e8c547', '#6fb7ff', '#ff7a7a', '#8be07a', '#c792ff', '#ffa14f', '#4fd6c7', '#ff8fd0'];
   const letterColor = (l) => LETTER_COLORS[(l.charCodeAt(0) - 65) % LETTER_COLORS.length];
@@ -258,7 +258,7 @@ CA.UI.GardenPage = (() => {
     const badge = it.live ? '<span class="ca-pill">live</span>' : it.edited ? '<span class="ca-badge ca-badge-edited">edited</span>' : it.builtin ? '' : '<span class="ca-pill">yours</span>';
     return (
       `<button type="button" class="ca-gslot${slot === s.layer ? ' on' : ''}" data-gp-slot="${s.layer}">` +
-      `<span class="ca-gslot-k">${I(s.icon, 12)} ${esc(s.label)} <em>${esc(s.what)}</em></span>` +
+      `<span class="ca-gslot-k">${I(s.icon, 12)} ${esc(s.label)}</span>` +
       `<b class="ca-gslot-name">${esc(it.name)} ${badge}</b>` +
       `<span class="ca-gslot-sum">${sum}</span>` +
       '</button>'
@@ -281,7 +281,7 @@ CA.UI.GardenPage = (() => {
       (p.builtin ? '' : C().trash('data-gp-pact="delete"', 'Delete this profile?', 'Delete this profile')) +
       '</span>' +
       (p.builtin ? '' : `<input type="text" class="ca-gname" maxlength="40" value="${esc(p.name)}" data-gp-iname="profile">`) +
-      `<div class="ca-hint ca-gprof-desc">${esc(p.desc || 'Yours: a gardener, a soil rule, a template and seeds.')}${changed ? ' — the slots below differ from it: Save puts them in it.' : ''}</div>` +
+      `<div class="ca-hint ca-gprof-desc">${esc(p.desc || 'Yours: a gardener, a soil rule, a template and seeds.')}</div>` +
       '</div>'
     );
   }
@@ -313,7 +313,7 @@ CA.UI.GardenPage = (() => {
     return (
       '<div class="ca-ed-layout"><div class="ca-editor-body">' +
       CK().html('garden', d.rules, d.knobs, { open: knobOpen }) +
-      CE().html('garden', d.rules, { title: layer === 'soil' ? 'The soil rule' : 'What the auto-gardener does', hint: layer === 'soil' ? SOIL_HINT : RULES_HINT }) +
+      CE().html('garden', d.rules, { title: 'Code', hint: layer === 'soil' ? SOIL_HINT : RULES_HINT }) +
       '</div>' +
       CE().libraryHtml('garden', { first: ['Garden', 'Values'] }) +
       '</div>'
@@ -343,7 +343,7 @@ CA.UI.GardenPage = (() => {
       }
     return (
       (it.live
-        ? '<div class="ca-hint">What’s planted now, as letters (A is the first seed, left to right, top to bottom). <b>Save as new</b> keeps it as a template of yours.</div>'
+        ? '<div class="ca-hint">What’s planted now. <b>Save as new</b> keeps it as a template of yours.</div>'
         : '<div class="ca-gbrushes">' +
           '<span class="ca-hint">Paint:</span>' +
           brushes.map((l) => `<button type="button" class="ca-gbrush${brush === l ? ' on' : ''}" data-gp-brush="${l}">${chip(l)}${l === next ? ' new' : ''}</button>`).join('') +
@@ -352,7 +352,7 @@ CA.UI.GardenPage = (() => {
           C().button('Fill', 'data-gp-tact="fill"', 'ca-btn-small') +
           '</div>') +
       `<div class="ca-gtemplate">${cells}</div>` +
-      `<div class="ca-hint">${d.abs ? 'Placed as it is on the plot.' : 'Laid on your plot from its top-left unlocked tile; dimmed cells are off your plot (a bigger garden uses them).'} ${used.length ? `${used.length} letter${used.length === 1 ? '' : 's'}: ${used.map((l) => `${l} = ${esc(seedName(seeds[l]))}`).join(', ')} (the Seeds slot)` : ''}</div>`
+      (d.abs ? '' : '<div class="ca-hint">Laid on your plot from its top-left unlocked tile; dimmed cells are off your plot.</div>')
     );
   }
 
@@ -412,7 +412,7 @@ CA.UI.GardenPage = (() => {
       shown.map(opt).join('') +
       '</div>' +
       '</div>' +
-      (it.live ? '<div class="ca-hint">The seeds of the Current garden, live. Picking a seed here makes a seed set of yours with it.</div>' : '')
+      (it.live ? '<div class="ca-hint">Picking a seed makes a seed set of yours with it.</div>' : '')
     );
   }
 
@@ -432,7 +432,7 @@ CA.UI.GardenPage = (() => {
   function gardenerCard() {
     return (
       `<div class="ca-card ca-editor2 ca-gardener" data-gp-rules data-edits="${G().GARDENER}">` +
-      C().cardHead('Auto-gardener', 'bolt', `<div class="ca-card-meta"><span class="ca-hint">also on the ${C().link('Macros', 'clickers')} page · ★ for a button on the left panel</span></div>`) +
+      C().cardHead('Auto-gardener', 'bolt', `<div class="ca-card-meta"><span class="ca-hint">also on the ${C().link('Macros', 'clickers')} page</span></div>`) +
       `<div class="ca-list">${CA.UI.MacrosPage.row(CA.Macros.get(G().GARDENER))}</div>` +
       profileBar() +
       `<div class="ca-gslots" data-gp-slots>${SLOTS.map(slotHtml).join('')}</div>` +
@@ -1005,7 +1005,6 @@ CA.UI.GardenPage = (() => {
       widgetName: 'Garden effects',
       widgetGroup: 'Garden',
       icon: 'sparkle',
-      note: 'What your plants do, as the game’s Garden information adds it up (soil, growth stage and tile boosts included).',
       height: 190,
       windows: [3600, 6 * 3600, 86400, 3 * 86400, 0],
       window: 6 * 3600,
@@ -1040,7 +1039,7 @@ CA.UI.GardenPage = (() => {
           .sort((a, b) => Math.abs(e[b.k]) - Math.abs(e[a.k]))
           .slice(0, 3);
         if (!top.length) return tile('Effects now', 'none', M.freeze ? 'the garden is frozen' : 'nothing planted gives any');
-        return top.map((ef) => tile(ef.n, pctFmt(e[ef.k] * 100), 'now')).join('');
+        return top.map((ef) => tile(ef.n, pctFmt(e[ef.k] * 100))).join('');
       },
     });
   }

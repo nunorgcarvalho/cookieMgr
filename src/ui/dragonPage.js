@@ -40,7 +40,7 @@ CA.UI.DragonPage = (() => {
       `<div class="ca-slot-gem">Aura ${i + 1}</div>` +
       (a
         ? `${sprite(a.pic, 'big')}<div class="ca-slot-name">${esc(a.dname || a.name)}</div><div class="ca-god-desc">${a.desc || ''}</div>`
-        : `<span class="ca-god-ico big empty"></span><div class="ca-slot-name">${open ? 'No aura' : 'Locked'}</div><div class="ca-slot-title">${open ? 'click to pick one' : `opens at dragon level ${i ? D().LAST : 5}`}</div>`) +
+        : `<span class="ca-god-ico big empty"></span><div class="ca-slot-name">${open ? 'No aura' : 'Locked'}</div>${open ? '' : `<div class="ca-slot-title">opens at dragon level ${i ? D().LAST : 5}</div>`}`) +
       '</div>'
     );
   }
@@ -127,7 +127,7 @@ CA.UI.DragonPage = (() => {
     const cur = (p.auras || [])[i] || '';
     const other = (p.auras || [])[1 - i] || '';
     return pickerHtml(
-      `${esc(p.name)} · aura ${i + 1}${i ? ' <span class="ca-hint">(used once the dragon has two slots, at level 27)</span>' : ''}`,
+      `${esc(p.name)} · aura ${i + 1}${i ? ` <span class="ca-hint">(from dragon level ${D().LAST})</span>` : ''}`,
       [tile(null, { selected: !cur })].concat(
         D()
           .auras()
@@ -166,7 +166,7 @@ CA.UI.DragonPage = (() => {
     const list = D().list();
     return (
       '<div class="ca-card ca-gardener">' +
-      C().cardHead('Aura profiles', 'save', '<div class="ca-card-meta"><span class="ca-hint">with one slot, a profile puts in its first trained aura · each switch costs one of your highest buildings</span></div>') +
+      C().cardHead('Aura profiles', 'save', '<div class="ca-card-meta"><span class="ca-hint">with one slot, its first trained aura goes in</span></div>') +
       (list.length ? `<div class="ca-list">${list.map(profileRow).join('')}</div>` : '<div class="ca-card-note">No profiles — make one below.</div>') +
       '<div class="ca-dprof-foot">' +
       C().button(`${I('plus', 12)} New profile`, 'data-dragon-act="new"', 'ca-btn-small') +

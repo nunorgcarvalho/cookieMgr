@@ -36,7 +36,7 @@ assert(row(), 'a row of its own');
 assert(row().previousElementSibling && row().previousElementSibling.classList.contains('ca-mw-p-stages'), 'right under the stages');
 const next = () => row().querySelector('.ca-wbuy-next');
 const f = B.next();
-assert(f && next() && /Next for the Auto buyer/.test(next().innerHTML), `what it buys next (${f && f.label})`);
+assert(f && next() && /Next · /.test(next().innerHTML), `what it buys next (${f && f.label})`);
 const text = row().querySelector('.ca-wbuy-text').textContent;
 assert(text.includes(f.label) && /PP/.test(text) && /in /.test(text) && row().querySelector('.ca-wbuy-bar'), `beside it: name, price, PP, when, a bar (${text})`);
 const card = next().querySelector('.ca-wpop').textContent;

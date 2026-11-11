@@ -181,7 +181,7 @@ CA.UI.TooltipsPage = (() => {
       `<div class="ca-list">${SI().profiles().map(profileRow).join('')}</div>` +
       '<div class="ca-dprof-foot">' +
       C().button(`${I('plus', 12)} Save as a new layout`, 'data-tp-act="new" data-tip="A copy of the lines in use, under a name of its own — then change it"', 'ca-btn-small') +
-      '<span class="ca-hint">The lines below are the layout in use’s: a change is saved to it. Macros: tooltips.profile(name).</span>' +
+      '<span class="ca-hint">A change below saves to the layout in use · macros: tooltips.profile(name)</span>' +
       '</div>'
     );
   }
@@ -252,11 +252,7 @@ CA.UI.TooltipsPage = (() => {
     const S = CA.Settings;
     return (
       '<div class="ca-card">' +
-      C().cardHead(
-        'In the store tooltip',
-        'search',
-        '<div class="ca-card-meta"><span class="ca-hint">the lines cookieMgr adds under the store’s tooltips, in order — drag a row, or hover it for what it shows</span></div>'
-      ) +
+      C().cardHead('In the store tooltip', 'search') +
       `<div class="ca-ttprofs" data-tp-list>${profilesHtml()}</div>` +
       '<div class="ca-tl">' +
       `<div data-tl-lines>${linesHtml()}</div>` +
@@ -475,8 +471,8 @@ CA.UI.TooltipsPage = (() => {
       '</div>' +
       `<div class="ca-card-note">${
         tab === 'stats'
-          ? 'Values are for the previewed building (an upgrade’s: the best upgrade). ☆ puts one on the left panel as a widget.'
-          : 'Every word a statistic can read, as the code editor lists them; its value now for the previewed building.'
+          ? 'Values are for the previewed building (an upgrade’s: the best upgrade).'
+          : 'Values now are for the previewed building.'
       }</div>` +
       CA.UI.CodeEditor.legendHtml() +
       `<div data-st-body>${tab === 'stats' ? catalogHtml() : valuesHtml()}</div>` +
@@ -488,7 +484,7 @@ CA.UI.TooltipsPage = (() => {
 
   /** Where the tooltip's layout is now: a note under the catalog. */
   const layoutNote = () =>
-    `<div class="ca-card-note">Which statistics show under the store’s tooltips, and the warnings, are set on ${C().link('the Settings page', 'settings:store')} (Store &amp; tooltips tab).</div>`;
+    `<div class="ca-card-note">The store tooltip’s lines and warnings are set on ${C().link('Settings', 'settings:store')}.</div>`;
   const html = () => browseCard() + layoutNote();
   /** Opens the page on a shelf: 'modes' (or 'Payback modes'), 'warnings', a group… */
   function showGroup(g) {

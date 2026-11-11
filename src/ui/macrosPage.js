@@ -379,7 +379,7 @@ CA.UI.MacrosPage = (() => {
   function asCodeHtml(d) {
     return (
       `<details class="ca-ed-sec ca-ed-ascode"${asCodeOpen ? ' open' : ''} data-ascode>` +
-      `<summary class="ca-ed-sec-head">${I('edit', 12)} As code <span class="ca-hint">what it runs — every macro is algorithmic code underneath; these settings are a shortcut for it</span></summary>` +
+      `<summary class="ca-ed-sec-head">${I('edit', 12)} As code</summary>` +
       `<pre class="ca-code-hl ca-ascode-pre" data-ascode-pre>${CE().view(M().codeFor(d)).hl}</pre>` +
       `<button type="button" class="ca-btn ca-btn-small" data-edit-act="to-code">${I('edit', 12)} Carry on as code</button>` +
       '</details>'
@@ -402,7 +402,7 @@ CA.UI.MacrosPage = (() => {
       '<div class="ca-ed-names">' +
       `<input type="text" class="ca-ed-name" maxlength="60" data-edit="name" value="${esc(d.name)}" placeholder="${d.id ? 'Name' : 'Name your macro…'}">` +
       `<input type="text" class="ca-ed-desc" maxlength="300" data-edit="desc" value="${esc(d.desc)}" placeholder="What it does (optional)">` +
-      (d.builtinEdit ? '<span class="ca-ed-fixed-sub">a built-in — change anything; “Revert to default” brings back the original</span>' : '') +
+      (d.builtinEdit ? '<span class="ca-ed-fixed-sub">a built-in</span>' : '') +
       '</div>' +
       '<div class="ca-ed-actions">' +
       C().button(`${I('save', 13)} Save`, 'data-edit-act="save"', 'ca-btn-on') +
@@ -438,7 +438,7 @@ CA.UI.MacrosPage = (() => {
         .list()
         .filter((m) => m.mode !== 'once' && m.mode !== 'group' && m.id !== d.id);
       h +=
-        `<div class="ca-ed-sec"><div class="ca-ed-sec-head">${I('widget', 12)} Members <span class="ca-hint">switching the group switches all of these together</span></div><div class="ca-members">` +
+        `<div class="ca-ed-sec"><div class="ca-ed-sec-head">${I('widget', 12)} Members</div><div class="ca-members">` +
         choices
           .map(
             (m) =>
@@ -451,7 +451,7 @@ CA.UI.MacrosPage = (() => {
       h += codeHtml(d);
     } else {
       h +=
-        `<div class="ca-ed-sec"><div class="ca-ed-sec-head">${I('bolt', 12)} Steps <span class="ca-hint">run in order, every time it ${d.mode === 'once' ? 'runs' : 'fires'}</span></div><div class="ca-ed-steps">` +
+        `<div class="ca-ed-sec"><div class="ca-ed-sec-head">${I('bolt', 12)} Steps</div><div class="ca-ed-steps">` +
         d.steps.map((s, i) => `<div class="ca-ed-step"><span class="ca-step-n">${i + 1}</span><div class="ca-ed-step-body">${stepBody(s, `steps.${i}`)}</div>${tools('step', 'steps', i, d.steps.length)}</div>`).join('') +
         `<button type="button" class="ca-btn ca-btn-small ca-ed-add" data-edit-act="step-add" data-path="steps">${I('plus', 12)} Add step</button></div></div>` +
         asCodeHtml(d);
@@ -720,7 +720,7 @@ CA.UI.MacrosPage = (() => {
       C().cardHead('Your macros', 'edit', `<div class="ca-card-meta">${C().button(`${I('plus', 12)} New macro`, 'data-ca="macro-new"', 'ca-btn-small')}</div>`) +
       (mine.length
         ? `<div class="ca-list">${mine.map(row).join('')}</div>`
-        : '<div class="ca-card-note">Chain actions into your own macros: pop everything at once, sell stocks when a value crosses a line, switch other macros on when an effect starts… Built-in macros can be duplicated as a starting point.</div>') +
+        : '<div class="ca-card-note">None yet. Make one, or duplicate a built-in as a starting point.</div>') +
       '</div>';
     h += CA.UI.Menu.optionsCard('Options', 'settings', 'macros');
     return h;

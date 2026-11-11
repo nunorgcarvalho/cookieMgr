@@ -47,7 +47,7 @@ CA.UI.BuyerRow = (() => {
   const count = (x) => (x.kind === 'building' && x.n > 1 ? `<em>${x.n}</em>` : '');
   const row = (k, v, cls = '') => `<span class="ca-wpop-row${cls}"><span class="ca-wpop-name">${k}</span><span class="ca-wpop-val">${v}</span></span>`;
   const head = (x, sub) => `<span class="ca-wpop-head">${picture(x)}<b>${esc(nameOf(x))}</b></span><span class="ca-wpop-sub">${esc(sub)}</span>`;
-  const pop = (inner) => `<span class="ca-wpop ca-wt">${inner}<span class="ca-wpop-foot">click to open the Payback page</span></span>`;
+  const pop = (inner) => `<span class="ca-wpop ca-wt">${inner}</span>`;
   /** The upgrades Buy all upgrades covers, by name: the first few, wrapping in the card, then how many more. */
   const COVERS = 4;
   function covers(x) {
@@ -78,7 +78,7 @@ CA.UI.BuyerRow = (() => {
       (f ? row('then', `${esc(nameOf(f))} <i>(${F().short(f.price)} · score ${scoreText(f)})</i>`) : '');
     return (
       `<span class="ca-wbuy-item ca-wbuy-next saving" data-pop aria-label="${esc(title)}">${bankPicture(w)}` +
-      `<span class="ca-wpop ca-wt"><span class="ca-wpop-head">${bankPicture(w)}<b>${esc(title)}</b></span><span class="ca-wpop-sub">${esc(`The Auto buyer keeps this before buying more · ${p.name} profile`)}</span>${rows}<span class="ca-wpop-foot">click to open the Payback page</span></span>` +
+      `<span class="ca-wpop ca-wt"><span class="ca-wpop-head">${bankPicture(w)}<b>${esc(title)}</b></span><span class="ca-wpop-sub">${esc(`Kept before buying more · ${p.name} profile`)}</span>${rows}</span>` +
       '</span>' +
       `<span class="ca-wbuy-text"><b data-tip="${esc(title)}">${esc(title)}</b>` +
       `<span>${F().short(w.price)} · ${w.at === 'first' ? 'kept first' : `before scores under ${w.at}`}${f ? ` · then ${esc(nameOf(f))}` : ''}</span>` +
@@ -109,7 +109,7 @@ CA.UI.BuyerRow = (() => {
       covers(f);
     return (
       `<span class="ca-wbuy-item ca-wbuy-next${pct >= 1 ? ' can' : ''}" data-pop aria-label="${esc(`Next: ${nameOf(f)}`)}">${picture(f)}${count(f)}` +
-      pop(head(f, `Next for the Auto buyer · ${p.name} profile`) + rows) +
+      pop(head(f, `Next · ${p.name} profile`) + rows) +
       '</span>' +
       `<span class="ca-wbuy-text"><b data-tip="${esc(nameOf(f))}">${esc(nameOf(f))}</b>` +
       `<span>${F().short(f.price)} · PP ${esc(F().payback(f.pp))} · score ${scoreText(f)}</span>` +
