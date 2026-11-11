@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 4.37.1 — 2026-11-11
+
+- **Guide:** the code editor library section covers the "▸ N values" lists under a call and where a ★ pin goes.
+
 ## 4.37.0 — 2026-11-11
 
 - **Code editor library, possible values:** a call whose choice comes from a fixed list (`spell.cast(spell)`,
