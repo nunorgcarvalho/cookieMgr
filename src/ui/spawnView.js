@@ -304,9 +304,9 @@ CA.UI.SpawnView = (() => {
     const star = type === 'golden' ? CA.UI.C.widgetStar(CA.UI.TimelineWidget.FREQUENCY_PRESET, 'Golden cookies (how often they come)') : '';
     const freq =
       factors || star
-        ? `<div class="ca-sp-factors"><span>${type === 'golden' ? 'Golden cookie' : 'Reindeer'} frequency effects:</span>${factors || '<em class="ca-sp-none">none yet</em>'}${star}</div>${whatIfLine}`
+        ? `<div class="ca-sp-factors"><span>Frequency effects:</span>${factors || '<em class="ca-sp-none">none yet</em>'}${star}</div>${whatIfLine}`
         : '';
-    const wrath = type === 'golden' ? tile('Wrath chance', pc(d.wrathChance), 'that it’s a wrath cookie') : '';
+    const wrath = type === 'golden' ? tile('Wrath chance', pc(d.wrathChance)) : '';
     const freqTile =
       tile('Multiplier', `×${mx(d.frequency)}`, d.factors.length ? 'vs nothing helping' : 'nothing helping yet', type === 'golden' ? CA.StatInfo.desc('golden.frequency') : '') +
       tile('Frequency', when(d.next.mean), `between ${type === 'golden' ? 'golden cookies' : 'reindeer'}, on average`, type === 'golden' ? CA.StatInfo.desc('golden.interval') : '');

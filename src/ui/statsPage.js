@@ -84,7 +84,7 @@ CA.UI.StatsPage = (() => {
       tile('If you ascended now', `+${F().beautify(P.gain())}`, `levels (${F().beautify(P.total())} in all)`) +
       tile('Next level', when(P.secondsTo(P.total() + 1)), `${F().beautify(P.toNext())} cookies to bake`) +
       tile('Rate', ph >= 1 ? `${ph >= 10 ? F().beautify(ph) : ph.toFixed(1)}/h` : ph > 0 ? `1 every ${when(3600 / ph)}` : '—', ph >= 1 ? 'levels an hour at this rate' : 'a level, at this rate') +
-      tile('CpS they’d add', `+${F().beautify(P.cpsGain())}`, 'with the levels you’d gain') +
+      tile('CpS they’d add', `+${F().beautify(P.cpsGain())}`) +
       tile('Lucky upgrades', '', lucky, 'The total prestige level each heavenly upgrade needs (ending in 7, 777, 777777)')
     );
   }
@@ -106,8 +106,8 @@ CA.UI.StatsPage = (() => {
     const buffs = CA.Timers.buffs();
     return (
       (L ? tile('Sugar lump', L.ripeIn > 0 ? `ripe in ${when(L.ripeIn)}` : 'ripe', `${L.type}${L.matureIn > 0 ? ` · mature in ${when(L.matureIn)}` : ''}`) : '') +
-      (m !== null ? tile('Magic', m > 0 ? `full in ${when(m)}` : 'full', 'the Grimoire') : '') +
-      (a !== null ? tile('Autosave', when(a), 'the game saves itself') : '') +
+      (m !== null ? tile('Magic', m > 0 ? `full in ${when(m)}` : 'full') : '') +
+      (a !== null ? tile('Autosave', when(a)) : '') +
       buffs.map((b) => tile(esc(b.name), when(b.secs), [b.cps !== 1 ? `CpS ×${b.cps}` : '', b.click !== 1 ? `clicks ×${b.click}` : ''].filter(Boolean).join(' · ') || 'effect')).join('')
     );
   }
@@ -134,7 +134,7 @@ CA.UI.StatsPage = (() => {
             '</tr>'
         )
         .join('');
-      h += rows ? `<div class="ca-wi-head">Pantheon: the CpS a spirit would bring in each slot</div><table class="ca-wi-table"><thead><tr><th></th>${SLOTS.map((s) => `<th>${s}</th>`).join('')}</tr></thead><tbody>${rows}</tbody></table>` : '';
+      h += rows ? `<div class="ca-wi-head">Pantheon</div><table class="ca-wi-table"><thead><tr><th></th>${SLOTS.map((s) => `<th>${s}</th>`).join('')}</tr></thead><tbody>${rows}</tbody></table>` : '';
     }
     if (Game.dragonLevel >= 5 && Game.dragonAuras) {
       const cost = CA.WhatIf.auraCost();
@@ -145,7 +145,7 @@ CA.UI.StatsPage = (() => {
         .sort((x, y) => Math.max(y.v1, y.v2 || -Infinity) - Math.max(x.v1, x.v2 || -Infinity));
       if (auras.length)
         h +=
-          `<div class="ca-wi-head">Dragon auras: the CpS switching would bring${cost ? ` (it costs one ${esc(cost.dname || cost.name)})` : ''}</div><div class="ca-wi-auras">` +
+          `<div class="ca-wi-head">Dragon auras${cost ? ` <span class="ca-hint">switching costs one ${esc(cost.dname || cost.name)}</span>` : ''}</div><div class="ca-wi-auras">` +
           auras
             .map((x) => `<span class="ca-wi-aura ${cls(Math.max(x.v1, x.v2 || -Infinity))}" data-tip="${esc(`${x.a.name}: slot 1 ${F().signed(x.v1)}/s${x.v2 !== null ? ` · slot 2 ${F().signed(x.v2)}/s` : ''}`)}">${esc(x.a.name)} <b>${pct(Math.max(x.v1, x.v2 === null ? -Infinity : x.v2))}</b></span>`)
             .join('') +
@@ -210,7 +210,7 @@ CA.UI.StatsPage = (() => {
   }
   function allUpgradesHtml() {
     const u = CA.Collection.everything().upgrades;
-    return allGroup('Upgrades', u.regular, 'upgrade') + allGroup('Cookies', u.cookie, 'upgrade') + allGroup('Heavenly upgrades', u.prestige, 'upgrade', 'bought with heavenly chips, kept through ascensions');
+    return allGroup('Upgrades', u.regular, 'upgrade') + allGroup('Cookies', u.cookie, 'upgrade') + allGroup('Heavenly upgrades', u.prestige, 'upgrade', 'kept through ascensions');
   }
   function allAchievementsHtml() {
     const a = CA.Collection.everything().achievements;
@@ -267,11 +267,11 @@ CA.UI.StatsPage = (() => {
   // each Stats tab's cards (a tab without any draws none)
   const CARDS = {
     golden: () =>
-      card('Next golden cookie', 'sparkle', CA.UI.SpawnView.html('golden'), 'class="ca-sp" data-st-spawn', meta('exact, from the game’s own odds — hover the chart')) +
+      card('Next golden cookie', 'sparkle', CA.UI.SpawnView.html('golden'), 'class="ca-sp" data-st-spawn', meta('exact, from the game’s own odds')) +
       (Game.season === 'christmas' ? card('Next reindeer', 'sparkle', CA.UI.SpawnView.html('reindeer'), 'class="ca-sp" data-st-reindeer') : '') +
-      card('Bank', 'dollar', bankHtml(), 'class="ca-meters" data-st-bank', meta('what golden cookies and spells pay at their most — and the bank it takes')),
+      card('Bank', 'dollar', bankHtml(), 'class="ca-meters" data-st-bank', meta('the bank each needs to pay its most')),
     prestige: () => card('Prestige statistics', 'ascend', prestigeHtml(), 'class="ca-stats" data-st-prestige'),
-    whatif: () => card('What if', 'pantheon', whatIfHtml(), 'data-st-whatif', meta('measured on the game itself, then put back')),
+    whatif: () => card('What if', 'pantheon', whatIfHtml(), 'data-st-whatif'),
     misc: () =>
       card('Timers', 'clock', timersHtml(), 'class="ca-stats" data-st-timers') +
       card('Wrinklers', 'wrinkler', wrinklersHtml(), 'class="ca-stats" data-st-wrinklers') +
@@ -280,8 +280,8 @@ CA.UI.StatsPage = (() => {
       allSeen = allSig();
       return (
         `<div class="ca-card"><div class="ca-all-bar" data-st-all-bar>${allBarHtml()}</div></div>` +
-        card('Upgrades', 'upgrade', allUpgradesHtml(), 'class="ca-all" data-st-all-upgrades', meta('bought this ascension — hover one for its card')) +
-        card('Achievements', 'trophy', allAchievementsHtml(), 'class="ca-all" data-st-all-achievements', meta('won for good: they stay through ascensions'))
+        card('Upgrades', 'upgrade', allUpgradesHtml(), 'class="ca-all" data-st-all-upgrades', meta('bought this ascension')) +
+        card('Achievements', 'trophy', allAchievementsHtml(), 'class="ca-all" data-st-all-achievements', meta('kept through ascensions'))
       );
     },
   };

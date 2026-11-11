@@ -1221,7 +1221,7 @@ CA.UI.Plot = (() => {
     function effectsTip(x, hitIv) {
       const here = (layout.data.intervals || []).filter((iv) => x >= iv.x0 && x < iv.x1).sort((a, b) => a.x0 - b.x0);
       if (!here.length) return '';
-      let h = `<div class="ca-tip-sub">${here.length === 1 ? 'Effect' : `${here.length} effects`}</div>`;
+      let h = '';
       const total = {};
       let withMults = 0;
       here.forEach((iv) => {

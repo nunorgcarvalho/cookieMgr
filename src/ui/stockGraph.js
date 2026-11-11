@@ -125,7 +125,7 @@ CA.UI.StockPerf = (() => {
       title: 'Portfolio performance',
       icon: 'graphs',
       height: 150,
-      note: 'Return on the cookies you have invested, over a rolling window: above zero your holdings are gaining, below they are losing. A percentage of the money at stake, so it reads the same at any portfolio size.',
+      note: 'Return on the cookies you have invested over a rolling window, as a share of the money at stake.',
       windows: [900, 3600, 10800, 43200, 86400, 604800, 0],
       window: 3600,
       smooth: false, // already a rolling average

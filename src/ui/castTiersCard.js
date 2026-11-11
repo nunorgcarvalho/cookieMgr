@@ -121,7 +121,7 @@ CA.UI.CastTiers = (() => {
       `<span class="ca-ct-acts"><span data-ct-status>${statusHtml(p, i, d)}</span>` +
       C().trash(`data-ct-act="deltier" data-tier="${i}"`, 'Delete this tier?', 'Delete this tier') +
       '</span></div>' +
-      `<div class="ca-ct-combos">${chips || '<span class="ca-hint">No combos yet — add one, or drag one here.</span>'}` +
+      `<div class="ca-ct-combos">${chips || '<span class="ca-hint">No combos yet.</span>'}` +
       `<button type="button" class="ca-ct-add" data-ct-act="pick" data-tier="${i}">${I('plus', 11)} Add combo</button></div>` +
       (picking && picking.profile === p.id && picking.tier === i ? pickerHtml(p, i) : '') +
       '</div></div>'
@@ -178,7 +178,7 @@ CA.UI.CastTiers = (() => {
         .join('')}</div>` +
       '<div class="ca-ct-foot">' +
       C().button(`${I('plus', 12)} New tier`, 'data-ct-act="addtier"', 'ca-btn-small') +
-      '<span class="ca-hint">Drag a combo onto another tier to move it. A combo is on when at least its effects are (others can be on too); the lowest tier with one on decides.</span>' +
+      '<span class="ca-hint">Drag a combo onto another tier to move it. The lowest tier with a combo on decides.</span>' +
       '</div></div>'
     );
   }

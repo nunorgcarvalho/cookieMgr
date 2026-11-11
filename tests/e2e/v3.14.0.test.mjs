@@ -51,7 +51,7 @@ const ticks = [...svg().querySelectorAll('.ca-sp-ticks text')].map((t) => t.text
 assert(ticks[0] === '0' && ticks[ticks.length - 1] === CA.Format.span(900), `the axis: 0 → the latest (${ticks.join(', ')})`);
 assert(/Expected wait/.test(text()) && text().includes(CA.Format.span(d.wait.mean)) && /Odds so far/.test(text()) && /Wrath chance/.test(text()), 'the numbers: expected wait, odds so far, wrath chance');
 assert(!/Most likely/.test(text()) && !/soonest/.test(text()) && !/median/.test(text()) && !/This cycle/.test(text()) && !/Next cycle/.test(text()) && !card().querySelector('.ca-sp-legend'), 'no percentiles, within-chips, legend or cycle notes');
-assert(/Golden cookie frequency effects:/.test(text()) && !/Making them come sooner/.test(text()) && card().querySelector('[data-sp-without][data-name="Lucky day"]'), 'Golden cookie frequency effects, as chips');
+assert(/Frequency effects:/.test(text()) && !/Making them come sooner/.test(text()) && card().querySelector('[data-sp-without][data-name="Lucky day"]'), 'Golden cookie frequency effects, as chips');
 
 // ---- time passes: the line sweeps right, the odds so far climb
 const before = c.by;

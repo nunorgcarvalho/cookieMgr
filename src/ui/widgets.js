@@ -718,11 +718,11 @@ CA.UI.Widgets = (() => {
       const sc = Math.round(scaleOf(w) * 100);
       look += field('Size', presets('scale', [[75, 'S'], [100, 'M'], [150, 'L'], [200, 'XL']], sc) + range('scale', SCALE_MIN * 100, SCALE_MAX * 100, sc, 'percent'), 'or drag its corner');
       // a round widget shows no title; a name tells its copies apart here
-      if (w.type !== 'macro') look += field('Name', `<input type="text" maxlength="40" value="${esc(w.title || '')}" placeholder="${esc(w.title ? t.name : labelOf(w))}" data-w-opt="title" data-type="text">`, 'what this list calls it');
+      if (w.type !== 'macro') look += field('Name', `<input type="text" maxlength="40" value="${esc(w.title || '')}" placeholder="${esc(w.title ? t.name : labelOf(w))}" data-w-opt="title" data-type="text">`);
     }
     else {
       look += field('Title', `<input type="text" maxlength="40" value="${esc(w.title || '')}" placeholder="${esc(t.name)}" data-w-opt="title" data-type="text">`);
-      look += field('Background', presets('bg', BG, bgOf(w) * 100), 'see-through ones show it when you hover them; the text keeps a dark outline');
+      look += field('Background', presets('bg', BG, bgOf(w) * 100), 'see-through ones show it on hover');
     }
     const shows = showsHtml(w);
     // where it sits: snap to a corner, an edge or the middle of the left panel
@@ -733,12 +733,12 @@ CA.UI.Widgets = (() => {
         ...spots.map((y) =>
           spots.map((x) => `<button type="button" class="ca-wsnap-cell${at(w.x) === x && at(w.y) === y && Math.abs(w.x - x) < 0.02 && Math.abs(w.y - y) < 0.02 ? ' on' : ''}" data-w-snap="${x},${y}" data-tip="Move it here"><i></i></button>`)
         )
-      ).join('')}</div><span class="ca-wf-hint">snap it to a corner, an edge or the middle — or drag it anywhere</span>`;
+      ).join('')}</div><span class="ca-wf-hint">or drag it anywhere</span>`;
     return (
       `<div class="ca-card ca-weditor ca-wtheme-${esc(w.type)}" data-w-editor="${esc(w.id)}" data-wlink="${esc(w.id)}">` +
       '<div class="ca-weditor-head">' +
       `<span class="ca-weditor-ico">${I(t.icon, 20)}</span>` +
-      `<div class="ca-weditor-title"><b>${esc(labelOf(w))}</b><span>${esc(w.type === 'macro' ? 'Macro button' : t.name)} · glowing on the left panel</span></div>` +
+      `<div class="ca-weditor-title"><b>${esc(labelOf(w))}</b><span>${esc(w.type === 'macro' ? 'Macro button' : t.name)}</span></div>` +
       copiesHtml(w) +
       (w.type === 'macro' ? '' : C.button(`${I('copy', 11)} Duplicate`, `data-w-page-dup="${esc(w.id)}" data-tip="Another one with these settings, placed beside it"`, 'ca-btn-small')) +
       C.button(`${I('close', 11)} Remove`, `data-w-page-del="${esc(w.id)}"`, 'ca-btn-small ca-btn-off') +
@@ -1161,7 +1161,7 @@ CA.UI.Widgets = (() => {
       '<div class="ca-pprof-foot">' +
       C.button(`${I('plus', 12)} Save current layout`, `data-wp-act="new"${widgets.length ? '' : ' disabled'}`, 'ca-btn-small') +
       (undo ? C.button(`${I('refresh', 12)} Undo`, `data-wp-act="undo" data-tip="Back to the layout you had before “${esc(undo.name)}”"`, 'ca-btn-small') : '') +
-      '<span class="ca-hint">Use swaps the whole left panel for that layout — its macro buttons get their ★, the others lose it.</span>' +
+      '<span class="ca-hint">Use swaps the whole left panel for that layout.</span>' +
       '</div></div>'
     );
   }
@@ -1189,7 +1189,6 @@ CA.UI.Widgets = (() => {
   function tileHtml(o) {
     // o: { id, name, short, desc, round, ring, sprite, sheet, svg, placed, link, badge }
     const n = o.placed || 0;
-    const shape = o.round ? 'Round dial' : 'Framed panel';
     let act = 'Click to place it on the left panel';
     let pill = '+ Add';
     if (o.link) {
@@ -1214,7 +1213,7 @@ CA.UI.Widgets = (() => {
       `<div class="ca-wtile-name">${esc(o.name)}</div>` +
       (o.short ? `<div class="ca-wtile-sub">${esc(o.short)}</div>` : '') +
       more +
-      `<div class="ca-wpop ca-wtip"><div class="ca-wtip-head">${esc(o.name)}<span class="ca-wshape">${shape}</span></div>${o.descHtml || esc(o.desc || '')}<div class="ca-wtip-act">${act}</div></div>` +
+      `<div class="ca-wpop ca-wtip"><div class="ca-wtip-head">${esc(o.name)}</div>${o.descHtml || esc(o.desc || '')}<div class="ca-wtip-act">${act}</div></div>` +
       '</div>'
     );
   }
@@ -1255,7 +1254,7 @@ CA.UI.Widgets = (() => {
     else rows.push({ g: { id: 'macros', name: 'Macros', sprite: [12, 0] }, tiles: [macroTile] });
     return (
       '<div class="ca-card">' +
-      C.cardHead('Add a widget', 'plus', '<div class="ca-card-meta"><span class="ca-pill">Hover for details · click to place</span></div>') +
+      C.cardHead('Add a widget', 'plus') +
       '<div class="ca-wpick">' +
       rows
         .filter((r) => r.tiles.length)
@@ -1263,7 +1262,7 @@ CA.UI.Widgets = (() => {
         .join('') +
       '</div>' +
       '<div class="ca-wpick-foot"><span class="ca-wkey"><i class="round"></i> round dial</span><span class="ca-wkey"><i></i> framed panel</span>' +
-      '<span class="ca-wkey hint">Widgets sit on the left panel, around the big cookie. Drag them anywhere — framed ones by their title bar, the rest from anywhere — and resize them from their corner; hover one for × and ⚙.</span></div>' +
+      '<span class="ca-wkey hint">Drag a widget to move it, its corner to resize it; hover one for × and ⚙.</span></div>' +
       '</div>'
     );
   }
@@ -1281,7 +1280,7 @@ CA.UI.Widgets = (() => {
     if (widgets.length) {
       h +=
         '<div class="ca-card">' +
-        C.cardHead('Your widgets', 'widget', `<div class="ca-card-meta"><span class="ca-pill">${widgets.length} placed</span></div>`) +
+        C.cardHead('Your widgets', 'widget') +
         `<div class="ca-wplaced"><div class="ca-wmap-wrap" data-w-map>${mapHtml()}</div><div class="ca-wchips">${chipsHtml()}</div></div>` +
         '</div>';
     }

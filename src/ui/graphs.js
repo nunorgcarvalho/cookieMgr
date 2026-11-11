@@ -423,7 +423,7 @@ CA.UI.Graphs = (() => {
       id: 'actual',
       title: 'Bank flows',
       icon: 'bolt',
-      note: 'Everything that moved the bank each second, by category — spending too (for what you baked, the income payback periods count in, see the Actual income tab). Building CpS and clicking can show the extra that CpS effects add (✦ CpS-boosted) on top of their unboosted part. Losses show below the line.',
+      note: 'Everything that moved the bank each second, by category, spending included; losses show below the line. ✦ CpS-boosted: the extra CpS effects add to building CpS and clicking.',
       windows: WINDOWS,
       window: 900,
       smooth: 15,
@@ -502,7 +502,7 @@ CA.UI.Graphs = (() => {
       settingsOf: 'actual', // same window, log scale and choices as Bank flows
       title: 'Cookie bank',
       icon: 'dollar',
-      note: 'The same categories, added up from the start: how the bank got to where it is. With everything included it traces the real bank (dashed).',
+      note: 'The same categories, added up: how the bank got to where it is (dashed: the real bank).',
       windows: WINDOWS,
       window: 900,
       smooth: false,
@@ -587,7 +587,7 @@ CA.UI.Graphs = (() => {
       id: 'income',
       title: 'Actual income',
       icon: 'bolt',
-      note: 'What you really baked each second, by where it came from: buildings with every effect on, clicking, golden cookies and reindeer, and the rest (wrinklers, spells…). Payback periods by actual income count in its average over the window you pick above (the line).',
+      note: 'What you really baked each second, by source. The line: the average that payback periods by actual income count in.',
       windows: WINDOWS,
       window: 3600,
       smooth: 60,
@@ -724,7 +724,7 @@ CA.UI.Graphs = (() => {
       '<div class="ca-card" data-income-card>' +
       CA.UI.C.cardHead('Actual income for payback periods', 'dollar') +
       '<div class="ca-row ca-row-option"><div class="ca-row-text">' +
-      `<div class="ca-row-name">Averaged over</div><div class="ca-row-desc">Every actual income — the Actual income payback mode, the tooltips’ income lines, payback.actualIncome() — counts what you baked over this much of your latest play${
+      `<div class="ca-row-name">Averaged over</div><div class="ca-row-desc">What you baked over this much of your latest play${
         pb ? `: now <b data-income-now>${beautify(pb.actual)}/s</b>${Number.isFinite(ratio) ? `, ×${ratio.toFixed(2)} your raw CpS` : ''}` : ' (once a minute is recorded)'
       }. Also on the ${CA.UI.C.link('Payback', 'payback')} page.</div></div>` +
       `<span class="ca-pp-chips">${chips}</span></div>` +

@@ -138,7 +138,7 @@ CA.UI.Menu = (() => {
     }).join('');
     return (
       '<div class="ca-card">' +
-      cardHead('All options', 'filter', '<div class="ca-card-meta"><span class="ca-hint">each lives on its own page — click a title to go there</span></div>') +
+      cardHead('All options', 'filter') +
       `<div class="ca-index">${blocks}</div>` +
       '</div>'
     );

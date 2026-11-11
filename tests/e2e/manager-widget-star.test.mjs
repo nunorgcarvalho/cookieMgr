@@ -19,7 +19,7 @@ await sleep(50);
 const stagesStar = () => [...page().querySelectorAll('.ca-card')].find((c) => /Stages ·/.test(c.querySelector('.ca-card-title').textContent)).querySelector('.ca-card-head .ca-wstar');
 assert(stagesStar(), 'the Stages card has the ☆');
 const watchStar = () => page().querySelector('[data-mgr-watchbox] .ca-wstar');
-assert(watchStar() && /Manager widget/.test(page().querySelector('.ca-mgr-watchstar').textContent), 'so do the widget watches, said what it is');
+assert(watchStar() && /Manager.*widget/.test(watchStar().dataset.tip), 'so do the widget watches, its tip saying what it is');
 assert(!Wd.hasPreset(CA.UI.ManagerWidget.PRESET), 'not on the panel yet');
 click(watchStar());
 assert(Wd.hasPreset(CA.UI.ManagerWidget.PRESET), 'clicked: the Manager widget is on the left panel');

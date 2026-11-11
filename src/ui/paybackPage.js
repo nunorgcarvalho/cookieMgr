@@ -190,7 +190,7 @@ CA.UI.PaybackPage = (() => {
     const S = CA.Settings;
     return (
       '<div class="ca-card">' +
-      C().cardHead('Store tooltips', 'search', `<div class="ca-card-meta"><span class="ca-hint">which lines show under the tooltips: ${C().link('Settings', 'settings')} · what each is, and your own: ${C().link('the Statistics page', 'tooltips')}</span></div>`) +
+      C().cardHead('Store tooltips', 'search', `<div class="ca-card-meta"><span class="ca-hint">lines: ${C().link('Settings', 'settings')} · ${C().link('Statistics', 'tooltips')}</span></div>`) +
       '<div class="ca-list">' +
       `<div class="ca-row ca-row-option"><span class="ca-row-ico">${I('search', 16)}</span><div class="ca-row-text"><div class="ca-row-name">Payback in tooltips</div><div class="ca-row-desc">The block at all (off: the game’s tooltips as they are).</div></div>${C().toggle(!!S.get('storeTooltips'), 'data-pp-opt="storeTooltips"', 'Payback in tooltips')}</div>` +
       `<div class="ca-row ca-row-option"><span class="ca-row-ico">${I('bell', 16)}</span><div class="ca-row-text"><div class="ca-row-name">Bank warnings</div><div class="ca-row-desc">A colored “!” on items whose purchase would take your bank below what a Lucky!, Conjure or a Frenzy Lucky! needs.</div></div>${C().toggle(!!S.get('storeWarnings'), 'data-pp-opt="storeWarnings"', 'Bank warnings')}</div>` +
@@ -203,10 +203,10 @@ CA.UI.PaybackPage = (() => {
     return (
       CA.UI.AutoBuyerCard.html() +
       '<div class="ca-card">' +
-      C().cardHead('Buildings', 'building', `<div class="ca-card-meta"><span class="ca-hint">payback period, what it adds, price — click a cell to buy</span></div>`) +
+      C().cardHead('Buildings', 'building', `<div class="ca-card-meta"><span class="ca-hint">payback period · gain · price</span></div>`) +
       `<div data-pp-buildings>${buildingsHtml(t)}</div>${legendHtml()}</div>` +
       '<div class="ca-card">' +
-      C().cardHead('Upgrades', 'upgrade', `<div class="ca-card-meta"><span class="ca-hint">best first — click to buy</span><span data-pp-swchip>${switchChip(t)}</span></div>`) +
+      C().cardHead('Upgrades', 'upgrade', `<div class="ca-card-meta"><span data-pp-swchip>${switchChip(t)}</span></div>`) +
       `<div data-pp-upgrades>${upgradesHtml(t)}</div></div>` +
       optionsCard() +
       tooltipCard()

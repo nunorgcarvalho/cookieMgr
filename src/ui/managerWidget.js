@@ -184,7 +184,7 @@ CA.UI.ManagerWidget = (() => {
       (done.length
         ? done.map((r) => `<span class="ca-wpop-row">${I((CA.Actions.get(r.action) || {}).icon || 'bolt', 11)}<span class="ca-wpop-name">${esc(what(r))}</span><span class="ca-wpop-val">${ago(r.t)}</span></span>`).join('')
         : '<span class="ca-wpop-row"><span class="ca-wpop-name">nothing done yet</span></span>') +
-      '<span class="ca-wpop-foot">click to open the Macros page</span></span>'
+      '</span>'
     );
   }
 

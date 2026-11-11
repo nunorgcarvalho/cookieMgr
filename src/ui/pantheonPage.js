@@ -52,7 +52,7 @@ CA.UI.PantheonPage = (() => {
         `<div class="ca-slot-gem">${SLOTS[i]}</div>` +
         (g
           ? `${sprite(g, 'big')}<div class="ca-slot-name">${esc(name)}</div><div class="ca-slot-title">${esc(title)}</div><div class="ca-god-desc">${effect(g, i)}</div>`
-          : '<span class="ca-god-ico big empty"></span><div class="ca-slot-name">Empty</div><div class="ca-slot-title">drag a spirit here in the Temple</div>') +
+          : '<span class="ca-god-ico big empty"></span><div class="ca-slot-name">Empty</div>') +
         '</div>';
     });
     return h + '</div></div>';
@@ -105,7 +105,7 @@ CA.UI.PantheonPage = (() => {
       '<div class="ca-pprof-foot">' +
       C().button(`${I('plus', 12)} New profile`, 'data-pp-act="new"', 'ca-btn-small') +
       C().button(`${I('pantheon', 12)} From current`, 'data-pp-act="current"', 'ca-btn-small') +
-      '<span class="ca-hint">Use puts in what differs, diamond first, a worship swap each (emptying a slot is free); without swaps it waits — a macro calling it again finishes it as swaps come back.</span>' +
+      '<span class="ca-hint">Use swaps in what differs, a worship swap each; without swaps it waits.</span>' +
       '</div></div>'
     );
   }
@@ -132,7 +132,7 @@ CA.UI.PantheonPage = (() => {
   }
 
   function godsCard(M) {
-    let h = '<div class="ca-card">' + C().cardHead('All spirits', 'sparkle', '<div class="ca-card-meta"><span class="ca-hint">hover a spirit for what it does in each slot</span></div>') + '<div class="ca-gods">';
+    let h = '<div class="ca-card">' + C().cardHead('All spirits', 'sparkle') + '<div class="ca-gods">';
     M.godsById.forEach((g, id) => {
       const at = M.slot.indexOf(id);
       const [name] = nameParts(g);

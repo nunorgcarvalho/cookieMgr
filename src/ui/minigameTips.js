@@ -62,7 +62,7 @@ CA.UI.MinigameTips = (() => {
     if (!g) return '';
     const rows = g.gains.map((x) => [`${x.name}${x.here ? ' <small>(here now)</small>' : ''}`, x.here ? '—' : `${x.cps >= 0 ? '+' : '−'}${F().beautify(Math.abs(x.cps))}/s <small>(${Number.isFinite(x.pct) ? pct(x.pct) : '—'})</small>`, x.here ? '' : x.cps > 0 ? 'ca-mg-ok' : x.cps < 0 ? 'ca-mg-bad' : '']);
     if (g.slot >= 0) rows.push(['Taken out', `${g.out >= 0 ? '+' : '−'}${F().beautify(Math.abs(g.out))}/s`, g.out > 0 ? 'ca-mg-ok' : g.out < 0 ? 'ca-mg-bad' : '']);
-    return block(rows, 'CpS in each slot, measured on the game itself (swaps counted as the game does them)');
+    return block(rows);
   }
 
   // ---- wrapping the game's tooltips -------------------------------------------------------------

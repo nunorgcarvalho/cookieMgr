@@ -136,7 +136,6 @@ CA.UI.EventsPage = (() => {
         return (
           '<div class="ca-card" data-ev-income-card>' +
           CA.UI.C.cardHead('Income outside CpS', 'dollar') +
-          '<div class="ca-card-note">Cookies that didn’t come from production or clicking — measured as they happened.</div>' +
           '<div class="ca-toolbar"><div class="ca-chipgroup">' +
           SPANS.map((s) => `<button type="button" class="ca-chip${s.v === span ? ' on' : ''}" data-ev-span="${s.v}">${s.label}</button>`).join('') +
           '</div></div>' +

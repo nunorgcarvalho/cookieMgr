@@ -220,7 +220,7 @@ CA.UI.StatEditor = (() => {
       `<input type="text" class="ca-ed-name" maxlength="80" data-se="label" value="${esc(d.label)}" placeholder="Name your statistic…">` +
       `<input type="text" class="ca-ed-desc" maxlength="200" data-se="desc" value="${esc(d.desc)}" placeholder="What it shows (optional)"${d.builtin ? ' disabled' : ''}>` +
       (d.builtin
-        ? '<span class="ca-ed-fixed-sub">a built-in — change its label, code, how it reads and its color; Reset brings back the original</span>'
+        ? '<span class="ca-ed-fixed-sub">a built-in</span>'
         : '') +
       '</div>' +
       '<div class="ca-ed-actions">' +
@@ -255,13 +255,13 @@ CA.UI.StatEditor = (() => {
         vars: stat ? ['item'] : [],
         title: 'Code',
         hint: stat
-          ? 'item is the building or upgrade · end with return … · Tab indents · click the library to insert'
-          : 'about the game · end with return … · Tab indents',
+          ? 'item is the building or upgrade · end with return …'
+          : 'end with return …',
       }) +
       `<div class="ca-ed-sec ca-se-result"><div class="ca-ed-sec-head">${I('play', 12)} What it shows ` +
       (choices.length
         ? `<select data-se-item>${choices.map((o) => `<option value="${esc(o.v)}"${o.v === item ? ' selected' : ''}>${esc(o.label)}</option>`).join('')}</select>`
-        : '<span class="ca-hint">about the game</span>') +
+        : '') +
       `</div><div data-se-result>${resultHtml()}</div></div>` +
       '</div>' +
       CE().libraryHtml(KEY, {
