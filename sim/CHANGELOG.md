@@ -3,10 +3,16 @@
 The simulator is versioned apart from the add-on (`SIM_VERSION` in `sim.mjs`, `sim-v*` tags). Each entry
 says which add-on version it was brought in step with.
 
-## Unreleased (add-on v3.44.0)
+## Unreleased
+
+## 0.7.0 — 2026-11-11 (add-on v4.39.0)
 
 - The add-on's Best building and Best upgrade became the **Auto buyer** (`autoBuyer`): the GUI lists it with the
   built-ins, and the docs name it. `cmBuildings` / `cmUpgrades` still switch it on.
+- **`experiment stock-market`:** the Stock market autobuyer's trader profiles in the game's own market code, run as
+  the add-on runs them: profit per hour, what a market tick spends (gross and net, by percentile), the capital in
+  stocks, and how much of the profit a bank keeping only so much for stocks still makes. `--search` finds Trends and
+  prices' thresholds (price paths from the game, a coordinate search, checked on held-out seeds).
 
 ## 0.6.0 — 2026-10-28 (add-on v3.39.0)
 
