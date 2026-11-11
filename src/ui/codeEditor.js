@@ -322,9 +322,7 @@ CA.UI.CodeEditor = (() => {
     const vars = opts.vars || [];
     const v = view(source, vars, compileOpts(opts.mode, opts.item));
     return (
-      `<div class="ca-ed-sec ca-ed-code" data-code-ed="${esc(key)}"${vars.length ? ` data-code-vars="${esc(vars.join(','))}"` : ''}${opts.mode ? ` data-code-mode="${esc(opts.mode)}"` : ''}${opts.item ? ' data-code-item' : ''}><div class="ca-ed-sec-head">${I('edit', 12)} ${esc(opts.title || 'Algorithm')} <span class="ca-hint">${esc(
-        opts.hint || 'indent a block under a line ending in “:” · Tab indents · click the library to insert'
-      )}</span></div>` +
+      `<div class="ca-ed-sec ca-ed-code" data-code-ed="${esc(key)}"${vars.length ? ` data-code-vars="${esc(vars.join(','))}"` : ''}${opts.mode ? ` data-code-mode="${esc(opts.mode)}"` : ''}${opts.item ? ' data-code-item' : ''}><div class="ca-ed-sec-head">${I('edit', 12)} ${esc(opts.title || 'Algorithm')}${opts.hint ? ` <span class="ca-hint">${esc(opts.hint)}</span>` : ''}</div>` +
       '<div class="ca-code">' +
       `<div class="ca-code-gutter" data-code-gutter>${v.gutter}</div>` +
       `<div class="ca-code-box"><pre class="ca-code-hl" data-code-hl aria-hidden="true">${v.hl}</pre>` +

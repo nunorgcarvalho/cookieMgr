@@ -38,7 +38,7 @@ hoverAt(L.xOf(xMid), pyChart);
 const html = () => tip.innerHTML;
 const text = () => tip.textContent;
 assert(tip.style.display === 'block' && /ca-tip-head/.test(html()), 'a readout, headed with the time');
-assert(/2 effects/.test(text()) && /Frenzy.*×7 CpS/.test(text()) && /Click frenzy.*×777 clicks/.test(text()), `every effect active there, with its multiplier (${text().slice(0, 200)})`);
+assert(/Frenzy.*×7 CpS/.test(text()) && /Click frenzy.*×777 clicks/.test(text()), `every effect active there, with its multiplier (${text().slice(0, 200)})`);
 assert(/Combined.*×7 CpS, ×777 clicks/.test(text()), 'and the two combined: the overall boost');
 assert(/Production/.test(text()) && /Clicking|Unbuffed CpS/.test(text()), 'then the bar’s production figures, in the same box');
 assert(text().indexOf('Combined') < text().indexOf('Production'), 'effects first, figures after');

@@ -118,7 +118,7 @@ CA.UI.CodeKnobs = (() => {
     const hidden = [];
     vars.forEach((v) => (specOf(v, knobs).kind === 'hidden' ? hidden : shown).push(v));
     return (
-      `<div class="ca-knobs-head">${I('settings', 12)} Variables <span class="ca-hint">set them here or in the code — the two stay in step</span></div>` +
+      `<div class="ca-knobs-head">${I('settings', 12)} Variables</div>` +
       shown
         .map((v) => {
           const sp = specOf(v, knobs);

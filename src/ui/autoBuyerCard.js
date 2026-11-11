@@ -83,7 +83,10 @@ CA.UI.AutoBuyerCard = (() => {
         `${bar(pct)}${f ? `<span class="ca-hint ca-ab-then">then: ${thingName(f)} · score ${Number.isFinite(f.score) ? Math.round(f.score) : f.first ? 'first' : '—'} · ${F().short(f.price)}</span>` : ''}</div></div>`
       );
     }
-    if (!f) return `<div class="ca-ab-next"><div class="ca-ab-next-text"><b>Nothing to buy</b><span class="ca-hint">${esc(B().readiness().text)}</span></div></div>`;
+    if (!f) {
+      const why = B().readiness().text;
+      return `<div class="ca-ab-next"><div class="ca-ab-next-text"><b>Nothing to buy</b>${/^nothing to buy$/i.test(why) ? '' : `<span class="ca-hint">${esc(why)}</span>`}</div></div>`;
+    }
     const keep = q.keep;
     const ahead = keptAhead(q, f);
     const need = f.price + keep;
@@ -126,18 +129,18 @@ CA.UI.AutoBuyerCard = (() => {
     return (
       '<div class="ca-ab-hero">' +
       C().toggle(on, 'data-ab-act="toggle"', 'Auto buyer on/off') +
-      `<span class="ca-ab-state ${on ? 'on' : ''}">${on ? 'on' : 'off'}${key ? ` · ${esc(CA.Hotkeys.format(key))}` : ''}</span>` +
+      (key ? `<span class="ca-ab-state ${on ? 'on' : ''}">${esc(CA.Hotkeys.format(key))}</span>` : '') +
       nextHtml() +
       '</div>' +
       `<div class="ca-ab-row"><span class="ca-ab-lbl">Profile</span><span class="ca-pp-chips">${profileChips()}</span></div>` +
       `<div class="ca-ab-row ca-pp-modebar" data-pp-modes>${CA.UI.PaybackPage.modeBar()}</div>` +
-      `<div class="ca-ab-row"><span class="ca-ab-lbl">Upgrades</span>${allUpgradesButton()}${allUpgradesPp()}</div>`
+      `<div class="ca-ab-row"><span class="ca-ab-lbl"></span>${allUpgradesButton()}${allUpgradesPp()}</div>`
     );
   }
   function buyerCard() {
     return (
       '<div class="ca-card ca-ab">' +
-      C().cardHead('Auto buyer', 'dollar', `<div class="ca-card-meta"><span class="ca-hint">buys what’s next in the queue — the ${C().link('Auto buyer macro', 'clickers')}</span></div>`) +
+      C().cardHead('Auto buyer', 'dollar', `<div class="ca-card-meta"><span class="ca-hint">also on the ${C().link('Macros', 'clickers')} page</span></div>`) +
       `<div data-ab-buyer>${buyerHtml()}</div></div>`
     );
   }
@@ -194,7 +197,7 @@ CA.UI.AutoBuyerCard = (() => {
     const q = B().queue();
     const things = q.items.filter((x) => x.kind !== 'bank').length;
     const banks = q.items.length - things;
-    return q.profile ? `${esc(q.profile.name)} · ${things} in the queue${banks ? `, ${banks} kept in the bank` : ''}${q.held.length ? `, ${q.held.length} held back` : ''} · score 100 = the best payback period` : '';
+    return q.profile ? `${things} in the queue${banks ? `, ${banks} kept in the bank` : ''}${q.held.length ? `, ${q.held.length} held back` : ''}` : '';
   }
   function queueCard() {
     return (
@@ -282,19 +285,19 @@ CA.UI.AutoBuyerCard = (() => {
       `<div class="ca-ab-row"><span class="ca-ab-lbl">Building bulk</span><span class="ca-pp-chips">${B()
         .BULKS.map((b) => chip('data-ab-bulk', b, b === 'auto' ? 'auto' : `×${b}`, p.bulk === b, b === 'auto' ? `The store’s minimum bulk (Options below), rounded up with Round to multiples — now ×${CA.Shop.minBulk()}` : ''))
         .join('')}</span></div>` +
-      `<div class="ca-ab-row"><span class="ca-ab-lbl">Cheap ×100</span><input type="number" min="0" step="0.5" class="ca-pp-num" value="${p.cheapBulk}" data-ab-f="cheapBulk" data-tip="${esc('0: off')}"><span class="ca-hint">s of unbuffed CpS — a building whose next 100 cost less, and the budget affords, is bought 100 at a time ahead of the queue, whatever its payback period (0: off)</span></div>` +
+      `<div class="ca-ab-row"><span class="ca-ab-lbl">Cheap ×100</span><input type="number" min="0" step="0.5" class="ca-pp-num" value="${p.cheapBulk}" data-ab-f="cheapBulk" data-tip="${esc('A building whose next 100 cost less than this, and the budget affords, is bought 100 at a time ahead of the queue, whatever its payback period. 0: off')}"><span class="ca-hint">s of unbuffed CpS</span></div>` +
       `<div class="ca-ab-row"><span class="ca-ab-lbl">Can’t afford</span><span class="ca-pp-chips">${chip('data-ab-skip', 0, 'save up for the front', !p.skip)}${chip('data-ab-skip', 1, 'skip to what I can afford', p.skip)}</span></div>` +
       `<div class="ca-ab-row"><span class="ca-ab-lbl">Keeps</span><input type="number" min="0" step="1" class="ca-pp-num" value="${p.reserve}" data-ab-f="reserve"><span class="ca-hint">minutes of unbuffed CpS</span>` +
       `<span class="ca-pp-chips">${B()
         .BANKS.map((b) => chip('data-ab-bank', b.id, esc(b.label), p.banks.includes(b.id), `Also keep ${b.tip}`))
         .join('')}</span></div>` +
       (p.banks.includes('gardenRounds')
-        ? `<div class="ca-ab-row"><span class="ca-ab-lbl">Rounds margin</span><input type="number" min="0" step="0.05" class="ca-pp-num" value="${p.roundsMargin}" data-ab-f="roundsMargin" data-tip="${esc('1: just one round; 0: the tulips only')}"><span class="ca-hint">× a round of golden clovers that Garden rounds keeps, on top of the nursetulips’ round while they aren’t all planted — the buyer spends what’s above it</span></div>`
+        ? `<div class="ca-ab-row"><span class="ca-ab-lbl">Rounds margin</span><input type="number" min="0" step="0.05" class="ca-pp-num" value="${p.roundsMargin}" data-ab-f="roundsMargin" data-tip="${esc('Garden rounds keeps this many rounds of golden clovers, on top of the nursetulips’ round while they aren’t all planted; the buyer spends what’s above it. 1: just one round; 0: the tulips only')}"><span class="ca-hint">× a round of golden clovers</span></div>`
         : '') +
       `<div class="ca-ab-row"><span class="ca-ab-lbl"></span><span class="ca-hint" data-ab-keep>${keepHtml(p)}</span></div>` +
       priorityRows(p) +
-      `<div class="ca-ab-row"><span class="ca-ab-lbl">Rank by</span><select data-ab-f="mode">${modes}</select><span class="ca-hint">the payback period the queue sorts on</span></div>` +
-      `<div class="ca-ab-row ca-ab-rules-head"><span class="ca-ab-lbl">Rules</span><span class="ca-hint">top to bottom: what it applies to → what it does, when its condition holds. “never” and a reached cap stop there.</span></div>` +
+      `<div class="ca-ab-row"><span class="ca-ab-lbl">Rank by</span><select data-ab-f="mode">${modes}</select></div>` +
+      `<div class="ca-ab-row ca-ab-rules-head"><span class="ca-ab-lbl">Rules</span><span class="ca-hint">top to bottom; “never” and a reached cap stop there</span></div>` +
       `<div class="ca-ab-rules">${p.rules.map((r, i) => ruleRow(p, r, i)).join('') || '<div class="ca-card-note">No rules: the queue is the payback ranking as it is.</div>'}</div>` +
       `<div class="ca-ab-row">${C().button(`${I('plus', 12)} Add rule`, 'data-ab-act="rule"', 'ca-btn-small')}${C().button(`${I('plus', 12)} Cheap first`, 'data-ab-act="rule-cheap"', 'ca-btn-small')}` +
       `<span class="ca-ab-grow"></span>${B().list().length > 1 ? C().trash('data-ab-act="delete"', `Delete ${p.name}?`, 'Delete this profile') : ''}</div>` +
@@ -305,7 +308,7 @@ CA.UI.AutoBuyerCard = (() => {
     const p = B().find();
     return (
       '<div class="ca-card">' +
-      C().cardHead(`Profile: ${p ? esc(p.name) : '—'}`, 'settings', '<div class="ca-card-meta"><span class="ca-hint">the active profile — macros: buyer.next(), buyer.queue(), buyer.profile(id)</span></div>') +
+      C().cardHead(`Profile: ${p ? esc(p.name) : '—'}`, 'settings', '<div class="ca-card-meta"><span class="ca-hint">macros: buyer.next(), buyer.queue(), buyer.profile(id)</span></div>') +
       `<div data-ab-editor>${editorHtml()}</div></div>`
     );
   }
@@ -352,13 +355,13 @@ CA.UI.AutoBuyerCard = (() => {
     };
     return (
       `<table class="ca-ab-queue ca-ab-hist"><thead><tr><th>When</th><th>What</th><th class="n">Price</th><th class="n" data-tip="${esc(tips.cps)}">CpS</th><th class="n" data-tip="${esc(tips.boost)}">Boost</th><th class="n" data-tip="${esc(tips.pp)}">PP</th><th>Profile</th></tr></thead><tbody>` +
-      (done.length ? done.map(historyRow).join('') : '<tr><td colspan="7" class="ca-hint">Nothing bought yet — what the Auto buyer buys shows here, newest first.</td></tr>') +
+      (done.length ? done.map(historyRow).join('') : '<tr><td colspan="7" class="ca-hint">Nothing bought yet.</td></tr>') +
       '</tbody></table>'
     );
   }
   function historyMeta() {
     const n = B().recentBought().length;
-    return n ? `${n === B().BOUGHT_MAX ? `the last ${n}` : `${n} bought`}, newest first · kept in your save` : `the last ${B().BOUGHT_MAX} purchases, kept in your save`;
+    return n === B().BOUGHT_MAX ? `the last ${n}` : n ? `${n} bought` : '';
   }
   function historyCard() {
     return (

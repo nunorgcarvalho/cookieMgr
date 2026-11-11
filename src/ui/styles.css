@@ -904,14 +904,7 @@
   font-style: italic;
   color: #a89a83;
 }
-/* the chart hover readout's parts: a small heading, a divider before a section, the game-off note */
-#CookieMgrLayer .ca-tip-sub {
-  margin: 2px 0 1px;
-  font-size: 9px;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  color: #8f8270;
-}
+/* the chart hover readout's parts: a divider before a section, the game-off note */
 #CookieMgrLayer .ca-tip-sec {
   margin-top: 5px;
   padding-top: 5px;
@@ -2222,14 +2215,6 @@
   color: #c9bba0;
   font-variant-numeric: tabular-nums;
 }
-#CookieMgrWidgets .ca-wpop-foot,
-#CookieMgrLayer .ca-wpop-foot {
-  display: block;
-  margin-top: 4px;
-  font-size: 9.5px;
-  font-style: italic;
-  color: #7d7262;
-}
 
 /* group members (macro rows and the editor) */
 #CookieMgrMenu .ca-step-member .ca-icon,
@@ -2945,12 +2930,6 @@
   letter-spacing: 0.04em;
   color: #9fe06a;
 }
-#CookieMgrMenu .ca-gslot-k em {
-  font-style: normal;
-  text-transform: none;
-  letter-spacing: 0;
-  color: rgba(232, 220, 192, 0.5);
-}
 #CookieMgrMenu .ca-gslot-name {
   font-size: 13px;
   color: #fff3d6;
@@ -3177,9 +3156,6 @@
   gap: 6px;
   font: bold 12px Tahoma, Arial, sans-serif;
   color: #9fe06a;
-}
-#CookieMgrMenu .ca-knobs-head .ca-hint {
-  font-weight: normal;
 }
 #CookieMgrMenu .ca-knob {
   display: grid;
@@ -3971,7 +3947,6 @@ body.ca-has-storebar #products {
 #CookieMgrMenu .ca-wtile .ca-wpop { display: none; }
 #CookieMgrLayer .ca-wpop.ca-wtip { width: 240px; }
 #CookieMgrLayer .ca-wtip-head { display: flex; align-items: center; gap: 7px; margin-bottom: 4px; font-size: 12px; font-weight: bold; color: #fff; }
-#CookieMgrLayer .ca-wtip-head .ca-wshape { margin-left: auto; font-weight: normal; font-size: 9.5px; color: #c9b891; text-transform: uppercase; letter-spacing: 0.05em; }
 #CookieMgrLayer .ca-wtip-act { margin-top: 5px; padding-top: 4px; border-top: 1px solid rgba(255,255,255,.1); font-size: 10px; color: #ffd36a; }
 
 /* styled hover tips (instead of the browser's own) */
@@ -6743,6 +6718,11 @@ body.ca-has-storebar #products {
   text-transform: uppercase;
   color: #a89a83;
 }
+#CookieMgrMenu .ca-wi-head .ca-hint {
+  margin-left: 6px;
+  text-transform: none;
+  letter-spacing: 0;
+}
 #CookieMgrMenu .ca-wi-table {
   border-spacing: 3px;
   padding: 0 9px 6px;
@@ -9073,10 +9053,6 @@ body.ca-has-storebar #products {
   letter-spacing: 0.07em;
   text-transform: uppercase;
   color: #c9b48c;
-}
-#CookieMgrMenu .ca-mgr-sechead .ca-hint {
-  text-transform: none;
-  letter-spacing: 0;
 }
 #CookieMgrMenu .ca-mgr-sechead.small {
   margin: 9px 0 5px;

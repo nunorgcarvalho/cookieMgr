@@ -50,7 +50,7 @@ CA.UI.WizardPage = (() => {
   function spellsCard() {
     return (
       '<div class="ca-card">' +
-      C().cardHead('Spells', 'sparkle', `<div class="ca-card-meta"><span class="ca-hint">★ gives a spell its own button on the left panel · hotkeys on the ${C().link('Macros', 'clickers')} page</span></div>`) +
+      C().cardHead('Spells', 'sparkle', `<div class="ca-card-meta"><span class="ca-hint">hotkeys on the ${C().link('Macros', 'clickers')} page</span></div>`) +
       '<div class="ca-spells">' +
       G()
         .SPELLS.map(
@@ -92,7 +92,7 @@ CA.UI.WizardPage = (() => {
       C().cardHead('Spell combos', 'sparkle', `<div class="ca-card-meta">${C().button(`${I('plus', 12)} New combo`, 'data-wiz-newcombo', 'ca-btn-small')}</div>`) +
       (combos.length
         ? `<div class="ca-list">${combos.map(CA.UI.MacrosPage.row).join('')}</div>`
-        : '<div class="ca-card-note">A combo casts several spells in one go — one button, one hotkey, or its own button on the left panel. It casts each spell in order, skipping any you can’t afford yet.</div>') +
+        : '<div class="ca-card-note">A combo casts several spells in one go, in order, skipping any you can’t afford yet.</div>') +
       '</div>';
     h += plot.html();
     h += CA.UI.Menu.optionsCard('Options', 'settings', 'grimoire');

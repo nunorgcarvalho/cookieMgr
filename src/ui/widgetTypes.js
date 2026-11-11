@@ -112,7 +112,7 @@ CA.UI.WidgetTypes = (() => {
       const val = s.error ? esc(s.error) : `${beautify(s.total || 0, 0)}${a.unit ? ' ' + esc(a.unit) : ''} · ${s.lastAt ? `${span((Date.now() - s.lastAt) / 1000)} ago` : 'nothing yet'}`;
       h += `<span class="ca-wpop-row${hot ? ' hot' : ''}${s.error ? ' err' : ''}">${I(a.icon || 'close', 11)}<span class="ca-wpop-name">${esc(CA.Actions.describe(step))}</span><span class="ca-wpop-val">${val}</span></span>`;
     });
-    return h + '<span class="ca-wpop-foot">click to open the Macros page</span></span>';
+    return h + '</span>';
   }
 
   function statusHtml() {
@@ -255,7 +255,7 @@ CA.UI.WidgetTypes = (() => {
       `<span class="ca-orb-ico">${icon}</span>` +
       (extra || '') +
       `<span class="ca-orb-label ca-wt">${label}</span>` +
-      `<span class="ca-wpop ca-orb-pop ca-wt">${pop.map(([k, v]) => (k === null ? `<span class="ca-wpop-head">${v}</span>` : `<span class="ca-wpop-row"><span class="ca-wpop-name">${k}</span><span class="ca-wpop-val">${v}</span></span>`)).join('')}<span class="ca-wpop-foot">click to open it</span></span>` +
+      `<span class="ca-wpop ca-orb-pop ca-wt">${pop.map(([k, v]) => (k === null ? `<span class="ca-wpop-head">${v}</span>` : `<span class="ca-wpop-row"><span class="ca-wpop-name">${k}</span><span class="ca-wpop-val">${v}</span></span>`)).join('')}</span>` +
       '</div>'
     );
   }
