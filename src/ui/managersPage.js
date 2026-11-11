@@ -148,7 +148,7 @@ CA.UI.ManagersPage = (() => {
   const macroList = () => CA.Macros.list().filter((x) => x.mode !== 'once' && x.id !== G().MACRO);
   const sectionOf = (x) => (SECTION_TITLES[x.section || ''] != null ? x.section || '' : '');
   const x = (act, attrs, tip) => `<button type="button" class="ca-mgr-x" data-mgr-act="${act}" ${attrs} data-tip="${esc(tip)}">×</button>`;
-  const PAGES = { buyer: 'payback', pantheon: 'pantheon', dragon: 'dragon', grimoire: 'wizard', garden: 'garden' };
+  const PAGES = { buyer: 'payback', pantheon: 'pantheon', dragon: 'dragon', grimoire: 'wizard', garden: 'garden', stocks: 'stocks' };
 
   /** The stage shown in the tabs: the one picked, else the one the manager is on, else the first. */
   function selected(m) {
@@ -336,7 +336,7 @@ CA.UI.ManagersPage = (() => {
       return `<span class="ca-mgr-snapit">Buys ${esc(what)}</span><span class="ca-mgr-snapit">${esc(bank)}</span>`;
     }
     if (k === 'grimoire') return (p.tiers || []).map((t) => `<span class="ca-mgr-snapit">${esc(t.name)}${t.pct ? ` · ${t.pct}%` : ''}</span>`).join('');
-    if (k === 'garden') return `<span class="ca-mgr-snapit">${esc(p.desc || p.name)}</span>`;
+    if (k === 'garden' || k === 'stocks') return `<span class="ca-mgr-snapit">${esc(p.desc || p.name)}</span>`;
     return '';
   }
 

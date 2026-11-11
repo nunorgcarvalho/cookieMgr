@@ -62,7 +62,7 @@ src/
     macros.js        macros: built-ins, your own, running them, save/load
     stocks.js        trend badges/tints, per-stock price states, and portfolio cost-basis tracking
     gameStates.js    the built-in states (CpS, cookies, earnings by source, prestige, portfolio, magic)
-    stockTrader.js   the "buy fast/slow rise, sell the rest" trading logic behind the autobuyer macro
+    stockTrader.js   the stock market autobuyer's trader profiles (code: Trends and prices, Ride the trends, yours)
     stockLog.js      wraps buyGood/sellGood to log every trade (auto or manual) as an event
     history.js       buff intervals and golden-cookie pop events for the CpS graph
     cookieMonster.js loads Cookie Monster on request or at start-up (optional — nothing needs it)
@@ -119,6 +119,7 @@ src/
     stockGraph.js    the Stock market page charts: portfolio value / per-stock prices, rolling performance
     stockLog.js      the trade ticker + transaction history table, also on the Stock market page
     bankToolbar.js   Sell all / autobuyer / cookieMgr buttons inside the Bank minigame
+    stockTraderCard.js the Stock market page's Trader card: the trader profile in use, its knobs and code
     menu.js          the panel; registers the built-in pages (hooks Game.ShowMenu / Game.UpdateMenu)
     styles.css       all styling, scoped to #CookieMgrTab / #CookieMgrMenu / #cm-bank-toolbar
   main.js            waits for the game, registers the mod (init/save/load)

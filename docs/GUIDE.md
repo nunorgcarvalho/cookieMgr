@@ -175,7 +175,7 @@ default brings the original back):
 | Reindeer               | `R`         | Pops reindeer                                                        |
 | Fortune news           | `F`         | Clicks fortunes in the news ticker                                   |
 | Wrinklers              | `K`         | Pops wrinklers as soon as they attach                                |
-| Stock market autobuyer | —           | Hires brokers, buys fast/slow-rising stocks, sells the rest, every second |
+| Stock market autobuyer | —           | Hires brokers, then trades as its trader profile says (Stock market page), every second |
 | Sell all stocks        | —           | Once: autobuyer off, then sells every stock                          |
 | Cast … (one per spell) | —           | Once: casts that Grimoire spell                                      |
 | SeasonCompletion       | —           | An algorithmic macro: every season in turn until complete, buying its drops |
@@ -246,7 +246,7 @@ or profile named in ( ). Actions are green, conditions blue, keywords orange. A 
 page — and a card says what it is: an action or condition (what it does with the options written there), a value
 (and what it is now), a keyword, a variable (where it's set), a macro (`switch on golden`: its name, what it does,
 whether it's on), or a profile (`buyer.profile(payback)`, `dragon.profile(drops)`, `pantheon.profile(golden)`,
-`grimoire.profile(default)`: what's in it and whether it's in use), a spell, a spirit, an aura, a season, a
+`grimoire.profile(default)`, `stocks.profile(trends)`: what's in it and whether it's in use), a spell, a spirit, an aura, a season, a
 building or an upgrade (its info card). Move onto the card to use its link: to the macro's editor, the profile's
 page, the statistic's editor, or the line a variable is set on. Unsaved code is asked about first (Save and go, Don't
 save, Stay), and a **Back to …** chip at the bottom of the panel returns to the code you left.
@@ -320,7 +320,8 @@ forever:
 
 - **Stock market** — `stocks()` (a list), `stock.mode / price / resting / held / max / room / delta / cost(good)`,
   `stock.brokers()`, `stock.maxBrokers()`, `stock.brokerPrice()`; `stock.buy(good, n)`, `stock.sell(good, n)`,
-  `stocks.hireBrokers()`. A stock is its symbol (CRL), its building (Farm) or its number; modes: 0 stable, 1 slow rise,
+  `stocks.hireBrokers()`; trader profiles: `stocks.profile(profile)`, `stocks.profileActive(profile)`,
+  `stocks.activeProfile()`, `stocks.profiles()`. A stock is its symbol (CRL), its building (Farm) or its number; modes: 0 stable, 1 slow rise,
   2 slow fall, 3 fast rise, 4 fast fall, 5 chaotic.
 - **Golden cookies and the bank** — `bank.lucky()`, `bank.luckyFrenzy()`, `bank.conjure()`, `bank.chain()`,
   `bank.chainFrenzy()`, `bank.edifice()`, `bank.plant(plant)` (the bank each needs to pay its most);
@@ -422,7 +423,7 @@ it). Modifiers work (`Shift + G`): click a key chip and press the new key (`Esc`
 
 A **manager** plays an ascension for you in **stages**. Stage 1 sets things up: it switches macros on or off,
 sets their settings (Research's "stop before", SeasonCompletion's last season…) and puts in the Auto buyer, Pantheon,
-dragon, Grimoire and garden profiles it names. Each stage after it lists only what it **changes**; everything else
+dragon, Grimoire, garden and stock trader profiles it names. Each stage after it lists only what it **changes**; everything else
 carries over, until a later stage changes it back. A stage lasts **until** a condition in the macro language holds
 (the last stage lasts for good). Moving on to a stage makes only its own changes, once, so a macro you flipped by
 hand stays flipped; jumping to a stage (clicking it in the strip) sets up the stages before it too. Profiles are
@@ -452,7 +453,7 @@ The **Managers** page has:
     the **most used** first, searchable: click one to switch it on (or off) from this stage.
   - **Settings**: the macro settings in force (**as before**, or set here, where × undoes it); **+ a setting…** adds
     one. Research's **Stop before** shows the research as icons: hover one for its card, click one to stop there.
-  - **Profiles**: a card per kind (Auto buyer, Pantheon, dragon, Grimoire, garden): what the stage puts in, or **as
+  - **Profiles**: a card per kind (Auto buyer, Pantheon, dragon, Grimoire, garden, stock trader): what the stage puts in, or **as
     before**, at a glance (its spirits, auras, what it buys…), and a link to its page.
   - **Moves on when**: the "until", one line of code; hover its words for what they are, as in the code editor.
   - **Widget watches**, folded away until you open them (below).
@@ -1216,12 +1217,28 @@ The **Stock market** tab in the cookieMgr panel has:
 - **Sell all** — its own standalone card at the top of the tab: sells every stock you currently hold and turns the
   autobuyer off first, so it doesn't just buy it all straight back. Hovering it shows the actual number of cookies
   selling everything right now would pay out. (It's the built-in "Sell all stocks" macro, so it can have a hotkey.)
-- **Autobuyer** — the built-in "Stock market autobuyer" macro, an algorithmic one (its code is the strategy below, written
-  with the stock building blocks — Edit on its card to change it; own switch and hotkey; shift-click its button to let it buy or only sell)
-  that, once a second, hires the stockbrokers it can afford (each makes buying goods 5% cheaper; the game allows your
-  highest grandma count ÷ 10 + the grandma level), buys the max it can afford of fast-rising stocks, then slow-rising
-  ones, and sells anything it holds that isn't currently rising. That's the entire strategy. Its **Hire stockbrokers**
-  choice turns the hiring off; only selling (shift-click) hires none either.
+- **Autobuyer** — the built-in "Stock market autobuyer" macro (own switch and hotkey; shift-click its button to let it
+  buy or only sell). Once a second it hires the stockbrokers it can afford (each makes buying goods 5% cheaper; the
+  game allows your highest grandma count ÷ 10 + the grandma level), then buys and sells as its **trader profile**
+  says. Its **Hire stockbrokers** choice turns the hiring off; only selling (shift-click) hires none either.
+- **Trader** — the trader profile the autobuyer runs, loaded and unloaded like the Garden's, Pantheon's or Grimoire's
+  profiles: pick one, change its numbers (knobs above its code) or its code, **Save** it, **Save as new** for one of
+  your own (rename it, delete it), **Revert** a built-in you edited. Two come with it:
+  - **Trends and prices** (the default): fast rises are bought at any price and held, fast falls sold at once; every
+    other trend buys a stock some way under its resting value (where its price drifts back to) and sells it some way
+    over — stable $30 under / $40 over, slow rise $20 / $100, slow fall $80 / $20, chaotic $10 / $10. Those are the
+    thresholds a simulator study found (the game's own market code, 12 seeds of 30 days, `npm run sim -- experiment
+    stock-market`): about 60% more profit than Ride the trends, with smaller purchases.
+  - **Ride the trends**: buys the max it can afford of fast-rising stocks, then slow-rising ones, and sells anything
+    it holds that isn't rising, whatever the price (the autobuyer before profiles — a save from then keeps it, and
+    autobuyer code you had edited becomes a profile of yours).
+
+  In code: `stocks.profile(trends)` uses a profile (its id or name), `stocks.profileActive(p)`,
+  `stocks.activeProfile()`, `stocks.profiles()`; a manager's stage can put one in (its **Stock trader** card).
+  **How much to keep in the bank:** with 1000 warehouse space per stock and 60+ brokers, a tick that buys (about one
+  in 12) spends a median of ~27 h of your highest raw CpS with Trends and prices (~50 h with Ride the trends), and the
+  stocks hold ~165 h of it on average. Cookies kept for stocks of ~50 h keep ~97% of the profit, ~100 h ~99% —
+  scale by your warehouse space.
 - The stock chart, defaulting to your **portfolio value** over time (a value line plus a cost-basis line, so the gap
   between them is your unrealized gain) with stat tiles for Value, Equity (cookies if sold now), Unrealized, Realized
   and Total gain — switch to

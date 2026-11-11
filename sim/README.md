@@ -226,10 +226,18 @@ tests/sim/           the simulator's tests (part of npm test; SKIPPED where the 
 - **Force the Hand of Fate on combos needs Serendipity and Get lucky.** Without them the next golden
   cookie comes 150 s at the soonest, and a Frenzy lasts 77 s, so cookies popped on sight never overlap.
 
+- **The stock market autobuyer earned ~60% more with prices in the rules.** `experiment stock-market` runs the
+  add-on's trader profiles in the game's own market code (30 days × 4 seeds, Bank level 10, 1000 warehouse space per
+  stock, 60 brokers; in hours of your highest raw CpS, the market's own unit): Ride the trends (buy rising stocks
+  at any price, sell the rest) made **55.1 h per hour of play**; Trends and prices, whose thresholds `--search` found,
+  **88.4 h**. With no brokers (20% overhead) Ride the trends loses money. A tick that buys (one in 12–13) spends a
+  median of 27 h with Trends and prices (50 h with Ride the trends); the stocks hold ~165 h on average, and a bank
+  keeping 50 h for stocks makes 97% of the profit, 100 h 99%. Rules on price alone (without the trend) made ~24 h.
+
 ## Not yet
 
 - Ascension, prestige and heavenly upgrades (the game's code is there; nothing drives it yet).
-- The minigames beyond the garden as strategy targets (spells, stocks, the Pantheon and the dragon
+- The minigames beyond the garden and the stock market as strategy targets (spells, the Pantheon and the dragon
   run, and cookieMgr's words for them work — `pantheon.profile`, `dragon.train`, Auto dragon,
   SeasonCompletion — but no strategies or scenarios use them yet).
 - A search loop — strategies with knobs, tuned automatically over many seeds.

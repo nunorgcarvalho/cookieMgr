@@ -61,7 +61,8 @@ Game.ClickCookie = realClick;
 assert(clicks >= 4 && clicks <= 6, `restarted at 5 a second (${clicks} clicks in ~1s)`);
 assert(!card('sellAll').querySelector('.ca-mtile-settings') && !card('castFthof').querySelector('[data-macro-param]'), 'fixed built-ins (Sell all, spells) have no choices');
 
-// ---- the stock autobuyer: only sell
+// ---- the stock autobuyer: only sell (Ride the trends: sells what isn't rising)
+CA.StockTrader.use('trends');
 const buy = card('stockTrader').querySelector('input[data-key="buy"]');
 assert(buy && buy.checked && /shift-click/.test(card('stockTrader').textContent), 'autobuyer: Buy rising stocks (shift-click its button)');
 CA.Macros.setFav('stockTrader', true);

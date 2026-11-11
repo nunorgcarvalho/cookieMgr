@@ -31,7 +31,8 @@ F = pass1('stock.buy(CRL, 5)\nstock.sell(CHC)');
 assert(goods[0].stock === 5 && goods[1].stock === 0 && F.done === 2, `stock.buy(CRL, 5), stock.sell(CHC) (${goods[0].stock}, ${goods[1].stock})`);
 assert(S.lookups().some((l) => l.name === 'Stock' && l.items.some((i) => i.v === 'SUG')) && S.lookups().some((l) => l.name === 'Stock mode' && l.items.length === 6), 'Lookup: stocks and stock modes');
 
-// ---- the autobuyer is code, with inputs
+// ---- the autobuyer is code, with inputs (since trader profiles: Ride the trends' code is this strategy)
+CA.StockTrader.use('trends');
 const auto = M.get('stockTrader');
 assert(auto.mode === 'flow' && M.sourceOf(auto) === CA.StockTrader.SOURCE && auto.inputs.map((i) => i.key).join() === 'buy,brokers', 'the autobuyer: algorithmic, inputs buy and brokers');
 assert(!M.compiledOf(auto).errors.length, 'its code compiles (its inputs are variables)');

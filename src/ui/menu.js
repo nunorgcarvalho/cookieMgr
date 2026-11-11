@@ -92,6 +92,11 @@ CA.UI.Menu = (() => {
       C.cardHead('Autobuyer', 'bolt', `<div class="ca-card-meta"><button type="button" class="ca-btn ca-btn-small" data-ca="open-macros">All macros</button>${C.gameLink('Bank')}</div>`) +
       `<div class="ca-list">${CA.UI.MacrosPage.row(CA.Macros.get('stockTrader'))}</div>` +
       '</div>' +
+      '<div class="ca-card ca-editor2 ca-gardener">' +
+      C.cardHead('Trader', 'stocks') +
+      '<div class="ca-hint">What the autobuyer buys and sells: the profile in use, as code. Pick another, change its numbers or its code, or save one of your own; managers can switch profiles stage by stage.</div>' +
+      CA.UI.StockTraderCard.html() +
+      '</div>' +
       optionsCard('Options', 'settings', 'stocks') +
       CA.UI.StockGraph.html() +
       CA.UI.StockPerf.html() +
@@ -347,7 +352,7 @@ CA.UI.Menu = (() => {
     order: 40,
     group: 'minigames',
     html: () => stocksPage(),
-    parts: [CA.UI.StockGraph, CA.UI.StockPerf, CA.UI.StockLog, { mount: wireSellAll, unmount() {}, tick() {} }],
+    parts: [CA.UI.StockTraderCard, CA.UI.StockGraph, CA.UI.StockPerf, CA.UI.StockLog, { mount: wireSellAll, unmount() {}, tick() {} }],
   });
   CA.UI.Pages.register({
     id: 'settings',

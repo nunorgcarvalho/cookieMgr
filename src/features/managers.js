@@ -1,12 +1,12 @@
 // **Managers**: a layer above the macros and profiles. A manager plays a whole ascension in
 // stages; each stage switches strategies on and off — macros, and the profiles of the Auto buyer,
-// the Pantheon, the dragon, the Grimoire and the garden — and lasts until its "until" holds.
+// the Pantheon, the dragon, the Grimoire, the garden and the stock trader — and lasts until its "until" holds.
 //
 //   Manager   { id, name, desc, scope, stages, code? } — named, saved with the game; one is the active one.
 //             scope 'ascension': its stages start over when you ascend (legacy managers, which carry
 //             on from one ascension to the next, are for later — the scope is there for them).
 //   Stage     { name, macros: { id: 'on'|'off' }, inputs: { id: { key: value } } (a macro's settings),
-//             profiles: { buyer, pantheon, dragon, grimoire, garden }, until } — what the stage
+//             profiles: { buyer, pantheon, dragon, grimoire, garden, stocks }, until } — what the stage
 //             CHANGES: stage 1 sets things up, each later stage only lists what it changes, and
 //             the rest carries over until a later stage changes it back (effective() adds them up).
 //             until is a condition in the macro language (features/script.js); the last stage lasts
@@ -52,7 +52,7 @@
 //     manager.goTo(stage)             goes to a stage of the active manager (an action; 1 = the first)
 //     manager.next()                  on to the next stage (an action)
 //     manager.profile(kind, profile)  puts a profile in, once this stage (an action; kind: buyer,
-//                                     pantheon, dragon, grimoire or garden)
+//                                     pantheon, dragon, grimoire, garden or stocks)
 //     macro.setting(macro, key, v)    changes a macro's setting (an action)
 //     manager.active()                the active manager's id ("": none)
 //     manager.stage()                 the stage it's on (1 = the first; 0: no manager)
@@ -64,7 +64,7 @@
 CA.Managers = (() => {
   const MACRO = 'manager';
   const SCOPES = [{ v: 'ascension', label: 'This ascension' }];
-  const KINDS = ['buyer', 'pantheon', 'dragon', 'grimoire', 'garden'];
+  const KINDS = ['buyer', 'pantheon', 'dragon', 'grimoire', 'garden', 'stocks'];
   const FORMATS = [
     { v: 'auto', label: 'as it is', tip: 'the value as it is' },
     { v: 'time', label: 'a time', tip: 'a time: the value in seconds' },
@@ -114,6 +114,13 @@ CA.Managers = (() => {
       list: () => (CA.CastTiers ? CA.CastTiers.list() : []),
       isIn: (id) => CA.CastTiers.isActive(id),
       use: (id) => CA.CastTiers.use(id),
+    },
+    stocks: {
+      label: 'Stock trader',
+      icon: 'stocks',
+      list: () => (CA.StockTrader ? CA.StockTrader.list() : []),
+      isIn: (id) => CA.StockTrader.isActive(id),
+      use: (id) => CA.StockTrader.use(id),
     },
     garden: {
       label: 'Garden',

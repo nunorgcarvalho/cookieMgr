@@ -96,6 +96,7 @@ const MODULES = [
   'ui/castTiersCard.js',
   'ui/wizardPage.js',
   'ui/codeKnobs.js',
+  'ui/stockTraderCard.js',
   'ui/gardenPage.js',
   'ui/pantheonPage.js',
   'ui/dragonPage.js',
