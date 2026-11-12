@@ -1705,7 +1705,7 @@ buy.best(all)
       `<div class="sim-form">` +
       `<label class="ca-field"><span class="ca-field-label">Plans</span>${chips([[0, 'Named plans', 'Cookie Clicker’s usual plays and cookieMgr’s tiers: 14 plans'], [1, 'Named + a tier sweep', 'Also Regular combos at 0/25/50/75/100%, single effects, Dragon Harvest pairs, anything at a full bar: 66 plans']], 'data-grsweep', GR.sweep ? 1 : 0)}</label>` +
       `<label class="ca-field"><span class="ca-field-label">Precision</span>${chips([[100000, '100k', '±3%, about 4 s a point'], [300000, '300k', '±1.5%, about 12 s a point'], [1000000, '1M', '±1%, about 40 s a point']], 'data-grpops', GR.pops)}</label>` +
-      `<label class="ca-field"><span class="ca-field-label">Scores</span>${chips([[0, 'From the curves', 'Each garden’s time at each frequency through the plan’s income curve: quick'], [1, 'Garden followed', 'Also a walk that follows each garden over game time with the plan casting — the garden and the Grimoire together, no shortcut: slower, and the scores shown']], 'data-grfollow', GR.follow ? 1 : 0)}</label>` +
+      `<label class="ca-field"><span class="ca-field-label">Scores</span>${chips([[0, 'From the curves', 'Each garden’s time at each frequency through the plan’s income curve: quick'], [1, 'Garden followed', 'Also a walk that follows each garden over game time with the plan casting — the garden and the Grimoire together, no shortcut (2M golden cookies × 3 seeds, kept once run): slow the first time, and the scores shown']], 'data-grfollow', GR.follow ? 1 : 0)}</label>` +
       C.button(`${I('play', 14)} Compare`, 'data-grrun', 'ca-btn-on') +
       (GR.job ? `<span class="ca-hint">${I('refresh', 12)} ${esc(GR.progress || 'Starting…')}</span>` : '') +
       '</div>' +

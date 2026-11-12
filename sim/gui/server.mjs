@@ -706,7 +706,7 @@ async function route(req, res) {
     const files = scoreFiles(b);
     const pops = Math.max(20000, Math.min(3000000, Math.round(Number(b.pops)) || 300000));
     const j = newJob('grimoire', { pops, sweep: !!b.sweep, follow: !!b.follow });
-    const args = [...files.args, '--pops', String(pops), '--level', String(Math.max(1, Math.min(9, Math.round(Number(b.level)) || 9))), ...(b.sweep ? ['--sweep'] : []), ...(b.follow ? ['--follow', '--follow-pops', String(pops)] : []), '--json'];
+    const args = [...files.args, '--pops', String(pops), '--level', String(Math.max(1, Math.min(9, Math.round(Number(b.level)) || 9))), ...(b.sweep ? ['--sweep'] : []), ...(b.follow ? ['--follow', '--follow-pops', '2000000', '--follow-seeds', '3'] : []), '--json'];
     const child = spawn(process.execPath, [path.join(ROOT, 'sim', 'cli.mjs'), 'experiment', 'grimoire-plans', ...args], { cwd: ROOT });
     j.child = child;
     let out = '';

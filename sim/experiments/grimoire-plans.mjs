@@ -14,6 +14,8 @@
 // combos and 8 nursetulips together (golden tulips). --follow walks each garden's own frequency and
 // CpS over game time with the plan casting (the garden and the Grimoire together, no shortcut).
 import fs from 'node:fs';
+import path from 'node:path';
+import crypto from 'node:crypto';
 import { cachedIncomeCurve, goldenIncomeGame, stateFromArgs } from '../models/goldenIncome.mjs';
 import { expectedAt, goldenParams } from '../models/goldenExpected.mjs';
 import { PLANS, sweepPlans, planById } from '../models/grimoire.mjs';
@@ -81,6 +83,18 @@ if (process.argv.includes('--follow')) {
   const fh = Number(arg('follow-hours', 20000));
   const seeds = Number(arg('follow-seeds', 1));
   const fpops = Number(arg('follow-pops', 2000000));
+  // each followed walk kept in sim/out/income/ (as the curves are), so the GUI shows a long run made once
+  const dir = new URL('../out/income/', import.meta.url).pathname;
+  const followed = (gd, seed, spec, run) => {
+    const inputs = { v: 1, kind: 'grimoire-follow', save, state, level, garden: gd.id, fh, seed, pops: fpops, spec };
+    const file = path.join(dir, `follow-${crypto.createHash('sha1').update(JSON.stringify(inputs)).digest('hex').slice(0, 16)}.json`);
+    if (fs.existsSync(file)) return JSON.parse(fs.readFileSync(file, 'utf8'));
+    const { mult, se, casts, spells, parts } = run();
+    const out = { mult, se, casts: casts || null, spells: spells || null, parts };
+    fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(file, JSON.stringify(out));
+    return out;
+  };
   for (const gd of [none, ...gardens]) {
     let schedule = () => ({ f: 1, cps: 1 });
     if (gd !== none) {
@@ -103,7 +117,7 @@ if (process.argv.includes('--follow')) {
     }
     for (const r of results) {
       const runs = [];
-      for (let s = 1; s <= seeds; s++) runs.push(expectedAt(g0, 1, { pops: fpops, seed: s, schedule, grimoire: r.spec }));
+      for (let s = 1; s <= seeds; s++) runs.push(followed(gd, s, r.spec, () => expectedAt(g0, 1, { pops: fpops, seed: s, schedule, grimoire: r.spec })));
       const mean = runs.reduce((a, x) => a + x.mult, 0) / seeds;
       r.scores[gd.id].followed = mean;
       r.scores[gd.id].followedSe = Math.sqrt(runs.reduce((a, x) => a + x.se * x.se, 0)) / seeds;
