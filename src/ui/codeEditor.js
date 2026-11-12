@@ -349,7 +349,7 @@ CA.UI.CodeEditor = (() => {
   const editorOf = (el) => el && el.closest && el.closest('[data-code-ed]');
   const compileOpts = (mode, item) => (mode ? { mode, item: !!item } : {});
 
-  /** After typing: the colouring, the line numbers and the problems follow the code. */
+  /** After typing: the coloring, the line numbers and the problems follow the code. */
   function refresh(ta) {
     const ed = editorOf(ta);
     if (!ed) return;
@@ -685,7 +685,7 @@ CA.UI.CodeEditor = (() => {
   const HOVER_MS = 250;
   const LEAVE_MS = 350; // time to move the mouse from the word onto its card
   let card = null;
-  let hovered = null; // the highlighted word under the mouse (a span of the coloured copy)
+  let hovered = null; // the highlighted word under the mouse (a span of the colored copy)
   let hoverTimer = null;
   let hideTimer = null;
   let hoveredAt = null; // where it was, to tell a scroll that moved it
@@ -699,7 +699,7 @@ CA.UI.CodeEditor = (() => {
   const defineOpen = (kind, fn) => (openers[kind] = fn);
   const guard = (page, g) => (guards[page] = g);
 
-  /** The span of coloured code at a point: under an editor's textarea (which lies on top), or in a code view. */
+  /** The span of colored code at a point: under an editor's textarea (which lies on top), or in a code view. */
   function spanAt(t, x, y) {
     if (t.matches && t.matches('[data-code]')) {
       const ed = editorOf(t);
@@ -717,7 +717,7 @@ CA.UI.CodeEditor = (() => {
     return el || null;
   }
 
-  /** Where a span of coloured code is: { line (from 1), col (from 0), source, vars }. */
+  /** Where a span of colored code is: { line (from 1), col (from 0), source, vars }. */
   function placeOf(span) {
     const box = span.closest('[data-code-hl], [data-code-view]');
     let off = 0;

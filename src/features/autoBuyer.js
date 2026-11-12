@@ -367,7 +367,7 @@ CA.AutoBuyer = (() => {
     const price = P().sumPrice(b, n);
     const worth = P().buildingWorth(x.name, n);
     const parts = P().parts(price, worth, p.mode);
-    return { ...x, n, label: n > 1 ? `${n} × ${b.dname || x.name}` : b.dname || x.name, price, bonus: worth.bonus, gain: parts.gain, pp: parts.pp, colour: null };
+    return { ...x, n, label: n > 1 ? `${n} × ${b.dname || x.name}` : b.dname || x.name, price, bonus: worth.bonus, gain: parts.gain, pp: parts.pp, color: null };
   }
 
   // ---- the score ------------------------------------------------------------------------------
@@ -418,7 +418,7 @@ CA.AutoBuyer = (() => {
     if (p.kinds.allUpgrades) {
       const all = P().allUpgrades({ budget: b, mode });
       if (all.n >= 2) ranked.push(all);
-      else held.push({ ...all, key: thingKey(all), ipp: NaN, score: NaN, first: false, rules: [], why: all.n ? 'affords only one upgrade: the same as buying it' : 'affords no upgrades', colour: 'gray' });
+      else held.push({ ...all, key: thingKey(all), ipp: NaN, score: NaN, first: false, rules: [], why: all.n ? 'affords only one upgrade: the same as buying it' : 'affords no upgrades', color: 'gray' });
     }
     if (p.kinds.garden) gardenThings().forEach((g) => (g.why ? held : ranked).push(g));
     const rules = p.rules.filter((r) => r.on);

@@ -42,7 +42,7 @@ const ta = () => ed().querySelector('[data-code]');
 assert(ta() && /^forever:\n {2}pop\.golden\(\)/.test(ta().value) && /Algorithmic/.test(ed().querySelector('.ca-ed-kind.on').textContent), `Algorithmic: the steps it had, as code (${ta() && ta().value})`);
 setVal('[data-code]', 'while cookies() < 5000:\n  t.log(a)\nnope()\n');
 assert(/1 problem/.test(ed().querySelector('[data-code-status]').textContent) && ed().querySelector('[data-code-gutter] span.err'), 'problems listed as you type, the line marked');
-assert(ed().querySelector('[data-code-hl] .hk') && ed().querySelector('[data-code-hl] .hv') && ed().querySelector('[data-code-hl] .hn'), 'keywords, values and numbers coloured');
+assert(ed().querySelector('[data-code-hl] .hk') && ed().querySelector('[data-code-hl] .hv') && ed().querySelector('[data-code-hl] .hn'), 'keywords, values and numbers colored');
 click(w, ed().querySelector('[data-edit-act="save"]'));
 assert(/Line 3:/.test(ed().querySelector('.ca-editor-error').textContent), 'can’t be saved with a problem');
 // Tab and Enter

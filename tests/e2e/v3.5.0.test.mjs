@@ -1,7 +1,7 @@
 // v3.5.0 (the in-house Cookie Monster, release A): payback periods
 // computed by CookieMgr itself (features/payback.js) — bonus income asked of the game (here a CpS
 // model), counting the achievements a purchase wins; bulk prices; Cookie Monster's PP formula and
-// colours; the options; the code words (pp.*, with the old cm.* names hidden but working);
+// colors; the options; the code words (pp.*, with the old cm.* names hidden but working);
 // buy.best; and the game left exactly as it was.
 import { IDBFactory, IDBKeyRange } from 'fake-indexeddb';
 import { boot, sleep, makeAssert } from '../harness/game.mjs';
@@ -72,25 +72,25 @@ assert(Math.abs(wiz.pp - ((wiz.price - Game.cookies) / Game.cookiesPs + wiz.pric
 assert(Math.abs(V('timeTo', wiz.price) - (wiz.price - Game.cookies) / Game.cookiesPs) < 1e-9 && V('timeTo', 10) === 0, 'timeTo(price)');
 assert(Math.abs(V('building.payback', 'Grandma') - g1.pp) < 1e-9 && Math.abs(V('building.gain', 'Grandma') - g1.bonus) < 1e-9, 'building.payback / building.gain');
 
-// ---- colours: green the best building; blue an upgrade better than it; gray never pays back
+// ---- colors: green the best building; blue an upgrade better than it; gray never pays back
 const rows = [1, 10, 100].flatMap((n) => Object.values(t.buildings[n]));
 const bestRow = rows.slice().sort((a, b) => a.pp - b.pp)[0];
-assert(bestRow.colour === 'green' && rows.filter((r) => r.colour === 'green').length === 1, `the best building is green (${bestRow.name} ×${bestRow.n})`);
-assert(t.upgrades['Kitten helpers'].pp < bestRow.pp && t.upgrades['Kitten helpers'].colour === 'blue', 'an upgrade better than any building: blue');
-assert(rows.every((r) => r.colour !== 'blue'), 'buildings are never blue');
+assert(bestRow.color === 'green' && rows.filter((r) => r.color === 'green').length === 1, `the best building is green (${bestRow.name} ×${bestRow.n})`);
+assert(t.upgrades['Kitten helpers'].pp < bestRow.pp && t.upgrades['Kitten helpers'].color === 'blue', 'an upgrade better than any building: blue');
+assert(rows.every((r) => r.color !== 'blue'), 'buildings are never blue');
 model.each.Bank = 0;
 Game.CalculateGains();
-assert(P.table().buildings[1].Bank.colour === 'gray' && P.table().buildings[1].Bank.pp === Infinity, 'adds nothing: gray, ∞');
+assert(P.table().buildings[1].Bank.color === 'gray' && P.table().buildings[1].Bank.pp === Infinity, 'adds nothing: gray, ∞');
 model.each.Bank = 1400;
 Game.CalculateGains();
 
 // ---- options
 CA.Settings.set('ppOnlyBuyable', true);
 const tb = P.table();
-assert(tb.buildings[1]['Wizard tower'].colour === 'red' && tb.buildings[1].Grandma.colour !== 'red', 'only buyable: what you can’t afford is red');
+assert(tb.buildings[1]['Wizard tower'].color === 'red' && tb.buildings[1].Grandma.color !== 'red', 'only buyable: what you can’t afford is red');
 CA.Settings.set('ppOnlyBuyable', false);
 CA.Settings.set('ppSecondsLowerLimit', 5);
-assert(P.table().buildings[1].Cursor.colour === 'blue', 'costing under 5 s of CpS: blue');
+assert(P.table().buildings[1].Cursor.color === 'blue', 'costing under 5 s of CpS: blue');
 CA.Settings.set('ppSecondsLowerLimit', 0);
 
 // ---- the code words: pp.*, the cm.* names hidden but working

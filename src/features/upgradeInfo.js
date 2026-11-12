@@ -183,7 +183,7 @@ CA.UpgradeInfo = (() => {
     const p = price(u);
     const pp = CA.Payback.ppOf(p, w);
     const t = CA.Payback.table({ staleMs: 2000 });
-    return { price: p, bonus: w.bonus, mouse: w.mouse, gain: w.gain, pp, colour: t.colourOf ? t.colourOf(pp, p) : '', won: w.won || [] };
+    return { price: p, bonus: w.bonus, mouse: w.mouse, gain: w.gain, pp, color: t.colorOf ? t.colorOf(pp, p) : '', won: w.won || [] };
   }
 
   // ---- as HTML -------------------------------------------------------------------------------------

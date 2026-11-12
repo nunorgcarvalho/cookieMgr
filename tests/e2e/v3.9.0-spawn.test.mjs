@@ -4,7 +4,7 @@
 //   cookies widget and its sparkline are gone)
 //   (the distribution itself is checked against the real game in tests/sim/golden-spawn)
 //   switches out of payback — no payback period, never the best buy, never bought by the buyers;
-//   the Payback page shows them only on request, greyed; the store gives them no block and sorts them last
+//   the Payback page shows them only on request, grayed; the store gives them no block and sorts them last
 import { IDBFactory, IDBKeyRange } from 'fake-indexeddb';
 import { boot, sleep, makeAssert, click } from '../harness/game.mjs';
 import { cpsModel } from '../harness/cps.mjs';
@@ -103,12 +103,12 @@ CA.Actions.run('buy.best', { kind: 'upgrade' });
 assert(!gold.bought && kitten.bought, 'buy.best: the same');
 kitten.bought = 0;
 Game.CalculateGains();
-// the Payback page: hidden by default, greyed on request
+// the Payback page: hidden by default, grayed on request
 CA.UI.Menu.openPage('payback');
 const pp = () => doc.querySelector('[data-page="payback"]');
 assert(!pp().querySelector('.ca-pp-switch') && pp().querySelector('[data-pp-up="Kitten helpers"]'), 'Payback page: upgrades only, by default');
 click(w, pp().querySelector('[data-pp-opt="ppShowSwitches"]'));
-assert(CA.Settings.get('ppShowSwitches') === true && pp().querySelectorAll('.ca-pp-switch').length === 2 && !pp().querySelector('.ca-pp-switch[data-pp-up]'), 'the chip: switches shown, greyed, no PP, not buyable from here — and remembered');
+assert(CA.Settings.get('ppShowSwitches') === true && pp().querySelectorAll('.ca-pp-switch').length === 2 && !pp().querySelector('.ca-pp-switch[data-pp-up]'), 'the chip: switches shown, grayed, no PP, not buyable from here — and remembered');
 click(w, pp().querySelector('[data-pp-opt="ppShowSwitches"]'));
 assert(!pp().querySelector('.ca-pp-switch'), 'and hidden again');
 // the store: no block on a switch's tooltip, last in the upgrade sort

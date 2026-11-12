@@ -129,7 +129,7 @@ set(2, 3, 'bakeberry', 20);
 M.soil = 2; // clay
 CA.UI.Menu.openPage('garden');
 const page = () => doc.querySelector('[data-page="garden"]');
-assert(page() && page().querySelectorAll('[data-gp-plot] .ca-gtile').length === 36 && page().querySelectorAll('[data-gp-plot] .ca-gtile.locked').length === 24, 'Garden page: the plot, locked tiles greyed');
+assert(page() && page().querySelectorAll('[data-gp-plot] .ca-gtile').length === 36 && page().querySelectorAll('[data-gp-plot] .ca-gtile.locked').length === 24, 'Garden page: the plot, locked tiles grayed');
 assert(page().querySelector('[data-macro-row="gardener"]'), 'the Auto-gardener switch');
 // v3.3: "From the garden" — a profile of yours: a template + seeds of what's planted, loaded
 click(w, page().querySelector('[data-gp-pact="snapshot"]'));

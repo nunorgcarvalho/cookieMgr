@@ -42,7 +42,8 @@ function differences(counted) {
       n++;
       if (!close(a.bonus, b.bonus)) bad.push(`${name} ×${bulk} bonus ${fmt(a.bonus)} vs CM ${fmt(b.bonus)}`);
       else if (!close(a.pp, b.pp, 1e-5)) bad.push(`${name} ×${bulk} PP ${fmt(a.pp)} vs CM ${fmt(b.pp)}`);
-      else if (a.colour !== String(b.colour).toLowerCase()) bad.push(`${name} ×${bulk} color ${a.colour} vs CM ${b.colour}`);
+      // b.colour: Cookie Monster's own field name (its spelling, not ours)
+      else if (a.color !== String(b.colour).toLowerCase()) bad.push(`${name} ×${bulk} color ${a.color} vs CM ${b.colour}`);
     }
   }
   let u = 0;

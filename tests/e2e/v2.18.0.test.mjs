@@ -65,7 +65,7 @@ const G2 = CA.UI.Plot.get('garden');
 G2.tick && G2.tick();
 d = G2.last();
 assert(d.data.xAxis && d.data.xAxis.x1 === 5 && d.data.bars.every((b) => b.x1 - b.x0 === 1), `growth: a bar per tick (${d.data.xAxis && d.data.xAxis.x0}–${d.data.xAxis && d.data.xAxis.x1})`);
-assert(d.data.xAxis.labels[d.data.xAxis.labels.length - 1].label === 'now', 'labelled back from now');
+assert(d.data.xAxis.labels[d.data.xAxis.labels.length - 1].label === 'now', 'labeled back from now');
 assert(/2 ticks ago/.test(d.data.xAxis.head(d.data.bars.find((b) => b.tick === 2))), 'tooltip heading in ticks');
 const t2 = d.data.bars.find((b) => b.tick === 2);
 const t4 = d.data.bars.find((b) => b.tick === 4);

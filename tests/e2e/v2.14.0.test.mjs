@@ -57,7 +57,7 @@ const canvas = doc.querySelector('[data-plot="actual"] canvas');
 canvas.dispatchEvent(new w.MouseEvent('mousemove', { bubbles: true, clientX: 600, clientY: 100 }));
 const tip = doc.querySelector('[data-plot-tip="actual"]');
 const rows = [...tip.querySelectorAll('.ca-tip-row')].map((r) => r.textContent);
-// v2.17.1: figures separated by a centred dot, a shared unit only once
+// v2.17.1: figures separated by a centered dot, a shared unit only once
 assert(rows.some((r) => /^Building CpS \(raw · boosted\)[\d.]+[A-Za-z]* · [\d.]+[A-Za-z]*\/s$/.test(r)), `one row per category, raw · boosted, "/s" once (${rows.join(' | ')})`);
 assert(!rows.some((r) => /unboosted|CpS boost/.test(r)), 'no separate boost rows');
 assert(rows.some((r) => /^Clicking \(raw · boosted\)/.test(r)), 'clicking too');

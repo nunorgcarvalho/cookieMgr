@@ -11,7 +11,7 @@ const doc = w.document;
 await sleep(300);
 const css = [...doc.querySelectorAll('style')].map((s) => s.textContent).join('\n');
 
-// ---- the CSS: the muted classes get a bright colour only under .ca-w-clear; chart axis text gets a stroke
+// ---- the CSS: the muted classes get a bright color only under .ca-w-clear; chart axis text gets a stroke
 ['.ca-w-stat span', '.ca-tl-nums em', '.ca-w-empty', '.ca-ev-time', '.ca-sp-ticks text', '.ca-graph-mini .ca-legend'].forEach((sel) =>
   assert(css.includes(`#CookieMgrWidgets .ca-w-clear ${sel}`), `${sel} has a see-through override`)
 );

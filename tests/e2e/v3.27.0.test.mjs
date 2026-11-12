@@ -57,7 +57,7 @@ const valOf = (id) => {
 };
 const best = ST.bestOf('building');
 assert(best && best.kind === 'building', `the best building (${best && best.name})`);
-assert(valOf('payback').textContent === CA.Format.payback(best.r.pp) && valOf('payback').classList.contains(`ca-pp-${best.r.colour}`), `a line’s value now, in its colour (${valOf('payback').textContent})`);
+assert(valOf('payback').textContent === CA.Format.payback(best.r.pp) && valOf('payback').classList.contains(`ca-pp-${best.r.color}`), `a line’s value now, in its color (${valOf('payback').textContent})`);
 assert(/Kitten helpers/.test(page().querySelector('[data-tl-preview]').textContent), 'the previews: a building, the best upgrade');
 // pick the previewed building: the values follow
 change(page().querySelector('[data-tl-b]'), 'Cursor');
@@ -93,7 +93,7 @@ await goTo('tooltips');
 const cards = () => [...page().querySelectorAll('[data-st-card]')];
 assert(cards().length === ST.all().length, `a card per statistic (${cards().length})`);
 const card = (id) => page().querySelector(`[data-st-card="${id}"]`);
-assert(card('payback').querySelector('.ca-code-hl .hv') && /item\.payback/.test(card('payback').textContent), 'its code, coloured');
+assert(card('payback').querySelector('.ca-code-hl .hv') && /item\.payback/.test(card('payback').textContent), 'its code, colored');
 assert(card('payback').querySelector('[data-st-val="payback"]').textContent === CA.Format.payback(cur.r.pp), 'its value for the previewed building');
 assert(/stat\.payback\(item\)/.test(card('payback').textContent), 'how to call it from a macro');
 assert(card('click').querySelector('.ca-st-live span').textContent === 'Kitten helpers', 'an upgrade’s: about the best upgrade');

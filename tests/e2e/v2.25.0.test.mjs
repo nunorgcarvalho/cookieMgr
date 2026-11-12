@@ -55,12 +55,12 @@ click(w, ed().querySelector('[data-edit-act="revert"]'));
 click(w, ed().querySelector('[data-edit-act="revert"]'));
 m = M.get('fortune');
 assert(m.name === 'Fortune news' && m.steps.length === 1 && !M.isCustomized('fortune') && !ed(), 'Revert to default: back to how it comes');
-// favourites survive edits and reverts
+// favorites survive edits and reverts
 M.setFav('golden', true);
 M.customize('golden', { ...M.get('golden'), name: 'G' });
 M.revert('golden');
-assert(M.isFav('golden'), 'still a favourite after editing and reverting');
-// settings count as customised too
+assert(M.isFav('golden'), 'still a favorite after editing and reverting');
+// settings count as customized too
 M.setEvery('wrath', 500);
 assert(M.isCustomized('wrath'), 'changed settings show as edited');
 M.revert('wrath');

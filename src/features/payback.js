@@ -36,7 +36,7 @@ CA.Payback = (() => {
   const buildingNamed = (name) => (Game.Objects || {})[name] || objects().find((o) => o.dname === name) || null;
   const upgradeNamed = (name) => (Game.Upgrades || {})[name] || (Game.UpgradesInStore || []).find((u) => u && u.name === name) || null;
   const BULKS = [1, 10, 100];
-  const COLOURS = ['blue', 'green', 'yellow', 'orange', 'red', 'purple', 'gray'];
+  const COLORS = ['blue', 'green', 'yellow', 'orange', 'red', 'purple', 'gray'];
 
   // ---- clicks per second (for upgrades that make clicks stronger) ----------------------------------
 
@@ -705,7 +705,7 @@ CA.Payback = (() => {
     const min = ranked.length ? ranked[at][0] : Infinity;
     const minBulk = ranked.length ? ranked[at][1] : 1;
     const rank = (i) => (ranked[i] ? ranked[i][0] : Infinity);
-    const colourOf = (v, price) => {
+    const colorOf = (v, price) => {
       let col;
       if (!(v > 0) || v === Infinity) col = 'gray';
       else if (v < min) col = 'blue';
@@ -719,7 +719,7 @@ CA.Payback = (() => {
       if (CA.Settings.get('ppOnlyBuyable') && price > Game.cookies) col = 'red';
       return col;
     };
-    BULKS.forEach((n) => Object.values(rows[n]).forEach((r) => (r.colour = colourOf(r.pp, r.price))));
+    BULKS.forEach((n) => Object.values(rows[n]).forEach((r) => (r.color = colorOf(r.pp, r.price))));
     const upgrades = {};
     const switches = [];
     (Game.UpgradesInStore || []).forEach((u) => {
@@ -728,9 +728,9 @@ CA.Payback = (() => {
       const { price, waits } = upgradeCost(u);
       const x = w ? parts(price, w) : null;
       const v = x ? x.pp : Infinity;
-      upgrades[u.name] = { name: u.name, price, bonus: w ? w.bonus : 0, mouse: w ? w.mouse : 0, gain: x ? x.gain : 0, afford: x ? x.afford : timeTo(price), earn: x ? x.earn : Infinity, mode: currentMode().id, worth: w, pp: v, colour: colourOf(v, price), won: w ? w.won : [], waits };
+      upgrades[u.name] = { name: u.name, price, bonus: w ? w.bonus : 0, mouse: w ? w.mouse : 0, gain: x ? x.gain : 0, afford: x ? x.afford : timeTo(price), earn: x ? x.earn : Infinity, mode: currentMode().id, worth: w, pp: v, color: colorOf(v, price), won: w ? w.won : [], waits };
     });
-    return { buildings: rows, upgrades, switches, min, minBulk, colourOf };
+    return { buildings: rows, upgrades, switches, min, minBulk, colorOf };
   }
 
   // ---- the best thing to buy -----------------------------------------------------------------------
@@ -789,7 +789,7 @@ CA.Payback = (() => {
       const x = parts(price, worth, opts.mode);
       const v = x.pp;
       const row = t && t.buildings[n] && t.buildings[n][name];
-      out.push({ kind: 'building', name, n, label: n > 1 ? `${n} × ${b.dname || name}` : b.dname || name, price, bonus: worth.bonus, gain: x.gain, pp: v, won: worth.won || [], colour: row ? row.colour : t ? t.colourOf(v, price) : null });
+      out.push({ kind: 'building', name, n, label: n > 1 ? `${n} × ${b.dname || name}` : b.dname || name, price, bonus: worth.bonus, gain: x.gain, pp: v, won: worth.won || [], color: row ? row.color : t ? t.colorOf(v, price) : null });
     });
     us.forEach((u) => {
       const w = upgradeWorth(u.name, c);
@@ -798,7 +798,7 @@ CA.Payback = (() => {
       const x = parts(price, w, opts.mode);
       const v = x.pp;
       const row = t && t.upgrades[u.name];
-      out.push({ kind: 'upgrade', name: u.name, n: 1, label: u.dname || u.name, price, bonus: w.gain, gain: x.gain, pp: v, won: w.won || [], colour: row ? row.colour : t ? t.colourOf(v, price) : null, estimated: !(w.bonus > 0) && w.mouse > 0, ...(waits ? { waits } : {}) });
+      out.push({ kind: 'upgrade', name: u.name, n: 1, label: u.dname || u.name, price, bonus: w.gain, gain: x.gain, pp: v, won: w.won || [], color: row ? row.color : t ? t.colorOf(v, price) : null, estimated: !(w.bonus > 0) && w.mouse > 0, ...(waits ? { waits } : {}) });
     });
     return out.filter((x) => (opts.all ? !Number.isNaN(x.pp) : Number.isFinite(x.pp)) && (!opts.skip || affordable(x.price))).sort((a, b) => (a.pp === b.pp ? 0 : a.pp - b.pp));
   }
@@ -1122,7 +1122,7 @@ CA.Payback = (() => {
     V('actualIncome', 'cookies a second you actually took in over about the last seconds of play (at least 5 minutes; NaN: too little recorded)', ['seconds'], (p) => (actualIncome(Number(p) || 0) || { actual: NaN }).actual);
   }
 
-  return { init, modes, mode: currentMode, actualWindow, actualWindowText, setActualWindow, windowText, ACTUAL_PRESETS, SINCE_ASCENSION, modeOf, income, bank, parts, ppOf, buildingWorth, actualRatio, clicksOver, incomeOver, isSwitch, ppActual, actualIncome, calls: () => calls, table, ranking, best, buy, buyBuilding, buyUpgrade, buyUpgrades, buildingBonus, upgradeWorth, upgradesWorth, achievementWorth, allUpgrades, pp, timeTo, sumPrice, clickRate, nextAchievement, storeUpgrades, measureAll, effectBoost, effectLeft, effectWait, shortBoost, shortLeft, waitingOut, unbuffedPrice, upgradeCost, COLOURS, BULKS,
+  return { init, modes, mode: currentMode, actualWindow, actualWindowText, setActualWindow, windowText, ACTUAL_PRESETS, SINCE_ASCENSION, modeOf, income, bank, parts, ppOf, buildingWorth, actualRatio, clicksOver, incomeOver, isSwitch, ppActual, actualIncome, calls: () => calls, table, ranking, best, buy, buyBuilding, buyUpgrade, buyUpgrades, buildingBonus, upgradeWorth, upgradesWorth, achievementWorth, allUpgrades, pp, timeTo, sumPrice, clickRate, nextAchievement, storeUpgrades, measureAll, effectBoost, effectLeft, effectWait, shortBoost, shortLeft, waitingOut, unbuffedPrice, upgradeCost, COLORS, BULKS,
     // the count achievements of the game's own checks, [[count, name]] (features/achievementInfo.js reads them too)
     ACHIEVS: { cursor: CURSOR_ACHIEVS, min: MIN_ACHIEVS, total: TOTAL_ACHIEVS, upgrades: UPGRADE_ACHIEVS } };
 })();

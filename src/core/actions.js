@@ -9,7 +9,8 @@
 //     icon: 'cookie',                   // ui/icons.js name
 //     group: 'Shimmers',                // heading in the macro editor's action picker
 //     unit: 'popped',                   // what run()'s return value counts, for status displays
-//     params: [{ key, label, type: 'select'|'number'|'bool', options: () => [{ v, label }], default }],
+//     params: [{ key, label, type: 'select'|'number'|'bool', options: () => [{ v, label }], default,
+//                alias }],                // alias: an old name for the key, still read (saved macros, code)
 //     available: () => true,            // false = can't run right now (minigame closed, …)
 //     run(params) { return 3; },        // a number = how many things it did (0 = nothing to do)
 //   });
@@ -34,7 +35,14 @@ CA.Actions = (() => {
     const a = byId[id];
     const out = {};
     if (a) a.params.forEach((p) => (out[p.key] = p.default));
-    return { ...out, ...(params || {}) };
+    const given = { ...(params || {}) };
+    if (a)
+      a.params.forEach((p) => {
+        if (!p.alias || !(p.alias in given)) return;
+        if (!(p.key in given)) given[p.key] = given[p.alias];
+        delete given[p.alias];
+      });
+    return { ...out, ...given };
   }
 
   /** Runs action `id` once. Returns its count (0 if it couldn't run), throws on errors. */

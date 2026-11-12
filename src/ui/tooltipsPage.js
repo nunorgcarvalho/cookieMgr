@@ -201,9 +201,9 @@ CA.UI.TooltipsPage = (() => {
   // ---- the warnings ---------------------------------------------------------------------------------
 
   /** A warning's color: its own, the item's payback color, or red. */
-  const warnColour = (s) => (s.colour === 'payback' ? 'payback' : ST().COLOURS.includes(s.colour) ? s.colour : 'red');
-  const COLOUR_TAG = (s) =>
-    `<span class="ca-tl-kind ca-tl-colour ${warnColour(s)}" data-tip="Its color (the store’s “!” takes the first warning’s)">${warnColour(s) === 'payback' ? 'payback colour' : warnColour(s)}</span>`;
+  const warnColor = (s) => (s.color === 'payback' ? 'payback' : ST().COLORS.includes(s.color) ? s.color : 'red');
+  const COLOR_TAG = (s) =>
+    `<span class="ca-tl-kind ca-tl-color ${warnColor(s)}" data-tip="Its color (the store’s “!” takes the first warning’s)">${warnColor(s) === 'payback' ? 'payback color' : warnColor(s)}</span>`;
   function warnsHtml() {
     const list = SI().warningList();
     const btn = (attr, i, icon, tip, off) =>
@@ -217,7 +217,7 @@ CA.UI.TooltipsPage = (() => {
           '<span></span>' +
           `<span class="ca-tl-n">${i + 1}</span>` +
           `<span class="ca-tl-name">${esc(s.label)}</span>` +
-          COLOUR_TAG(s) +
+          COLOR_TAG(s) +
           `<span class="ca-tl-val ${cls}" data-tw-val="${i}">${v}</span>` +
           '<span></span>' +
           btn('data-tw-up', i, '↑', 'Move up', i === 0) +
@@ -319,7 +319,7 @@ CA.UI.TooltipsPage = (() => {
     const call = `stat.${s.key}(${s.scope === 'game' ? '' : 'item'})`;
     return (
       `<div class="ca-st-card${s.builtin ? '' : ' yours'}" data-st-card="${esc(s.id)}">` +
-      `<div class="ca-st-head"><b class="ca-st-name">${esc(s.label)}</b>${kindTag(s.scope)}${s.warn ? `<span class="ca-tl-kind ca-tl-colour ${warnColour(s)}" data-tip="A warning: it marks items in the store">⚠ warning</span>` : ''}${s.mode ? '<span class="ca-tl-kind ca-st-modetag" data-tip="A payback mode: it sets income (what payback periods count in) and returns what the item adds to it">payback mode</span>' : ''}${s.builtin ? (s.customized ? '<span class="ca-tl-kind yours" data-tip="A built-in you’ve changed (Edit → Reset brings back the original)">changed</span>' : '') : '<span class="ca-tl-kind yours">yours</span>'}${star}</div>` +
+      `<div class="ca-st-head"><b class="ca-st-name">${esc(s.label)}</b>${kindTag(s.scope)}${s.warn ? `<span class="ca-tl-kind ca-tl-color ${warnColor(s)}" data-tip="A warning: it marks items in the store">⚠ warning</span>` : ''}${s.mode ? '<span class="ca-tl-kind ca-st-modetag" data-tip="A payback mode: it sets income (what payback periods count in) and returns what the item adds to it">payback mode</span>' : ''}${s.builtin ? (s.customized ? '<span class="ca-tl-kind yours" data-tip="A built-in you’ve changed (Edit → Reset brings back the original)">changed</span>' : '') : '<span class="ca-tl-kind yours">yours</span>'}${star}</div>` +
       `<div class="ca-st-live"><span>${c ? aboutHtml(c) : 'the game'}</span><b class="${cls}" data-st-val="${esc(s.id)}">${v}</b></div>` +
       `<div class="ca-st-desc">${esc(s.desc || '')}</div>` +
       codeHtml(s.source) +

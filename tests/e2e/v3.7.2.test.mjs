@@ -1,6 +1,6 @@
 // v3.7.2: payback measures only what's asked. Buying (best, pp.best, the autobuyers) asks for the
 // buildings you can buy at the amount you'd buy and the store's upgrades — not the sixty rows of the
-// colour table (every building ×1/×10/×100, locked ones too), which only the store's colours and the
+// color table (every building ×1/×10/×100, locked ones too), which only the store's colors and the
 // Payback page need; best() doesn't measure an upgrade whose wait to afford alone is longer than the
 // best building's payback period; cookie upgrades that win nothing are worked out (CpS × power%)
 // after one is measured as a check; the store redraws from a table up to 2 s old. Same answers.
@@ -49,8 +49,8 @@ const newState = () => (Game.pledges = 100 + ++st); // in the cache's key: a new
 newState();
 n = 0;
 const top = P.best('all');
-assert(top && n <= 3 + 2 + 4, `best(): ${n} CpS computations — 3 unlocked buildings + 2 of 4 upgrades measured (two cookies worked out), + a baseline and a restore for each of the two batches; the colour table would be 15 + 4`);
-assert(n < 15, 'not the colour table (5 buildings × 3 bulks)');
+assert(top && n <= 3 + 2 + 4, `best(): ${n} CpS computations — 3 unlocked buildings + 2 of 4 upgrades measured (two cookies worked out), + a baseline and a restore for each of the two batches; the color table would be 15 + 4`);
+assert(n < 15, 'not the color table (5 buildings × 3 bulks)');
 // the cookie upgrades worked out: exactly CpS × power%
 const base = Game.cookiesPs;
 const r = Object.fromEntries(P.ranking('upgrade').map((x) => [x.name, x.bonus]));

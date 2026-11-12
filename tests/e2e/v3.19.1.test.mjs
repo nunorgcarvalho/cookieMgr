@@ -59,7 +59,7 @@ const lastShape = Math.max(...kids.map((k, i) => (k.matches('path, line, rect, c
 assert(kids.findIndex((k) => k.querySelector && k.querySelector('.ca-sp-since')) > lastShape && kids.findIndex((k) => k.matches('.ca-sp-ylab')) > lastShape, 'the labels come after every line, curve and bar (drawn on top)');
 const half = card().querySelector('.ca-sp-half');
 const hp = d.cycle.cdf(240 + d.wait.mean);
-assert(Math.abs(Number(half.getAttribute('y1')) - (128 - 118 * hp)) < 0.05 && [...card().querySelectorAll('.ca-sp-ylab')].some((t) => t.textContent === `${(hp * 100).toFixed(hp < 0.1 ? 1 : 0)}%`), `the dashed line across meets the expected line on the curve, labelled ${(hp * 100).toFixed(0)}%`);
+assert(Math.abs(Number(half.getAttribute('y1')) - (128 - 118 * hp)) < 0.05 && [...card().querySelectorAll('.ca-sp-ylab')].some((t) => t.textContent === `${(hp * 100).toFixed(hp < 0.1 ? 1 : 0)}%`), `the dashed line across meets the expected line on the curve, labeled ${(hp * 100).toFixed(0)}%`);
 CA.Settings.set('widgetsShown', true);
 CA.UI.Widgets.add('goldenNext');
 CA.UI.Widgets.render();

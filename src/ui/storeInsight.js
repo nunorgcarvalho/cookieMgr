@@ -15,14 +15,14 @@
 //
 //   sort       optionally, the upgrades in payback order (color group, then payback period)
 //
-// Options (Settings → Store): storeColours, storeTooltips, storeWarnings, storeUpgradeSort (and,
+// Options (Settings → Store): storeColors, storeTooltips, storeWarnings, storeUpgradeSort (and,
 // chosen on the Tooltips page: storeTooltipLines, storeWarningList).
 
 CA.UI = CA.UI || {};
 
 CA.UI.StoreInsight = (() => {
   const P = () => CA.Payback;
-  const COLOURS = ['blue', 'green', 'yellow', 'orange', 'red', 'purple', 'gray'];
+  const COLORS = ['blue', 'green', 'yellow', 'orange', 'red', 'purple', 'gray'];
   const S = (k) => CA.Settings.get(k);
 
   // ---- colors -----------------------------------------------------------------------------------
@@ -36,7 +36,7 @@ CA.UI.StoreInsight = (() => {
     const price = P().sumPrice(b, n);
     const worth = P().buildingWorth(b.name, n);
     const x = P().parts(price, worth);
-    return { name: b.name, n, price, bonus: worth.bonus, gain: x.gain, afford: x.afford, earn: x.earn, mode: x.mode, worth, pp: x.pp, colour: t.colourOf(x.pp, price), won: worth.won };
+    return { name: b.name, n, price, bonus: worth.bonus, gain: x.gain, afford: x.afford, earn: x.earn, mode: x.mode, worth, pp: x.pp, color: t.colorOf(x.pp, price), won: worth.won };
   }
 
   /** An item's mark in the store: the color of its first warning (or none). */
@@ -50,19 +50,19 @@ CA.UI.StoreInsight = (() => {
       el = document.createElement('div');
       host.appendChild(el);
     }
-    el.className = `ca-bank-mark ca-pp-bg-${warns[0].colour}`;
+    el.className = `ca-bank-mark ca-pp-bg-${warns[0].color}`;
     el.textContent = '!';
   }
 
   function paint() {
-    const on = S('storeColours') && Game.buyMode === 1;
+    const on = S('storeColors') && Game.buyMode === 1;
     const warn = Game.buyMode === 1 && warningsOn();
     const t = on || warn ? P().table({ staleMs: 2000 }) : null;
     Object.values(Game.Objects || {}).forEach((b) => {
       const el = document.getElementById(`productPrice${b.id}`);
       if (!el) return;
-      COLOURS.forEach((c) => el.classList.remove(`ca-pp-${c}`));
-      if (on) el.classList.add(`ca-pp-${rowFor(b, t).colour}`);
+      COLORS.forEach((c) => el.classList.remove(`ca-pp-${c}`));
+      if (on) el.classList.add(`ca-pp-${rowFor(b, t).color}`);
       const host = document.getElementById(`product${b.id}`);
       if (host) mark(host, warn ? warnings({ kind: 'building', name: b.name, r: rowFor(b, t), t }) : []);
     });
@@ -73,8 +73,8 @@ CA.UI.StoreInsight = (() => {
       ? (Game.UpgradesInStore || [])
           .map((u) => ({ u, r: tu.upgrades[u.name] }))
           .sort((a, b) => {
-            const ca = COLOURS.indexOf(a.r ? a.r.colour : 'gray');
-            const cb = COLOURS.indexOf(b.r ? b.r.colour : 'gray');
+            const ca = COLORS.indexOf(a.r ? a.r.color : 'gray');
+            const cb = COLORS.indexOf(b.r ? b.r.color : 'gray');
             return ca - cb || (a.r ? a.r.pp : Infinity) - (b.r ? b.r.pp : Infinity);
           })
           .map((x) => x.u)
@@ -97,7 +97,7 @@ CA.UI.StoreInsight = (() => {
         dot = document.createElement('div');
         el.appendChild(dot);
       }
-      dot.className = `ca-pp-updot ca-pp-bg-${r.colour}`;
+      dot.className = `ca-pp-updot ca-pp-bg-${r.color}`;
     });
   }
 
@@ -137,7 +137,7 @@ CA.UI.StoreInsight = (() => {
   /** The tooltip's one warning line: a colored tag for each warning, with what it shows. */
   function warnLine(warns) {
     if (!warns.length) return '';
-    const tags = warns.map((w) => `<span class="ca-tt-bank ca-tt-bank-${w.colour}">${w.label} <small>${w.html}</small></span>`);
+    const tags = warns.map((w) => `<span class="ca-tt-bank ca-tt-bank-${w.color}">${w.label} <small>${w.html}</small></span>`);
     return `<div class="ca-tt-row ca-tt-warn"><span>⚠</span><b>${tags.join('')}</b></div>`;
   }
 
@@ -338,7 +338,7 @@ CA.UI.StoreInsight = (() => {
 
   function init() {
     const D = (key, icon, name, desc) => CA.Settings.defineOption({ key, group: 'store', icon, name, desc, default: true });
-    D('storeColours', 'drop', 'Payback colors', 'Each building’s price in its payback color (for what a click buys), and a dot in each upgrade’s corner — blue better than the best building, green the best, then yellow, orange, red, purple; gray never pays back.');
+    D('storeColors', 'drop', 'Payback colors', 'Each building’s price in its payback color (for what a click buys), and a dot in each upgrade’s corner — blue better than the best building, green the best, then yellow, orange, red, purple; gray never pays back.');
     D('storeTooltips', 'search', 'Payback in tooltips', 'Under the game’s building and upgrade tooltips: the CpS it adds, its payback period, when you can afford it, its share of production, the next achievement.');
     CA.Settings.defineOption({ key: 'storeUpgradeSort', group: 'store', icon: 'sortList', name: 'Upgrades: best first', desc: 'The store lists its upgrades by payback period (best first, in color groups) instead of by price.', default: false });
     CA.Settings.defineOption({ key: 'storeTooltipLines', group: 'store-hidden', name: 'Tooltip lines', desc: '', default: null });
@@ -356,7 +356,7 @@ CA.UI.StoreInsight = (() => {
         /* a store mid-rebuild: next time */
       }
     }, 500);
-    CA.Events.on('settings', (k) => (k === 'storeColours' || k === 'storeUpgradeSort' || k === 'storeWarnings' || k === 'storeWarningList' || k === null) && paint());
+    CA.Events.on('settings', (k) => (k === 'storeColors' || k === 'storeUpgradeSort' || k === 'storeWarnings' || k === 'storeWarningList' || k === null) && paint());
     CA.Events.on('stats', () => paint());
 
     // code: tooltips.profile(name) puts a saved tooltip layout in use

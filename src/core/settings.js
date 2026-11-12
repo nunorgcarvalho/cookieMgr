@@ -136,6 +136,11 @@ CA.Settings = (() => {
   function migrateOptions(saved, v, data) {
     const out = { ...saved };
     if (!(v >= 2) && out.numberFormat === 'abbr') out.numberFormat = 'short';
+    // American spelling: the store's payback colors option was saved as storeColours
+    if ('storeColours' in out) {
+      if (!('storeColors' in out)) out.storeColors = out.storeColours;
+      delete out.storeColours;
+    }
     const profiles = data && data.buyer && Array.isArray(data.buyer.profiles) ? data.buyer.profiles : [];
     const retired = [out.ppMode].concat(profiles.map((p) => p && p.mode)).find((m) => RETIRED_ACTUAL[m]);
     if (retired) out.ppActualWindow = RETIRED_ACTUAL[retired];

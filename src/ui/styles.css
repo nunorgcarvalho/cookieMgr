@@ -7882,32 +7882,32 @@ body.ca-has-storebar #products {
 #CookieMgrMenu .ca-tw-row {
   cursor: default;
 }
-#CookieMgrMenu .ca-tl-colour.red {
+#CookieMgrMenu .ca-tl-color.red {
   color: #ff8a8a;
   background: rgba(255, 107, 107, 0.15);
 }
-#CookieMgrMenu .ca-tl-colour.orange {
+#CookieMgrMenu .ca-tl-color.orange {
   color: #ffb36a;
   background: rgba(255, 170, 77, 0.15);
 }
-#CookieMgrMenu .ca-tl-colour.yellow {
+#CookieMgrMenu .ca-tl-color.yellow {
   color: #ffe066;
   background: rgba(255, 224, 102, 0.12);
 }
-#CookieMgrMenu .ca-tl-colour.green {
+#CookieMgrMenu .ca-tl-color.green {
   color: #9dff9a;
   background: rgba(125, 255, 122, 0.12);
 }
-#CookieMgrMenu .ca-tl-colour.blue {
+#CookieMgrMenu .ca-tl-color.blue {
   color: #8fd0ff;
   background: rgba(110, 195, 255, 0.14);
 }
-#CookieMgrMenu .ca-tl-colour.purple {
+#CookieMgrMenu .ca-tl-color.purple {
   color: #d6b3ff;
   background: rgba(201, 155, 255, 0.14);
 }
-#CookieMgrMenu .ca-tl-colour.gray,
-#CookieMgrMenu .ca-tl-colour.payback {
+#CookieMgrMenu .ca-tl-color.gray,
+#CookieMgrMenu .ca-tl-color.payback {
   color: #bdbdbd;
   background: rgba(154, 154, 154, 0.14);
 }

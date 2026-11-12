@@ -84,7 +84,7 @@ const PROBLEMS = [
   ['bogus.action()', /“bogus\.action” isn’t an action/],
   ['if cookies() > 1:\nlog "x"', /needs an indented block/],
   ['pop.golden(1, 2, 3)', /takes no options/],
-  ['spell.cast(colour=red)', /has no option “colour”/],
+  ['spell.cast(color=red)', /has no option “color”/],
   ['wait until', /expected something to compare/],
   ['wait 5K', /a time is in seconds or minutes/],
   ['wait 5 hours', /a time is in seconds or minutes/],

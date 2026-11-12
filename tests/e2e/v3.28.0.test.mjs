@@ -1,5 +1,5 @@
-// v3.28.0: the statistic editor (ui/statEditor.js) on the Tooltips page — New, Edit, Customise a
-// built-in (Reset), Delete; its code name, what it's about, how it reads, its colour, its group; the
+// v3.28.0: the statistic editor (ui/statEditor.js) on the Tooltips page — New, Edit, Customize a
+// built-in (Reset), Delete; its code name, what it's about, how it reads, its color, its group; the
 // code checked as a statistic, with the knobs and a library of what a statistic can use; what it shows
 // about an item you pick, and what each line did (the trace); copy as text, and Paste.
 import { boot, sleep, waitFor, makeAssert, click } from '../harness/game.mjs';
@@ -148,7 +148,7 @@ assert(ST.get(two[1].id), 'Delete: armed first');
 click(w, ed().querySelector('[data-se-act="delete"]'));
 assert(!SE.isOpen() && !ST.get(two[1].id) && JSON.stringify(SI.lines()) === '["payback"]', 'deleted, and its line');
 
-// ---- Customise a built-in, Reset
+// ---- Customize a built-in, Reset
 click(w, page().querySelector('[data-st-edit="price"]'));
 assert(ed().querySelector('[data-se="key"]').disabled && ed().querySelector('[data-se="scope"]').disabled && !ed().querySelector('[data-se-act="delete"]') && !ed().querySelector('[data-se-act="reset"]'), 'a built-in: its name and what it’s about stay; no Delete, nothing to reset yet');
 click(w, ed().querySelector('[data-se-act="save"]'));
@@ -158,7 +158,7 @@ click(w, page().querySelector('[data-st-edit="price"]'));
 type(ed().querySelector('[data-se="label"]'), 'Cost');
 type(ta(), 'return item.price() * 2');
 click(w, ed().querySelector('[data-se-act="save"]'));
-assert(ST.get('price').customized && ST.get('price').label === 'Cost' && /Cost/.test(Game.Objects.Farm.tooltip()), 'customised: in the tooltip');
+assert(ST.get('price').customized && ST.get('price').label === 'Cost' && /Cost/.test(Game.Objects.Farm.tooltip()), 'customized: in the tooltip');
 assert(/changed/.test(page().querySelector('[data-st-card="price"] .ca-st-head').textContent), 'the card says so');
 click(w, page().querySelector('[data-st-edit="price"]'));
 click(w, ed().querySelector('[data-se-act="reset"]'));

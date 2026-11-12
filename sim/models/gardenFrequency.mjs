@@ -17,7 +17,7 @@
 //                      clovers grows, until `clayAt` (a quarter, as the add-on's) of them are mature
 //   soil 'both'        as 'clovers', and fertilizer as well while any nursetulip is still growing
 //   soil 'clay'        always clay
-import { stageMult, randomFloor, decayChance, neighbours, bestNurseLayout } from './garden.mjs';
+import { stageMult, randomFloor, decayChance, neighbors, bestNurseLayout } from './garden.mjs';
 import { plotAt } from './gardenData.mjs';
 import { makeRng } from '../game/rng.mjs';
 
@@ -60,7 +60,7 @@ export function runGarden(
   };
   const die = { G: [], N: [] };
   for (const k of ['G', 'N']) for (let a = 0; a <= 100; a++) die[k][a] = decayChance(P[k], a);
-  const nb = neighbours(w, h);
+  const nb = neighbors(w, h);
   const G = kinds.map((k, i) => (k === 'G' ? i : -1)).filter((i) => i >= 0);
   const T = kinds.map((k, i) => (k === 'N' ? i : -1)).filter((i) => i >= 0);
   const age = new Array(N).fill(0);

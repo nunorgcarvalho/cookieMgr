@@ -1,5 +1,5 @@
 // The game's Santa / dragon menu: what cookieMgr opens to do something there (petting the dragon,
-// levelling Santa), it closes again, and what you had open stays open. The stubs below act like main.js:
+// leveling Santa), it closes again, and what you had open stays open. The stubs below act like main.js:
 // ToggleSpecialMenu(1) puts the menu up for Game.specialTab (any, even none), ToggleSpecialMenu(0) only
 // takes it down while a tab is set; UpgradeSanta redraws the menu whatever is open.
 import { IDBFactory, IDBKeyRange } from 'fake-indexeddb';

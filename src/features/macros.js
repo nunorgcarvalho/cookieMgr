@@ -954,6 +954,18 @@ CA.Macros = (() => {
       delete p.flow;
       if (p.custom && typeof p.custom === 'object') delete p.custom.flow;
       const base = baseDefs[id];
+      // a row choice saved under an action option's old name (alert.flash's "colour" → "color")
+      if (base && Array.isArray(base.steps) && p.params && typeof p.params === 'object') {
+        Object.keys(p.params).forEach((k) => {
+          const [i, key] = k.split('.');
+          const step = base.steps[i];
+          const def = step && CA.Actions.get(step.action);
+          const opt = def && def.params.find((x) => x.alias === key);
+          if (!opt) return;
+          if (p.params[`${i}.${opt.key}`] === undefined) p.params[`${i}.${opt.key}`] = p.params[k];
+          delete p.params[k];
+        });
+      }
       if (base && Array.isArray(base.inputs) && p.params && typeof p.params === 'object') {
         Object.keys(p.params).forEach((k) => {
           const key = k.split('.')[1];

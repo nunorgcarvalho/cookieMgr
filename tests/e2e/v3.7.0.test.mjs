@@ -26,7 +26,7 @@ Game.lumpRipeAge = 5000;
 assert(!cond('lumpRipe'), 'lumpRipe: not yet');
 
 // ---- actions
-assert(CA.Actions.run('alert.flash', { colour: 'red' }) === 1 && doc.querySelector('.ca-alert-flash'), 'alert.flash: a full-screen flash');
+assert(CA.Actions.run('alert.flash', { color: 'red' }) === 1 && doc.querySelector('.ca-alert-flash'), 'alert.flash: a full-screen flash');
 await waitFor(() => !doc.querySelector('.ca-alert-flash'), 2000);
 assert(!doc.querySelector('.ca-alert-flash'), '…that goes away');
 calls.sounds.length = 0;
@@ -61,10 +61,10 @@ Game.shimmers.push({ id: 2, type: 'golden', wrath: 0, popped: false });
 await waitFor(() => alerts().length > before + 1, 3000);
 assert(alerts().length === before + 2, 'the next one: again');
 M.set('alertGolden', false, { silent: true });
-// its card: the colour, the sound, where to note it
+// its card: the color, the sound, where to note it
 CA.UI.Menu.openPage('clickers');
 const card = doc.querySelector('[data-page="clickers"] .ca-mtile[data-macro-row="alertGolden"]');
-assert(card && card.querySelector('select[data-key="colour"]') && card.querySelector('select[data-key="sound"]') && card.querySelector('select[data-key="where"]'), 'its card: colour, sound, where');
+assert(card && card.querySelector('select[data-key="color"]') && card.querySelector('select[data-key="sound"]') && card.querySelector('select[data-key="where"]'), 'its card: color, sound, where');
 assert(/Alerts/.test(doc.querySelector('[data-page="clickers"]').textContent), 'an Alerts section on the Macros page');
 
 // ---- the tab

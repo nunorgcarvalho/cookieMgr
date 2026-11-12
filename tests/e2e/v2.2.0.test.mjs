@@ -124,7 +124,7 @@ assert(two && two.when.all.length === 2 && two.when.all[1].cond === 'magicPct' &
 const old = CA.Macros.save({ name: 'Old style', mode: 'when', when: { cond: 'buff', params: { name: 'Frenzy' }, edge: 'rise' }, steps: [{ action: 'pop.golden' }] });
 assert(old.when.all.length === 1 && old.when.all[0].params.name === 'Frenzy', 'v2.0 single-condition macros upgrade');
 
-// favourite a spell → shortcuts widget
+// favorite a spell → shortcuts widget
 CA.UI.Menu.openPage('wizard');
 await sleep(50);
 click(w, tile('hand of fate').querySelector('[data-wiz-fav]'));

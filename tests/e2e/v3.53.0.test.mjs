@@ -98,14 +98,14 @@ assert(hl, 'the editor is open');
 const lineEl = hl.querySelectorAll('.ca-hl-line')[6];
 const span = [...lineEl.querySelectorAll('span')].find((s) => s.textContent === 'payback');
 const at = CA.UI.CodeEditor.placeOf(span);
-assert(at.line === 7 && at.col === 16 && at.source === src, `a coloured word’s place in the code (${at.line}:${at.col})`);
+assert(at.line === 7 && at.col === 16 && at.source === src, `a colored word’s place in the code (${at.line}:${at.col})`);
 CA.UI.CodeEditor.showCard(span);
 const card = doc.querySelector('#CookieMgrLayer .ca-word-tip');
 assert(card && card.style.display === 'block' && /Payback/.test(card.textContent) && /Auto buyer profile/.test(card.textContent), 'its card shows in the floating layer');
 doc.dispatchEvent(new w.KeyboardEvent('keydown', { bubbles: true }));
 assert(card.style.display === 'none', 'typing hides it');
 const html = CA.UI.CodeEditor.cardHtml({ title: 'X', tag: 'T', sig: 'x(a)', desc: 'd', rows: [['k', 'v']], note: 'n' });
-assert(/ca-tip-head/.test(html) && /ca-word-sig/.test(html) && /class="ha"|class="hi"/.test(html) && /ca-tip-note/.test(html), 'a card: head, coloured signature, rows, note');
+assert(/ca-tip-head/.test(html) && /ca-word-sig/.test(html) && /class="ha"|class="hi"/.test(html) && /ca-tip-note/.test(html), 'a card: head, colored signature, rows, note');
 
 // ---- the card's link: to where the word is edited, asking about unsaved code first, and Back ----
 const fire = (el) => el.dispatchEvent(new w.MouseEvent('click', { bubbles: true }));
