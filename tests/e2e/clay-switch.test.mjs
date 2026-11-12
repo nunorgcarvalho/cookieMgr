@@ -51,7 +51,8 @@ function pickAll(mature, young) {
   CA.Macros.runPass(CA.Script.compile('garden.soilRule()').flow);
   return soil();
 }
-assert(LY.picks().soil === 'cohort', `Golden clover combos: Grow together, then clay (${LY.picks().soil})`);
+assert(LY.picks().soil === 'clovers', `Golden clover combos: Clovers grow together, then clay (${LY.picks().soil})`);
+LY.pick('soil', 'cohort'); // the Full-garden replanter's rule, tested below
 assert(pickAll(7, 23) === 'fertilizer' && pickAll(8, 22) === 'clay', 'cohort: clay from a quarter mature');
 assert(pickAll(5, 20) === 'clay', 'cohort: plants gone, a few still growing: clay');
 
