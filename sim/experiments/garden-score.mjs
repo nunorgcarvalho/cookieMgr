@@ -3,6 +3,7 @@
 //   npm run sim -- experiment garden-score --save mysave.txt [--level 9] [--tulips 4,8] [--garden-hours 1000] [--seeds 3] [--pops 1000000 | --play --hours 2000] [--state state.json] [--set key=value …] [--json]
 //   npm run sim -- experiment garden-score --curve curve.json …     (a golden-income --json result)
 //   npm run sim -- experiment garden-score --save mysave.txt --follow [--follow-hours 20000] [--follow-seeds 2]
+//   npm run sim -- experiment garden-score --save mysave.txt --grimoire default     (a spell plan casting: models/grimoire.mjs)
 //
 // models/gardenScore.mjs: each gardener's golden cookie frequency and CpS over game time (the Garden
 // page's fast model, models/gardenFrequency.mjs), and the save's income curve (golden-income:
@@ -18,10 +19,15 @@ import { expectedAt } from '../models/goldenExpected.mjs';
 import { gardenData } from '../models/gardenData.mjs';
 import { frequencyStudy, runGarden } from '../models/gardenFrequency.mjs';
 import { curveFrom, scoreGarden } from '../models/gardenScore.mjs';
+import { planById, sweepPlans } from '../models/grimoire.mjs';
 
 const arg = (k, d) => (process.argv.includes(`--${k}`) ? process.argv[process.argv.indexOf(`--${k}`) + 1] : d);
 const json = process.argv.includes('--json');
 const log = (s) => (json ? process.stderr : process.stdout).write(s + '\n');
+// --grimoire: a spell plan's id (or a JSON file with its spec), cast as the plan says
+const gArg = arg('grimoire');
+const grimoire = !gArg ? null : gArg.endsWith('.json') ? JSON.parse(fs.readFileSync(gArg, 'utf8')) : (planById(gArg) || sweepPlans().find((p) => p.id === gArg) || { spec: undefined }).spec;
+if (gArg && grimoire === undefined) throw new Error(`--grimoire: no plan "${gArg}"`);
 let curve;
 if (arg('curve')) curve = curveFrom(JSON.parse(fs.readFileSync(arg('curve'), 'utf8')));
 else {
@@ -36,6 +42,7 @@ else {
       pops: Number(arg('pops', 1000000)),
       fs: String(arg('f', '1,1.25,1.5,1.75,2,2.25,2.5,2.75,3')).split(',').map(Number),
       jobs: Number(arg('jobs', 4)),
+      grimoire,
       onPoint: (p, done, total) => log(`  income curve ${done}/${total}: f ${p.f} ×${p.mult.toFixed(0)} (${((Date.now() - t0) / 1000).toFixed(0)} s)`),
     })
   );
@@ -71,7 +78,7 @@ if (process.argv.includes('--follow')) {
       return { f: 1 + B[lo], cps: C[lo] };
     };
     const runs = [];
-    for (let s = 1; s <= seeds; s++) runs.push(expectedAt(g, 1, { pops, seed: s, schedule }));
+    for (let s = 1; s <= seeds; s++) runs.push(expectedAt(g, 1, { pops, seed: s, schedule, grimoire }));
     r.followed = { income: runs.reduce((a, x) => a + x.mult, 0) / seeds, runs: runs.map((x) => x.mult) };
     log(`  followed ${r.name}: ×${r.followed.income.toFixed(0)} (curve ×${r.score.income.toFixed(0)})`);
   }

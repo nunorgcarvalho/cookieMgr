@@ -10,6 +10,8 @@
 //   Compare       strategies side by side over several seeds, in parallel
 //   Strategies    the .cmgr files: cookieMgr's code editor, with its library
 //   Garden        golden cookie frequency over game time, gardener by gardener: a histogram each
+//   Grimoire      spell plans (Force the Hand of Fate's cast tiers, other spells) scored with each golden
+//                 cookie garden, from the fast computed model: the best play per garden, with charts
 //   Experiments   the fast models, run with their output
 //   Vocabulary    every word a strategy can use (cookieMgr's library)
 
@@ -116,6 +118,7 @@
     { id: 'compare', label: 'Compare', icon: 'graphs' },
     { id: 'strategies', label: 'Strategies', icon: 'edit' },
     { id: 'garden', label: 'Garden', icon: 'leaf' },
+    { id: 'grimoire', label: 'Grimoire', icon: 'wizard' },
     { id: 'experiments', label: 'Experiments', icon: 'puzzle' },
     { id: 'vocab', label: 'Vocabulary', icon: 'log' },
   ];
@@ -1643,6 +1646,354 @@ buy.best(all)
       card.querySelectorAll('[data-k]').forEach((b) => b.classList.toggle('on', x != null && Number(b.dataset.k) * st.bin >= x - 1e-9));
       card.querySelector('[data-read]').innerHTML = gardenReadHtml(r, x, st.bin);
     });
+  }
+
+  // =====================================================================================================
+  // Grimoire
+  // =====================================================================================================
+
+  // spell plans × the add-on's golden cookie gardens (experiments/grimoire-plans.mjs): the save is the
+  // Garden page's (SC.save), its variables as edited there
+  const GR = Object.assign({ sweep: false, pops: 300000, follow: false, garden: 'goldenCombos', shown: null }, store.get('grimoire', {}), { job: null, progress: '', result: null, error: '', pick: null, hover: null });
+  const saveGR = () => store.set('grimoire', { sweep: GR.sweep, pops: GR.pops, follow: GR.follow, garden: GR.garden, shown: GR.shown });
+  // a plan's group, its color on the charts (the add-on's palette)
+  const GROUP_COLOR = { Baseline: '#a99f8c', 'Force the Hand of Fate': '#6fb4e8', 'Cast tiers': '#ffd36a', 'Other spells': '#c58cf0', Sweep: '#6fbf4a' };
+  const PLAN_COLORS = ['#ffd36a', '#6fb4e8', '#e8766f', '#6fbf4a', '#c58cf0', '#f0a35e', '#5fd1c4', '#e86fb4'];
+  const EFFECT_NAMES = { frenzy: 'Frenzy', 'multiply cookies': 'Lucky', 'click frenzy': 'Click frenzy', 'building special': 'Building special', 'cookie storm': 'Cookie storm', 'cookie storm drop': 'Storm drop', 'dragon harvest': 'Dragon Harvest', dragonflight: 'Dragonflight', blab: 'Nothing (blab)', 'free sugar lump': 'Sugar lump', clot: 'Clot (backfire)', 'ruin cookies': 'Ruin (backfire)', 'cursed finger': 'Cursed finger (backfire)', 'blood frenzy': 'Elder frenzy (backfire)', 'chain cookie': 'Chain' };
+  const SPELL_NAMES = { fthof: 'Force the Hand of Fate', stretch: 'Stretch Time', adept: 'Diminish Ineptitude', conjure: 'Conjure Baked Goods' };
+  const PART_NAMES = { cps: 'CpS', clicks: 'Clicks', lucky: 'Lucky', chain: 'Chains', storm: 'Storms', spell: 'Spells (Conjure)' };
+
+  /** A plan's income at frequency f: its computed points joined in log–log (the page's drawing; scores come from the model). */
+  function planAt(plan, f) {
+    const pts = plan.points;
+    if (f <= pts[0].f) return pts[0].mult;
+    for (let i = 1; i < pts.length; i++)
+      if (f <= pts[i].f) {
+        const a = pts[i - 1];
+        const b = pts[i];
+        const t = (Math.log(f) - Math.log(a.f)) / (Math.log(b.f) - Math.log(a.f));
+        return Math.exp(Math.log(a.mult) + t * (Math.log(b.mult) - Math.log(a.mult)));
+      }
+    return pts[pts.length - 1].mult;
+  }
+  /** A plan's score for a garden: the walk that followed the garden over time when there is one, else its curve's. */
+  const sc = (p, id) => (p.scores[id].followed != null ? p.scores[id].followed : p.scores[id].income);
+  const grGarden = (r, id) => r.gardens.find((g) => g.id === id) || r.gardens[0];
+  const byScore = (r, id) => [...r.plans].sort((a, b) => sc(b, id) - sc(a, id));
+  const refPlan = (r) => r.plans.find((p) => p.id === 'default') || r.plans[0];
+  const noSpells = (r) => r.plans.find((p) => p.id === 'none');
+  const vsRef = (r, p, id) => sc(p, id) / sc(refPlan(r), id) - 1;
+  const signed = (x, d = 1) => `${x >= 0 ? '+' : '−'}${Math.abs(x * 100).toFixed(d)}%`;
+  /** The plans the curves chart draws: picked, else the garden's best 4, Default and No spells. */
+  function shownPlans(r) {
+    const ids = GR.shown && GR.shown.filter((id) => r.plans.some((p) => p.id === id));
+    if (ids && ids.length) return ids;
+    const out = byScore(r, GR.garden)
+      .slice(0, 4)
+      .map((p) => p.id);
+    for (const id of ['default', 'none']) if (!out.includes(id) && r.plans.some((p) => p.id === id)) out.push(id);
+    return out;
+  }
+  /** The point a plan's details read: the frequency nearest the garden's mean. */
+  const detailPoint = (plan, g) => plan.points.reduce((a, p) => (Math.abs(p.f - (1 + g.mean)) < Math.abs(a.f - (1 + g.mean)) ? p : a), plan.points[0]);
+
+  function grimoireSetupHtml() {
+    return (
+      `<div class="ca-card">${C.cardHead('Compare spell plans', 'wizard', GR.result ? `<span class="ca-pill">${GR.result.plans.length} plans · ${GR.result.expected ? `${(GR.result.pops / 1000).toLocaleString()}k golden cookies a point` : 'played'}</span>` : '')}` +
+      `<div class="ca-card-note">What the Grimoire is worth with each of the add-on’s golden cookie gardens, plan by plan: Force the Hand of Fate on cookieMgr’s cast tiers (combos, and how full the bar must be for each tier), other thresholds, and other spells. All of it from the fast computed model: the Grimoire runs inside it, magic refilling as the game refills it, each spell’s outcome at its odds, backfires included. Each plan gets its own income curve against golden cookie frequency, then each garden’s time at each frequency, CpS cost included, goes through it. The save is the one on the Garden page.</div>` +
+      `<textarea class="sim-save" data-grsave placeholder="Paste your exported save here…">${esc(SC.save)}</textarea>` +
+      `<div class="sim-form">` +
+      `<label class="ca-field"><span class="ca-field-label">Plans</span>${chips([[0, 'Named plans', 'Cookie Clicker’s usual plays and cookieMgr’s tiers: 14 plans'], [1, 'Named + a tier sweep', 'Also Regular combos at 0/25/50/75/100%, single effects, Dragon Harvest pairs, anything at a full bar: 66 plans']], 'data-grsweep', GR.sweep ? 1 : 0)}</label>` +
+      `<label class="ca-field"><span class="ca-field-label">Precision</span>${chips([[100000, '100k', '±3%, about 4 s a point'], [300000, '300k', '±1.5%, about 12 s a point'], [1000000, '1M', '±1%, about 40 s a point']], 'data-grpops', GR.pops)}</label>` +
+      `<label class="ca-field"><span class="ca-field-label">Scores</span>${chips([[0, 'From the curves', 'Each garden’s time at each frequency through the plan’s income curve: quick'], [1, 'Garden followed', 'Also a walk that follows each garden over game time with the plan casting — the garden and the Grimoire together, no shortcut: slower, and the scores shown']], 'data-grfollow', GR.follow ? 1 : 0)}</label>` +
+      C.button(`${I('play', 14)} Compare`, 'data-grrun', 'ca-btn-on') +
+      (GR.job ? `<span class="ca-hint">${I('refresh', 12)} ${esc(GR.progress || 'Starting…')}</span>` : '') +
+      '</div>' +
+      (GR.error ? `<div class="sim-err">${esc(GR.error)}</div>` : '') +
+      '</div>'
+    );
+  }
+
+  function grimoireBestHtml(r) {
+    const tiles = r.gardens
+      .map((g) => {
+        const best = byScore(r, g.id)[0];
+        const none = noSpells(r);
+        return tile(
+          esc(g.name),
+          esc(best.name),
+          `×${mult(sc(best, g.id))} · ${signed(vsRef(r, best, g.id))} vs Default${none ? ` · ×${(sc(best, g.id) / sc(none, g.id)).toFixed(1)} no spells` : ''}`,
+          `${g.mean ? `Golden cookies +${Math.round(g.mean * 100)}% on average, +140% or more ${pc(g.at140, 0)} of the time, CpS ×${g.cps.toFixed(3)}. ` : ''}The best plan's expected income, in multiples of the baseline (unbuffed CpS + clicks)`
+        );
+      })
+      .join('');
+    const gm = r.grimoire;
+    return (
+      `<div class="ca-card">${C.cardHead('The best play, garden by garden', 'trophy')}<div class="ca-stats">${tiles}</div>` +
+      `<div class="ca-card-note">The Grimoire in this game: ${Math.floor(gm.magicM)} magic, a full bar from empty in ${span(gm.refill)}. Force the Hand of Fate costs ${gm.costs.fthof} (backfires ${pc(gm.fail, 0)} of the time), Stretch Time ${gm.costs.stretch}, Diminish Ineptitude ${gm.costs.adept}, Conjure Baked Goods ${gm.costs.conjure}.</div></div>`
+    );
+  }
+
+  /** Income by plan for one garden: a bar each, sorted, Default marked. */
+  function grimoireBarsHtml(r) {
+    const g = grGarden(r, GR.garden);
+    const rows = byScore(r, g.id);
+    const top = sc(rows[0], g.id);
+    const W = 640;
+    const rowH = 20;
+    const L = 210;
+    const H = rows.length * rowH + 8;
+    const X = (v) => L + (v / top) * (W - L - 120);
+    const bars = rows
+      .map((p, i) => {
+        const y = 4 + i * rowH;
+        const v = sc(p, g.id);
+        const on = GR.pick === p.id;
+        return (
+          `<g class="sim-gr-row${on ? ' on' : ''}" data-grpick="${esc(p.id)}"><rect class="sim-gr-hit" x="0" y="${y}" width="${W}" height="${rowH}"/>` +
+          `<text class="sim-gr-name" x="${L - 8}" y="${y + 14}" text-anchor="end">${esc(p.name.length > 34 ? `${p.name.slice(0, 33)}…` : p.name)}</text>` +
+          `<rect x="${L}" y="${y + 3}" width="${Math.max(1, X(v) - L).toFixed(1)}" height="${rowH - 6}" rx="2" fill="${GROUP_COLOR[p.group] || '#d9a531'}"${p.id === 'default' ? ' stroke="#fff" stroke-width="1.5"' : ''}/>` +
+          `<text class="sim-gr-val" x="${X(v) + 6}" y="${y + 14}">×${mult(v)} <tspan class="sim-gr-pct">${p.id === 'default' ? 'Default' : signed(vsRef(r, p, g.id))}</tspan></text></g>`
+        );
+      })
+      .join('');
+    const legend = [...new Set(r.plans.map((p) => p.group))].map((k) => `<span class="sim-gr-key"><i style="background:${GROUP_COLOR[k] || '#d9a531'}"></i>${esc(k)}</span>`).join('');
+    return (
+      `<div class="ca-card">${C.cardHead('Income by plan', 'graphs', chips(r.gardens.map((x) => [x.id, esc(x.name.replace(/ \(.*\)$/, ''))]), 'data-grgarden', g.id))}` +
+      `<div class="ca-card-note">Expected income over any long stretch of play with ${esc(g.name)}, in multiples of the baseline (unbuffed CpS + clicks), each plan against cookieMgr’s Default${r.plans[0].scores[g.id].followed != null ? ', from a walk that followed the garden over game time with the plan casting' : ', from the plan’s income curve'}. Click a plan for what it casts and what that brings.</div>` +
+      `<svg class="sim-hist sim-gr-bars" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet">${bars}</svg>` +
+      `<div class="sim-gr-legend">${legend}</div></div>`
+    );
+  }
+
+  /** Income against the golden cookie frequency bonus, a line per plan shown (log scale), the garden's time behind it. */
+  function grimoireCurvesHtml(r) {
+    const g = grGarden(r, GR.garden);
+    const ids = shownPlans(r);
+    const plans = ids.map((id) => r.plans.find((p) => p.id === id));
+    const W = 640;
+    const H = 260;
+    const P = { l: 58, r: 14, t: 12, b: 30 };
+    const f0 = Math.min(...r.fs);
+    const f1 = Math.max(...r.fs);
+    const vals = plans.flatMap((p) => p.points.map((x) => x.mult));
+    const y0 = Math.floor(Math.log10(Math.min(...vals)));
+    const y1 = Math.ceil(Math.log10(Math.max(...vals)));
+    const X = (f) => P.l + ((f - f0) / (f1 - f0)) * (W - P.l - P.r);
+    const Y = (v) => P.t + (1 - (Math.log10(Math.max(v, 1e-9)) - y0) / (y1 - y0)) * (H - P.t - P.b);
+    let grid = '';
+    for (let e = y0; e <= y1; e++) grid += `<line class="sim-h-grid" x1="${P.l}" x2="${W - P.r}" y1="${Y(10 ** e)}" y2="${Y(10 ** e)}"/><text class="sim-h-tick" x="${P.l - 5}" y="${Y(10 ** e) + 3}" text-anchor="end">×${mult(10 ** e)}</text>`;
+    for (let f = f0; f <= f1 + 1e-9; f += 0.25) grid += `<text class="sim-h-tick" x="${X(f)}" y="${H - P.b + 15}" text-anchor="middle">${bonus(f - 1)}</text>`;
+    // the garden's time at each bonus, as a faint histogram along the bottom
+    let time = '';
+    if (g.bins) {
+      const bin = 0.05;
+      const ymax = Math.max(...g.bins);
+      g.bins.forEach((v, k) => {
+        const fa = 1 + k * bin;
+        if (v < 1e-6 || fa > f1) return;
+        const h = (v / ymax) * 50;
+        time += `<rect class="sim-gr-time" x="${X(fa)}" y="${H - P.b - h}" width="${Math.max(1, X(Math.min(f1, fa + bin)) - X(fa) - 1)}" height="${h}"/>`;
+      });
+    }
+    const lines = plans
+      .map((p, i) => {
+        const color = PLAN_COLORS[i % PLAN_COLORS.length];
+        let d = '';
+        for (let k = 0; k <= 80; k++) {
+          const f = f0 + ((f1 - f0) * k) / 80;
+          d += `${k ? 'L' : 'M'}${X(f).toFixed(1)},${Y(planAt(p, f)).toFixed(1)}`;
+        }
+        const dots = p.points.map((x) => `<circle cx="${X(x.f)}" cy="${Y(x.mult)}" r="2.5" fill="${color}"><title>${esc(p.name)} at ${bonus(x.f - 1)}: ×${mult(x.mult)} ± ${mult(x.se || 0)}</title></circle>`).join('');
+        return `<path d="${d}" fill="none" stroke="${color}" stroke-width="${p.id === 'default' ? 2.5 : 1.8}"${p.id === 'none' ? ' stroke-dasharray="5 4"' : ''}/>${dots}`;
+      })
+      .join('');
+    const hover = GR.hover != null ? `<line class="sim-h-cursor" x1="${X(GR.hover)}" x2="${X(GR.hover)}" y1="${P.t}" y2="${H - P.b}"/>` : '';
+    const keys = plans.map((p, i) => `<span class="sim-gr-key" data-grshow="${esc(p.id)}" data-tip="Click to hide"><i style="background:${PLAN_COLORS[i % PLAN_COLORS.length]}"></i>${esc(p.name)}${GR.hover != null ? ` <b>×${mult(planAt(p, GR.hover))}</b>` : ''}</span>`).join('');
+    const more = r.plans.filter((p) => !ids.includes(p.id));
+    return (
+      `<div class="ca-card" data-grcurves>${C.cardHead('Income against golden cookie frequency', 'timeline')}` +
+      `<div class="ca-card-note">Each plan’s income at a steady golden cookie frequency bonus (log scale), as the model computed it at each dot; behind them, the share of the time ${esc(g.name)} spends at each bonus. A plan that waits for combos gains more as golden cookies come more often. Hover for the values.</div>` +
+      `<svg class="sim-hist sim-gr-curves" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" data-grsvg data-f0="${f0}" data-f1="${f1}" data-l="${P.l}" data-r="${P.r}" data-w="${W}">${grid}${time}<line class="sim-h-axis" x1="${P.l}" x2="${W - P.r}" y1="${H - P.b}" y2="${H - P.b}"/>${lines}${hover}<rect class="sim-h-hit" x="${P.l}" y="0" width="${W - P.l - P.r}" height="${H}" data-grhit/></svg>` +
+      `<div class="sim-gr-legend">${keys}</div>` +
+      (more.length ? `<div class="sim-form"><label class="ca-field"><span class="ca-field-label">Add a plan</span><select data-gradd><option value="">…</option>${more.map((p) => `<option value="${esc(p.id)}">${esc(p.name)}</option>`).join('')}</select></label>${GR.shown ? C.button('Best ones', 'data-grbest', 'ca-btn-small') : ''}</div>` : '') +
+      '</div>'
+    );
+  }
+
+  /** One plan: what it casts, on what, what comes of it, and where its income comes from. */
+  function grimoireDetailHtml(r) {
+    const g = grGarden(r, GR.garden);
+    const plan = r.plans.find((p) => p.id === GR.pick) || byScore(r, g.id)[0];
+    // what the walk that followed the garden saw, when there is one; else the curve's nearest point
+    const fo = plan.scores[g.id];
+    const pt = fo.followedParts ? { f: null, mult: fo.followed, casts: fo.followedCasts, spells: fo.followedSpells, parts: fo.followedParts } : detailPoint(plan, g);
+    const casts = pt.casts || {};
+    const sp = pt.spells || {};
+    const why = Object.entries(sp)
+      .filter(([k]) => k.startsWith('why:'))
+      .map(([k, v]) => [k.slice(4), v])
+      .sort((a, b) => b[1] - a[1]);
+    const totalWhy = why.reduce((a, [, v]) => a + v, 0);
+    const outs = Object.entries(sp)
+      .filter(([k]) => k.startsWith('fthof:'))
+      .map(([k, v]) => [k.slice(6), v])
+      .sort((a, b) => b[1] - a[1]);
+    const totalOut = outs.reduce((a, [, v]) => a + v, 0);
+    const parts = Object.entries(pt.parts || {}).filter(([, v]) => v > 0);
+    const totalParts = parts.reduce((a, [, v]) => a + v, 0);
+    const row = (label, v, of) => `<tr><td><b>${esc(label)}</b></td><td>${v.toFixed(2)} / h</td><td>${pc(v / of, 0)}</td></tr>`;
+    const specLines = [];
+    const s = plan.spec || {};
+    (s.tiers || []).forEach((t) => specLines.push(`${esc(t.name)} at ${t.pct}%: ${t.combos.map((c) => c.map((k) => EFFECT_NAMES[k] || k).join(' + ')).join(' · ')}`));
+    if (s.any != null) specLines.push(`Force the Hand of Fate at ${s.any}% whatever’s on`);
+    if (s.adept) specLines.push('Diminish Ineptitude first when there’s magic for both');
+    if (s.stretch) specLines.push('Stretch Time right after, on a combo');
+    if (s.conjure) specLines.push(`Conjure Baked Goods at ${s.conjure.pct}%${s.conjure.combos ? ' on a combo' : ''}`);
+    if (!plan.spec) specLines.push('No spells');
+    return (
+      `<div class="ca-card">${C.cardHead(esc(plan.name), 'wizard', `<span class="ca-pill">${pt.f == null ? esc(g.name.replace(/ \(.*\)$/, '')) : `at ${bonus(pt.f - 1)}`}: ×${mult(pt.mult)}</span>`)}` +
+      `<div class="ca-card-note">${esc(plan.desc || '')} ${pt.f == null ? `As the walk that followed ${esc(g.name)} over game time saw it.` : `Read at ${bonus(pt.f - 1)} golden cookie frequency, the nearest computed point to ${esc(g.name)}’s mean.`}</div>` +
+      `<div class="ca-hint sim-gr-spec">${specLines.join('<br>')}</div>` +
+      `<div class="ca-stats">${r.gardens.map((x) => tile(esc(x.name.replace(/ \(.*\)$/, '')), `×${mult(sc(plan, x.id))}`, plan.id === 'default' ? 'Default' : `${signed(vsRef(r, plan, x.id))} vs Default`)).join('')}${Object.entries(casts)
+        .map(([k, v]) => tile(SPELL_NAMES[k] || k, `${v.toFixed(2)} / h`, `every ${span(3600 / v)}`))
+        .join('')}</div>` +
+      `<div class="sim-gr-tables">` +
+      (why.length ? `<table class="sim-table"><tr><th>Cast on</th><th>Casts</th><th>Share</th></tr>${why.map(([k, v]) => row(k === 'any' ? 'Nothing in particular' : k, v, totalWhy)).join('')}</table>` : '') +
+      (outs.length ? `<table class="sim-table"><tr><th>Force the Hand of Fate brought</th><th>Rate</th><th>Share</th></tr>${outs.map(([k, v]) => row(EFFECT_NAMES[k] || k, v, totalOut)).join('')}</table>` : '') +
+      `<table class="sim-table"><tr><th>Income from</th><th>×baseline</th><th>Share</th></tr>${parts.map(([k, v]) => `<tr><td><b>${esc(PART_NAMES[k] || k)}</b></td><td>×${mult(v)}</td><td>${pc(v / totalParts, 0)}</td></tr>`).join('')}</table>` +
+      '</div></div>'
+    );
+  }
+
+  /** Every plan, every garden. */
+  function grimoireTableHtml(r) {
+    const best = Object.fromEntries(r.gardens.map((g) => [g.id, byScore(r, g.id)[0].id]));
+    return (
+      `<div class="ca-card">${C.cardHead('All plans', 'sortList')}<table class="sim-table"><tr><th>Plan</th>${r.gardens.map((g) => `<th data-tip="${esc(g.name)}">${esc(g.name.replace(/ \(.*\)$/, ''))}</th>`).join('')}<th>Force the Hand of Fate</th><th>Other spells</th></tr>` +
+      byScore(r, GR.garden)
+        .map((p) => {
+          const c = p.points[0].casts || {};
+          const others = Object.entries(c).filter(([k]) => k !== 'fthof');
+          return (
+            `<tr class="sim-gr-tr${GR.pick === p.id ? ' on' : ''}" data-grpick="${esc(p.id)}"><td><b data-tip="${esc(p.desc || '')}">${esc(p.name)}</b></td>` +
+            r.gardens.map((g) => `<td class="${best[g.id] === p.id ? 'sim-gr-best' : ''}">×${mult(sc(p, g.id))} <span class="ca-hint">${p.id === 'default' ? '' : signed(vsRef(r, p, g.id), 0)}</span></td>`).join('') +
+            `<td>${c.fthof ? `${c.fthof.toFixed(2)} / h` : '—'}</td><td>${others.length ? others.map(([k, v]) => `${esc(SPELL_NAMES[k] || k)} ${v.toFixed(2)} / h`).join(', ') : '—'}</td></tr>`
+          );
+        })
+        .join('') +
+      '</table><div class="ca-card-note">Casts an hour at no garden’s frequency. ★ marks each garden’s best.</div></div>'
+    );
+  }
+
+  pages.grimoire = {
+    html() {
+      const r = GR.result;
+      return (
+        `<div class="sim-h1">Grimoire <small>the best spell plan for your garden, from the fast computed model</small></div>` +
+        `<div data-grsetup>${grimoireSetupHtml()}</div>` +
+        (r ? grimoireBestHtml(r) + grimoireBarsHtml(r) + `<div data-grcurvebox>${grimoireCurvesHtml(r)}</div>` + grimoireDetailHtml(r) + grimoireTableHtml(r) : '')
+      );
+    },
+    mount(root) {
+      root.addEventListener('click', onGrimoireClick);
+      root.addEventListener('input', onGrimoireInput);
+      root.addEventListener('change', onGrimoireInput);
+      root.addEventListener('mousemove', onGrimoireHover);
+      root.addEventListener('mouseleave', onGrimoireHover);
+    },
+    unmount() {
+      const root = main();
+      root.removeEventListener('click', onGrimoireClick);
+      root.removeEventListener('input', onGrimoireInput);
+      root.removeEventListener('change', onGrimoireInput);
+      root.removeEventListener('mousemove', onGrimoireHover);
+      root.removeEventListener('mouseleave', onGrimoireHover);
+    },
+  };
+  const renderGR = () => current === 'grimoire' && render();
+  const onGrimoireClick = guard(async (e) => {
+    const t = e.target.closest('[data-grsweep],[data-grfollow],[data-grpops],[data-grrun],[data-grgarden],[data-grpick],[data-grshow],[data-grbest]');
+    if (!t) return;
+    const d = t.dataset;
+    if (d.grsweep != null) GR.sweep = d.grsweep === '1';
+    if (d.grpops != null) GR.pops = Number(d.grpops);
+    if (d.grfollow != null) GR.follow = d.grfollow === '1';
+    if (d.grgarden != null) GR.garden = d.grgarden;
+    if (d.grpick != null) GR.pick = d.grpick;
+    if (d.grshow != null && GR.result) GR.shown = shownPlans(GR.result).filter((id) => id !== d.grshow);
+    if (d.grbest != null) GR.shown = null;
+    saveGR();
+    if (d.grrun != null) return comparePlans();
+    renderGR();
+  });
+  function onGrimoireInput(e) {
+    const t = e.target;
+    if (t.matches('[data-grsave]') && e.type === 'input') {
+      SC.save = t.value.trim();
+      store.set('gardenSave', SC.save);
+      SC.state = SC.saved = null;
+      return;
+    }
+    if (t.matches('[data-gradd]') && e.type === 'change' && t.value && GR.result) {
+      GR.shown = [...shownPlans(GR.result), t.value];
+      saveGR();
+      renderGR();
+    }
+  }
+  function onGrimoireHover(e) {
+    const r = GR.result;
+    if (!r) return;
+    const hit = e.type === 'mousemove' && e.target.closest && e.target.closest('[data-grhit]');
+    let f = null;
+    if (hit) {
+      const svg = hit.ownerSVGElement;
+      const box = svg.getBoundingClientRect();
+      const d = svg.dataset;
+      const sx = ((e.clientX - box.left) / box.width) * Number(d.w);
+      f = Number(d.f0) + ((sx - Number(d.l)) / (Number(d.w) - Number(d.l) - Number(d.r))) * (Number(d.f1) - Number(d.f0));
+      f = Math.max(Number(d.f0), Math.min(Number(d.f1), Math.round(f * 50) / 50));
+    }
+    if (f === GR.hover) return;
+    GR.hover = f;
+    const box = $('[data-grcurvebox]', main());
+    if (box) morph(box, grimoireCurvesHtml(r));
+  }
+  async function comparePlans() {
+    if (GR.job) return;
+    GR.error = '';
+    GR.progress = '';
+    const { id } = await api.post('/api/grimoire/plans', { save: SC.save, state: SC.state ? stateChanges() : undefined, sweep: GR.sweep, pops: GR.pops, follow: GR.follow });
+    GR.job = id;
+    renderGR();
+    const es = new EventSource(`/api/jobs/${id}/stream`);
+    const setup = () => {
+      const box = $('[data-grsetup]', main());
+      if (current === 'grimoire' && box) morph(box, grimoireSetupHtml());
+    };
+    const take = (j) => {
+      if (j.state === 'running') {
+        const lines = String(j.out || '').trim().split('\n');
+        GR.progress = lines[lines.length - 1] || '';
+        return setup();
+      }
+      es.close();
+      GR.job = null;
+      if (j.state === 'done' && j.results && j.results[0]) GR.result = j.results[0];
+      else GR.error = String(j.out || 'The comparison failed').trim().split('\n').pop();
+      renderGR();
+    };
+    let out = '';
+    es.addEventListener('state', (ev) => {
+      const j = JSON.parse(ev.data);
+      out = j.out || '';
+      take(j);
+    });
+    es.addEventListener('out', (ev) => {
+      out += JSON.parse(ev.data);
+      take({ state: 'running', out });
+    });
+    es.addEventListener('done', (ev) => take(JSON.parse(ev.data)));
   }
 
   // =====================================================================================================

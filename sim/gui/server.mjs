@@ -699,6 +699,39 @@ async function route(req, res) {
     return json(res, 200, { id: j.id });
   }
 
+  // --- the Grimoire page: spell plans × the add-on's golden cookie gardens (experiments/grimoire-plans.mjs, a
+  // job: each plan's income curve computed with the Grimoire in the model, then scored per garden)
+  if (method === 'POST' && p === '/api/grimoire/plans') {
+    const b = await body(req);
+    const files = scoreFiles(b);
+    const pops = Math.max(20000, Math.min(3000000, Math.round(Number(b.pops)) || 300000));
+    const j = newJob('grimoire', { pops, sweep: !!b.sweep, follow: !!b.follow });
+    const args = [...files.args, '--pops', String(pops), '--level', String(Math.max(1, Math.min(9, Math.round(Number(b.level)) || 9))), ...(b.sweep ? ['--sweep'] : []), ...(b.follow ? ['--follow', '--follow-pops', String(pops)] : []), '--json'];
+    const child = spawn(process.execPath, [path.join(ROOT, 'sim', 'cli.mjs'), 'experiment', 'grimoire-plans', ...args], { cwd: ROOT });
+    j.child = child;
+    let out = '';
+    child.stdout.on('data', (d) => (out += d));
+    child.stderr.on('data', (d) => {
+      const text = String(d);
+      j.lines.push(text);
+      emit(j, 'out', text);
+    });
+    child.on('close', (code) => {
+      files.clean();
+      try {
+        if (code !== 0) throw new Error(j.lines.join('').trim().split('\n').pop() || `grimoire-plans exited with ${code}`);
+        j.results = [JSON.parse(out)];
+        j.state = 'done';
+      } catch (e) {
+        j.state = 'failed';
+        j.lines.push(e.message);
+      }
+      j.finished = Date.now();
+      emit(j, 'done', { code, finished: j.finished, state: j.state, results: j.results, out: j.lines.join('') });
+    });
+    return json(res, 200, { id: j.id });
+  }
+
   if (parts[1] === 'jobs' && parts[2]) {
     const j = jobs.get(parts[2]);
     if (!j) return fail(res, 404, 'No such job');

@@ -22,6 +22,8 @@
 // models/goldenExpected.mjs computes the same income without playing (seconds, a few tenths of a percent).
 import { createSim } from '../sim.mjs';
 import { makeRng } from '../game/rng.mjs';
+import { SLOTS, goldenParams } from './goldenExpected.mjs';
+import { makePlan } from './grimoire.mjs';
 
 // The upgrades that change golden cookies themselves (main.js: their timer, how long they and their
 // effects last, what they give) — the ones a game state lists; any other upgrade can be set too.
@@ -153,9 +155,16 @@ export async function goldenIncomeGame({ save, seed = 1, state = {} } = {}) {
   };
   const st = gameState(Game, clicks);
   const base = st.cps + clicks * st.click;
-  const at = (f, opts) => {
+  const at = (f, opts = {}) => {
     freq = f;
-    return incomeAt(Game, { ...opts, clicks, base });
+    // a spell plan's spec (models/grimoire.mjs), the bar starting full
+    let plan = null;
+    if (opts.grimoire) {
+      plan = makePlan(opts.grimoire, goldenParams(Game, { clicks }));
+      const M = Game.Objects['Wizard tower'].minigame;
+      M.magic = M.magicM;
+    }
+    return incomeAt(Game, { ...opts, clicks, base, plan });
   };
   const setFrequency = (f) => {
     freq = f;
@@ -202,7 +211,7 @@ export function spawnFrame(min, max, after, u) {
  * holds the bank there at every click (else it grows from the save's); `onStretch(frames, Game)` sees
  * every stretch between two events, with the buffs then running.
  */
-export function incomeAt(Game, { hours = 1000, seed = 1, clicks = 20, base, batches = 50, bank = null, onStretch = null } = {}) {
+export function incomeAt(Game, { hours = 1000, seed = 1, clicks = 20, base, batches = 50, bank = null, onStretch = null, plan = null } = {}) {
   const rnd = makeRng(seed * 7919 + 13);
   const fps = Game.fps;
   const T = Game.shimmerTypes.golden;
@@ -210,8 +219,10 @@ export function incomeAt(Game, { hours = 1000, seed = 1, clicks = 20, base, batc
   Game.killShimmers(); // the timer restarts, with today's min / max
   Game.CalculateGains();
   const end = Math.round(hours * 3600 * fps);
-  const parts = { cps: 0, clicks: 0, lucky: 0, chain: 0, storm: 0, other: 0 };
+  const parts = { cps: 0, clicks: 0, lucky: 0, chain: 0, storm: 0, other: 0, spell: 0 };
   const effects = {};
+  const casts = {};
+  const spells = {};
   const batchLen = end / batches;
   const batchSums = new Array(batches).fill(0);
   let golden = 0;
@@ -252,7 +263,7 @@ export function incomeAt(Game, { hours = 1000, seed = 1, clicks = 20, base, batc
     }
     return any;
   };
-  const pop = (s) => {
+  const pop = (s, prefix = '') => {
     if (bank != null) Game.cookies = bank; // a bank held still (Lucky and chains read it)
     const before = Game.cookiesEarned;
     const lumps = Game.lumps;
@@ -261,7 +272,8 @@ export function incomeAt(Game, { hours = 1000, seed = 1, clicks = 20, base, batc
     // run, against a baseline taken at its start
     Game.lumps = lumps;
     const choice = s.force === '' && T.last ? T.last : T.last;
-    effects[choice] = (effects[choice] || 0) + 1;
+    if (prefix) spells[prefix + choice] = (spells[prefix + choice] || 0) + 1;
+    else effects[choice] = (effects[choice] || 0) + 1;
     const got = Game.cookiesEarned - before;
     if (got > 0) {
       const part = choice === 'multiply cookies' ? 'lucky' : choice === 'chain cookie' ? 'chain' : choice === 'cookie storm drop' ? 'storm' : 'other';
@@ -271,15 +283,82 @@ export function incomeAt(Game, { hours = 1000, seed = 1, clicks = 20, base, batc
     }
   };
 
+  // spells (models/grimoire.mjs makePlan): the game's own magic refill, frame by frame, and its own
+  // castSpell; the plan reads the buffs on, as the computed model's state
+  const M = plan ? Game.Objects['Wizard tower'].minigame : null;
+  const S = plan ? SLOTS : null;
+  let just = 0; // 1 right after a Force the Hand of Fate, 2 after Diminish Ineptitude worked
+  const stateNow = () => {
+    const st = new Array(S.B0).fill(0);
+    const B = [];
+    for (const name in Game.buffs) {
+      const b = Game.buffs[name];
+      if (!(b.time > 0)) continue;
+      if (b.type && b.type.name === 'building buff') B.push(b.time);
+      else if (BUFF_SLOT[name] != null) st[S[BUFF_SLOT[name]]] = b.time;
+    }
+    st[S.J] = just;
+    return [...st, ...B.sort((a, b) => b - a)];
+  };
+  const refill = (frames) => {
+    if (!M) return;
+    let m = M.magic;
+    const max = M.magicM;
+    for (let k = 0; k < frames && m < max; k++) m = Math.min(max, m + Math.max(0.002, Math.pow(m / Math.max(max, 100), 0.5)) * 0.002);
+    M.magic = m;
+  };
+  // the frames until magic first reaches a level the plan waits for (Infinity: none above)
+  const toNextLevel = () => {
+    const m = M.magic;
+    const L = plan.levels.find((x) => x > m + 1e-12);
+    if (L == null) return Infinity;
+    let k = 0;
+    const max = M.magicM;
+    for (let x = m; x < L && k < 1e7; k++) x = Math.min(max, x + Math.max(0.002, Math.pow(x / Math.max(max, 100), 0.5)) * 0.002);
+    return Math.max(1, k);
+  };
+  let toLevel = plan ? toNextLevel() : Infinity;
+  const castNow = () => {
+    for (let n = 0; n < 6; n++) {
+      const d = plan.decide(stateNow(), M.magic, 0);
+      if (!d) break;
+      const id = SPELL_ID[d.spell];
+      const before = Game.cookiesEarned;
+      const n0 = Game.shimmers.length;
+      const adept = Game.hasBuff('Magic adept');
+      if (!M.castSpell(M.spells[id])) break;
+      casts[d.spell] = (casts[d.spell] || 0) + 1;
+      spells[`why:${d.why}`] = (spells[`why:${d.why}`] || 0) + 1;
+      const got = Game.cookiesEarned - before;
+      if (got > 0) {
+        parts.spell += got;
+        total += got;
+        batchSums[Math.min(batches - 1, Math.floor(frame / batchLen))] += got;
+      }
+      const born = Game.shimmers.slice(n0);
+      for (const s of born) pop(s, 'fthof:');
+      just = d.spell === 'fthof' ? 1 : d.spell === 'adept' && Game.hasBuff('Magic adept') && !adept ? 2 : 0;
+      dropDead();
+      recalc();
+    }
+    just = 0;
+    toLevel = toNextLevel();
+  };
+  if (plan) castNow();
+
   while (frame < end) {
     const storm = Game.hasBuff('Cookie storm');
-    let stop = Math.min(next, end);
+    let stop = Math.min(next, end, frame + toLevel);
     for (const name in Game.buffs) stop = Math.min(stop, frame + Math.max(1, Game.buffs[name].time));
     if (storm) stop = frame + 1; // a storm drops cookies frame by frame
     const d = stop - frame;
     earnFor(d);
     for (const name in Game.buffs) Game.buffs[name].time -= d;
     if (!T.spawned) T.time += d;
+    if (plan) {
+      refill(d);
+      toLevel = Math.max(1, toLevel - d);
+    }
     frame = stop;
     let changed = dropDead();
     if (storm && rnd() < 0.5) {
@@ -308,6 +387,7 @@ export function incomeAt(Game, { hours = 1000, seed = 1, clicks = 20, base, batc
       changed = true;
     }
     if (changed) recalc();
+    if (plan) castNow();
   }
   const secs = end / fps;
   const per = (x) => x / (base * secs);
@@ -322,8 +402,12 @@ export function incomeAt(Game, { hours = 1000, seed = 1, clicks = 20, base, batc
     parts: Object.fromEntries(Object.entries(parts).map(([k, v]) => [k, per(v)])),
     golden: golden / hrs,
     effects: Object.fromEntries(Object.entries(effects).map(([k, v]) => [k, v / hrs])),
+    ...(plan ? { casts: Object.fromEntries(Object.entries(casts).map(([k, v]) => [k, v / hrs])), spells: Object.fromEntries(Object.entries(spells).map(([k, v]) => [k, v / hrs])) } : {}),
   };
 }
+// the buffs a spell plan reads, by their names in Game.buffs: their slots (models/goldenExpected.mjs SLOTS)
+const BUFF_SLOT = { Frenzy: 'F', 'Dragon Harvest': 'H', 'Click frenzy': 'C', Dragonflight: 'D', 'Cookie storm': 'S', 'Elder frenzy': 'E', Clot: 'L', 'Cursed finger': 'X', 'Magic adept': 'A', 'Magic inept': 'I' };
+const SPELL_ID = { fthof: 'hand of fate', stretch: 'stretch time', adept: 'diminish ineptitude', conjure: 'conjure baked goods' };
 
 /**
  * The income curve for a save: at each of `fs`, computed (`expected`, models/goldenExpected.mjs: `pops`
@@ -333,7 +417,7 @@ export function incomeAt(Game, { hours = 1000, seed = 1, clicks = 20, base, batc
  * parts, golden, effects }], a, b, c (models/gardenScore.mjs fitCurve: the smoothing a played curve
  * needs; a computed one goes through its points) }. `onPoint(point, done, total)` as each comes in.
  */
-export async function incomeCurve({ save, state = {}, fs = [1, 1.25, 1.5, 1.75, 2, 2.25, 2.5, 2.75, 3], hours = 2000, seed = 1, jobs = 4, expected = false, pops = 1000000, bank = null, onPoint } = {}) {
+export async function incomeCurve({ save, state = {}, fs = [1, 1.25, 1.5, 1.75, 2, 2.25, 2.5, 2.75, 3], hours = 2000, seed = 1, jobs = 4, expected = false, pops = 1000000, bank = null, grimoire = null, onPoint } = {}) {
   const { spawn } = await import('node:child_process');
   const { fitCurve } = await import('./gardenScore.mjs');
   const worker = new URL('./goldenIncomePoint.mjs', import.meta.url).pathname;
@@ -354,7 +438,7 @@ export async function incomeCurve({ save, state = {}, fs = [1, 1.25, 1.5, 1.75, 
           reject(e);
         }
       });
-      child.stdin.end(JSON.stringify({ save, state, f, hours, seed: expected ? seed : seed * 1000 + i, expected, pops, bank }));
+      child.stdin.end(JSON.stringify({ save, state, f, hours, seed: expected ? seed : seed * 1000 + i, expected, pops, bank, grimoire }));
     });
   let next = 0;
   const run = async () => {
@@ -369,7 +453,7 @@ export async function incomeCurve({ save, state = {}, fs = [1, 1.25, 1.5, 1.75, 
   await Promise.all(Array.from({ length: Math.max(1, Math.min(jobs, fs.length)) }, run));
   points.sort((a, b) => a.f - b.f);
   const { a, b, c } = fitCurve(points);
-  return { ...head, hours: expected ? null : hours, expected, pops: expected ? pops : null, points, a, b, c };
+  return { ...head, hours: expected ? null : hours, expected, pops: expected ? pops : null, grimoire, points, a, b, c };
 }
 
 /** incomeCurve, kept in sim/out/income/ by its inputs, so the same save and state fit once. */
@@ -377,8 +461,9 @@ export async function cachedIncomeCurve(opts) {
   const fs = await import('node:fs');
   const path = await import('node:path');
   const crypto = await import('node:crypto');
-  const { save, state = {}, fs: freqs = [1, 1.25, 1.5, 1.75, 2, 2.25, 2.5, 2.75, 3], hours = 2000, seed = 1, expected = false, pops = 1000000, bank = null } = opts;
-  const inputs = expected ? { save, state, freqs, expected, pops, seed, bank, v: 2 } : { save, state, freqs, hours, seed, v: 1 };
+  const { save, state = {}, fs: freqs = [1, 1.25, 1.5, 1.75, 2, 2.25, 2.5, 2.75, 3], hours = 2000, seed = 1, expected = false, pops = 1000000, bank = null, grimoire = null } = opts;
+  // a spell plan (models/grimoire.mjs) is part of the key, as of the model that casts (v 3)
+  const inputs = expected ? { save, state, freqs, expected, pops, seed, bank, v: 2, ...(grimoire ? { grimoire, v: 3 } : {}) } : { save, state, freqs, hours, seed, v: 1, ...(grimoire ? { grimoire, v: 3 } : {}) };
   const key = crypto.createHash('sha1').update(JSON.stringify(inputs)).digest('hex').slice(0, 16);
   const dir = new URL('../out/income/', import.meta.url).pathname;
   const file = path.join(dir, `${key}.json`);

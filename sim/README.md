@@ -87,6 +87,23 @@ pinned in `game/fetch.mjs`.
   npm run sim -- experiment garden-score --save mysave.txt --level 9 --tulips 8,10 --state state.json
   npm run sim -- experiment garden-score --save mysave.txt --follow   # each garden's own frequency over time, too
   ```
+- **Grimoire** — the best spell plan for each of the add-on's golden cookie gardens (Golden clover combos, 8
+  nursetulips together), for your save: Force the Hand of Fate on cookieMgr's cast tiers (which combos, how full
+  the bar must be for each tier), at a set bar whatever's on, and other spells (Stretch Time after a combo,
+  Diminish Ineptitude first, Conjure Baked Goods), optionally with a sweep of tier thresholds. The Grimoire runs
+  inside the computed model (`models/goldenExpected.mjs` with a plan from `models/grimoire.mjs`): magic refills as
+  the game refills it, the plan casts when its rule says, and each spell's outcomes are credited at their odds,
+  backfires included (a wrath cookie's Clot, Ruin, Cursed finger, Elder frenzy). Each plan gets its own income
+  curve, each garden's time goes through it, and the page charts it: the best plan per garden, income by plan,
+  income against golden cookie frequency with the garden's time behind it, and a plan's casts, what they were
+  cast on, what they brought and where its income comes from. The same from the command line:
+
+  ```
+  npm run sim -- experiment grimoire-plans --save mysave.txt [--sweep] [--pops 300000]
+  npm run sim -- experiment grimoire-plans --save mysave.txt --plans default,regular0 --follow   # garden and Grimoire walked together over time
+  npm run sim -- experiment grimoire-plans --save mysave.txt --plans none,default --play --f 1,1.5,2   # the game's own spells, played: the slow check
+  npm run sim -- experiment garden-score --save mysave.txt --grimoire default                       # every gardener, with a plan casting
+  ```
 - **Experiments** — each with its explanation and arguments; its output streams in as it runs.
 - **Vocabulary** — every action, value and condition a strategy can use (cookieMgr's library,
   searchable, click to copy), staging words marked, and the built-in macros.
