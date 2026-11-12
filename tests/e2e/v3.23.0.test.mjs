@@ -80,10 +80,10 @@ CA.UI.StoreInsight.setLines(['bonus', 'actualGain', 'payback', 'actual', 'afford
 let r = rowsOf(tip('Farm'));
 const farm = CA.Payback.table().buildings[1].Farm;
 eq(r[0][0], 'Bonus income (×1)', 'the label a statistic sets');
-eq(r[1], ['Payback period', CA.Format.payback(farm.pp), ` class="ca-pp-${farm.colour}"`], 'payback: short, in its colour');
+eq(r[1], ['Payback period', CA.Format.payback(farm.pp), ` class="ca-pp-${farm.color}"`], 'payback: short, in its color');
 SI.setLines(['bulks', 'price']);
 r = rowsOf(tip('Farm'));
-assert(/^<span class="ca-pp-\w+">.+<\/span> · <span/.test(r[0][1]), `×1 / 10 / 100: a list, each in its colour (${r[0][1]})`);
+assert(/^<span class="ca-pp-\w+">.+<\/span> · <span/.test(r[0][1]), `×1 / 10 / 100: a list, each in its color (${r[0][1]})`);
 eq(r[1][1], CA.Format.beautify(farm.price), 'price');
 eq(rowsOf(upTip()).map((x) => x[0]), ['Price'], 'a building’s statistic is left out of an upgrade’s tooltip');
 

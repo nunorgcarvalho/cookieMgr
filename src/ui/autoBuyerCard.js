@@ -121,7 +121,7 @@ CA.UI.AutoBuyerCard = (() => {
     const x = P().allUpgrades();
     if (!x.n) return '';
     const t = P().table({ staleMs: 1000 });
-    return `<span class="ca-hint" data-tip="${esc('Its payback period in the mode in use: the upgrades it would buy, measured together as one purchase. Macros: payback.allUpgrades()')}"><span class="ca-pp-dot ${t.colourOf(x.pp, x.price)}"></span>PP ${ppText(x.pp)} · +${F().short(x.gain)}/s · ${F().beautify(x.price)}</span>`;
+    return `<span class="ca-hint" data-tip="${esc('Its payback period in the mode in use: the upgrades it would buy, measured together as one purchase. Macros: payback.allUpgrades()')}"><span class="ca-pp-dot ${t.colorOf(x.pp, x.price)}"></span>PP ${ppText(x.pp)} · +${F().short(x.gain)}/s · ${F().beautify(x.price)}</span>`;
   }
   function buyerHtml() {
     const on = CA.Macros.isOn('autoBuyer');
@@ -150,7 +150,7 @@ CA.UI.AutoBuyerCard = (() => {
   function row(x, i, t, q) {
     const held = i < 0;
     const bank = x.kind === 'bank';
-    const colour = x.colour || (t ? t.colourOf(x.pp, x.price) : 'gray');
+    const color = x.color || (t ? t.colorOf(x.pp, x.price) : 'gray');
     const can = x.price <= (Game.cookies || 0);
     const score = held ? dash : x.first ? '<span class="ca-ab-first">first</span>' : scoreHtml(x.score);
     // a held row's last rule is the one that held it: its why says it in full
@@ -164,7 +164,7 @@ CA.UI.AutoBuyerCard = (() => {
       `<tr class="${cls}">` +
       `<td class="n">${held ? '–' : i + 1}</td>` +
       `<td>${thingName(x)}</td>` +
-      `<td class="n">${bank ? dash : `<span class="ca-pp-dot ${colour}"></span>${ppText(x.pp)}`}</td>` +
+      `<td class="n">${bank ? dash : `<span class="ca-pp-dot ${color}"></span>${ppText(x.pp)}`}</td>` +
       `<td class="n">${held || !Number.isFinite(x.ipp) ? dash : ppText(x.ipp)}</td>` +
       `<td class="n">${score}</td>` +
       `<td class="n">${F().short(x.price)}</td>` +

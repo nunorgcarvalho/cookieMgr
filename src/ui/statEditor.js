@@ -26,7 +26,7 @@ CA.UI.StatEditor = (() => {
   const CE = () => CA.UI.CodeEditor;
   const CK = () => CA.UI.CodeKnobs;
   const KEY = 'stat'; // the code editor's key
-  const COLOURS = [
+  const COLORS = [
     ['none', 'none'],
     ['payback', 'its payback color'],
     ...['red', 'orange', 'yellow', 'green', 'blue', 'purple', 'gray'].map((c) => [c, c]),
@@ -53,7 +53,7 @@ CA.UI.StatEditor = (() => {
     desc: s.desc || '',
     scope: s.scope || 'item',
     format: s.format || 'auto',
-    colour: s.colour || 'none',
+    color: s.color || 'none',
     group: s.group || '',
     warn: !!s.warn,
     mode: !!s.mode,
@@ -141,7 +141,7 @@ CA.UI.StatEditor = (() => {
     const shows = r.error
       ? `<div class="ca-se-bad">${I('close', 11)} ${esc(r.error)}</div>`
       : w
-        ? `<div class="ca-se-line ca-se-warn"><span>⚠ It warns</span><b><span class="ca-tt-bank ca-tt-bank-${w.colour}">${w.label} <small>${w.html}</small></span></b></div>`
+        ? `<div class="ca-se-line ca-se-warn"><span>⚠ It warns</span><b><span class="ca-tt-bank ca-tt-bank-${w.color}">${w.label} <small>${w.html}</small></span></b></div>`
         : row
           ? `<div class="ca-se-line"><span>${row[0]}</span><b class="${row[2]}">${row[1]}</b></div>`
           : s.warn
@@ -201,7 +201,7 @@ CA.UI.StatEditor = (() => {
         ST().FORMATS.map((f) => [f.id, f.name]),
         d.format
       )}</label>` +
-      `<label class="ca-field"><span>Color</span>${sel('colour', COLOURS, d.colour)}</label>` +
+      `<label class="ca-field"><span>Color</span>${sel('color', COLORS, d.color)}</label>` +
       `<label class="ca-field"><span>Group</span>${sel('group', [['', '—']].concat(ST().GROUPS.map((g) => [g, g])), d.group, off)}</label>` +
       `<code class="ca-st-call" data-se-call data-tip="Use it in a macro or another statistic">${esc(call)}</code>` +
       '</div>'
@@ -321,7 +321,7 @@ CA.UI.StatEditor = (() => {
       desc: d.desc,
       scope: d.scope,
       format: d.format,
-      colour: d.colour,
+      color: d.color,
       group: d.group,
       warn: d.warn,
       mode: d.mode,
@@ -329,7 +329,7 @@ CA.UI.StatEditor = (() => {
     };
     if (d.builtin) {
       const orig = ST().BUILTINS.find((b) => b.id === d.id);
-      const same = ['label', 'source', 'format', 'colour'].every((k) => String(orig[k]) === String(def[k]));
+      const same = ['label', 'source', 'format', 'color'].every((k) => String(orig[k]) === String(def[k]));
       if (same)
         ST().remove(d.id); // as it came: no version of yours
       else ST().update(d.id, def);
@@ -430,7 +430,7 @@ CA.UI.StatEditor = (() => {
       draft.mode = el.value === 'mode';
       if ((draft.warn || draft.mode) && draft.scope === 'game') draft.scope = 'item';
       if (draft.mode && !draft.group) draft.group = 'Payback modes';
-      if (draft.warn && draft.colour === 'none') draft.colour = 'red';
+      if (draft.warn && draft.color === 'none') draft.color = 'red';
       item = 'best';
       redraw();
       return;

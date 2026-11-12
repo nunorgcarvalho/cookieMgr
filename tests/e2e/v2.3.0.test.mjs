@@ -1,4 +1,4 @@
-// v2.3.0: widgets over the cookie, a button widget per favourite, icon status bar,
+// v2.3.0: widgets over the cookie, a button widget per favorite, icon status bar,
 // centered moving averages instead of wider bars, bank gains/losses toggles.
 import { IDBFactory, IDBKeyRange } from 'fake-indexeddb';
 import { boot, sleep, makeAssert, click } from '../harness/game.mjs';
@@ -19,7 +19,7 @@ function fakeLayout(w) {
 }
 const mouse = (w, el, type, x, y) => el.dispatchEvent(new w.MouseEvent(type, { bubbles: true, button: 0, clientX: x, clientY: y }));
 
-// a v2.1 save: one Shortcuts widget, two favourites
+// a v2.1 save: one Shortcuts widget, two favorites
 const v21 = JSON.stringify({
   v: 1,
   options: {},
@@ -43,16 +43,16 @@ const css = [...doc.querySelectorAll('style')].map((s) => s.textContent).join('\
 const m = css.match(/#CookieMgrWidgets\s*\{[^}]*z-index:\s*(\d+)/);
 assert(m && Number(m[1]) > 10000 && Number(m[1]) < 20000, `widget layer z-index above #bigCookie (10000), below popups (${m && m[1]})`);
 
-// ---- v2.1 Shortcuts widget → one button per favourite, where it was
+// ---- v2.1 Shortcuts widget → one button per favorite, where it was
 const list = () => CA.UI.Widgets.list();
 const buttons = () => list().filter((x) => x.type === 'macro');
 assert(!list().some((x) => x.type === 'shortcuts'), 'old Shortcuts widget gone');
-assert(buttons().map((x) => x.macro).join() === 'golden,sellAll', `a button per favourite (${buttons().map((x) => x.macro)})`);
+assert(buttons().map((x) => x.macro).join() === 'golden,sellAll', `a button per favorite (${buttons().map((x) => x.macro)})`);
 const b0 = buttons()[0];
 assert(Math.abs(b0.x * 560 - 0.5 * 560) < 2 && Math.abs(b0.y * 860 - 0.25 * 860) < 2, 'first button where the old widget was');
 assert(list().some((x) => x.type === 'stats'), 'other widgets kept');
 
-// ---- favourite → its own button; un-favourite → gone
+// ---- favorite → its own button; un-favorite → gone
 CA.Macros.setFav('wrath', true);
 assert(buttons().some((x) => x.macro === 'wrath'), 'starring a macro adds its button');
 const btnEl = (id) => doc.querySelector(`#CookieMgrWidgets [data-w-trigger="${id}"]`);
@@ -86,9 +86,9 @@ w.dispatchEvent(new w.MouseEvent('mouseup', {}));
 assert(cookiePresses === 0, 'presses on widgets don’t reach the cookie');
 await sleep(10);
 
-// × on a button un-favourites
+// × on a button un-favorites
 click(w, doc.querySelector(`[data-widget="${buttons().find((x) => x.macro === 'sellAll').id}"] [data-w-remove]`));
-assert(!CA.Macros.isFav('sellAll') && !buttons().some((x) => x.macro === 'sellAll'), '× un-favourites');
+assert(!CA.Macros.isFav('sellAll') && !buttons().some((x) => x.macro === 'sellAll'), '× un-favorites');
 
 // locked: still clickable, not draggable
 CA.Settings.set('widgetsLocked', true);

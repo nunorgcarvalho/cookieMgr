@@ -33,7 +33,7 @@ CA.UI.PaybackPage = (() => {
   let root = null;
   let life = null;
 
-  const COLOUR_NAMES = {
+  const COLOR_NAMES = {
     blue: 'better than the best building',
     green: 'the best building',
     yellow: 'within the 10 best',
@@ -79,8 +79,8 @@ CA.UI.PaybackPage = (() => {
     if (!row) return '<td></td>';
     const can = row.price <= Game.cookies;
     return (
-      `<td class="ca-pp-cell ${row.colour}${can ? ' can' : ''}" data-pp-buy="${esc(b.name)}" data-n="${n}" data-tip="${esc(
-        `${n} × ${b.dname || b.name}: PP ${ppText(row.pp)}${partsNote(row)} (${COLOUR_NAMES[row.colour]}) · adds ${F().beautify(row.gain)}/s${row.mode !== 'cps' ? ` (${F().beautify(row.bonus)} CpS)` : ''} for ${F().beautify(row.price)}${row.won.length ? ` · wins ${row.won.join(', ')}` : ''}${can ? ' — click to buy' : ` — affordable ${Number.isFinite(P().timeTo(row.price)) ? `in ${F().span(P().timeTo(row.price))}` : 'not at this CpS'}`}`
+      `<td class="ca-pp-cell ${row.color}${can ? ' can' : ''}" data-pp-buy="${esc(b.name)}" data-n="${n}" data-tip="${esc(
+        `${n} × ${b.dname || b.name}: PP ${ppText(row.pp)}${partsNote(row)} (${COLOR_NAMES[row.color]}) · adds ${F().beautify(row.gain)}/s${row.mode !== 'cps' ? ` (${F().beautify(row.bonus)} CpS)` : ''} for ${F().beautify(row.price)}${row.won.length ? ` · wins ${row.won.join(', ')}` : ''}${can ? ' — click to buy' : ` — affordable ${Number.isFinite(P().timeTo(row.price)) ? `in ${F().span(P().timeTo(row.price))}` : 'not at this CpS'}`}`
       )}">` +
       `<b>${ppText(row.pp)}</b><span>+${F().short(row.gain)}/s</span><em>${F().short(row.price)}</em>` +
       '</td>'
@@ -124,7 +124,7 @@ CA.UI.PaybackPage = (() => {
           const what = r.bonus > 0 ? `adds ${F().beautify(r.bonus)}/s` : r.mouse > 0 ? `adds ${F().beautify(r.mouse)} a click (≈ ${F().beautify(r.gain)}/s at your clicking)` : 'adds no CpS';
           return (
             // its info card on hover (ui/upgradeTip.js): what it does, costs, adds, its payback period, how it unlocked
-            `<button type="button" class="ca-pp-up ${r.colour}${can ? ' can' : ''}" data-pp-up="${esc(r.name)}" ${CA.UpgradeInfo.attrs(r.name)} aria-label="${esc(`${u.dname || r.name}: PP ${ppText(r.pp)}${partsNote(r)} (${COLOUR_NAMES[r.colour]}) · ${what} · ${F().beautify(r.price)}${can ? ' — click to buy' : ''}`)}">` +
+            `<button type="button" class="ca-pp-up ${r.color}${can ? ' can' : ''}" data-pp-up="${esc(r.name)}" ${CA.UpgradeInfo.attrs(r.name)} aria-label="${esc(`${u.dname || r.name}: PP ${ppText(r.pp)}${partsNote(r)} (${COLOR_NAMES[r.color]}) · ${what} · ${F().beautify(r.price)}${can ? ' — click to buy' : ''}`)}">` +
             (u.icon ? sprite(u.icon) : '') +
             `<span>${ppText(r.pp)}</span></button>`
           );
@@ -146,7 +146,7 @@ CA.UI.PaybackPage = (() => {
   }
 
   function legendHtml() {
-    return `<div class="ca-pp-legend">${CA.Payback.COLOURS.map((c) => `<span><i class="ca-pp-dot ${c}"></i>${COLOUR_NAMES[c]}</span>`).join('')}</div>`;
+    return `<div class="ca-pp-legend">${CA.Payback.COLORS.map((c) => `<span><i class="ca-pp-dot ${c}"></i>${COLOR_NAMES[c]}</span>`).join('')}</div>`;
   }
 
   function optionsCard() {

@@ -36,7 +36,7 @@ CA.UI.Widgets.types()
   });
 assert(!page().querySelector('[data-w-tile="macro"]'), 'the hidden macro type stays out');
 assert(page().querySelector('[data-w-shelf="macros"] [data-w-tile="macro-buttons"][data-ca="open-macros"]'), 'Macro buttons tile in Macros, linking to the Macros page');
-eq(page().querySelector('[data-w-tile="grimoire"] .ca-wcrate').getAttribute('style'), '--ring:#d9c4ff', 'ring colour');
+eq(page().querySelector('[data-w-tile="grimoire"] .ca-wcrate').getAttribute('style'), '--ring:#d9c4ff', 'ring color');
 assert(!page().querySelector('.ca-wcard, .ca-wgallery'), 'the old gallery is gone');
 
 // ---- click to place / remove

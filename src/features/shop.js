@@ -60,7 +60,7 @@ CA.Shop = (() => {
         .map((x) => x.b.name);
     }
     const t = CA.Payback.table({ staleMs: 2000 }); // redrawn every half second: a table up to 2 s old will do
-    const C = CA.Payback.COLOURS;
+    const C = CA.Payback.COLORS;
     return all
       .map((b) => {
         // what a click buys — or the minimum bulk, when one is set and it's more
@@ -69,7 +69,7 @@ CA.Shop = (() => {
         const row = t.buildings[n] && t.buildings[n][b.name];
         const price = row ? row.price : CA.Payback.sumPrice(b, n);
         const v = row ? row.pp : CA.Payback.ppOf(price, CA.Payback.buildingWorth(b.name, n));
-        return { b, v, c: C.indexOf(row ? row.colour : t.colourOf(v, price)) };
+        return { b, v, c: C.indexOf(row ? row.color : t.colorOf(v, price)) };
       })
       .sort((a, b) => (a.c === b.c ? a.v - b.v || a.b.id - b.b.id : a.c - b.c))
       .map((x) => x.b.name);

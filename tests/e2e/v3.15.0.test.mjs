@@ -1,4 +1,4 @@
-// v3.15.0: the Effect timers widget redrawn — a slim bar per effect in its own colour with the game's
+// v3.15.0: the Effect timers widget redrawn — a slim bar per effect in its own color with the game's
 // icon, what it multiplies, the time left, the chance of a golden cookie before it ends; bad effects
 // striped; ordered as they started or ending soonest. And every framed widget's Background (Solid,
 // Faint, None): see-through ones fade in on hover; saved; Effect timers starts see-through.
@@ -41,10 +41,10 @@ const [r0, r1, r2, r3] = rows();
 assert(/Frenzy/.test(r0.textContent) && /×7 CpS/.test(r0.textContent) && /2:21/.test(r0.textContent), 'Frenzy: its name, ×7 CpS, 2:21 left');
 assert(/×777 clicks/.test(r1.textContent) && /21s/.test(r1.textContent), 'Click frenzy: ×777 clicks, 21s');
 assert(Math.abs(parseFloat(r0.querySelector('.ca-et-bar > i').style.width) - (141 / 154) * 100) < 0.01, 'the bar: the share of its time left');
-assert(r0.style.getPropertyValue('--c') === CA.UI.EffectTimers.COLORS.frenzy && r1.style.getPropertyValue('--c') === CA.UI.EffectTimers.COLORS['click frenzy'], 'each effect its own colour');
-assert(r3.style.getPropertyValue('--c').startsWith('hsl('), 'an unknown effect: a colour from its name');
+assert(r0.style.getPropertyValue('--c') === CA.UI.EffectTimers.COLORS.frenzy && r1.style.getPropertyValue('--c') === CA.UI.EffectTimers.COLORS['click frenzy'], 'each effect its own color');
+assert(r3.style.getPropertyValue('--c').startsWith('hsl('), 'an unknown effect: a color from its name');
 assert(/img\/icons\.png/.test(r0.querySelector('.ca-et-ico i').getAttribute('style')) && /-480px -672px/.test(r0.querySelector('.ca-et-ico i').getAttribute('style')), 'the game’s own icon');
-assert(r3.querySelector('.ca-et-ico.none'), 'no icon: a coloured dot');
+assert(r3.querySelector('.ca-et-ico.none'), 'no icon: a colored dot');
 assert(r2.classList.contains('bad') && !r0.classList.contains('bad'), 'Clot: striped as a bad effect');
 assert(r2.classList.contains('ending'), 'under 5 s left: marked ending');
 const gc = CA.Timers.buffsWithGolden().find((b) => b.name === 'Click frenzy').golden;
@@ -71,11 +71,11 @@ inst.barScale = 'own';
 CA.UI.Widgets.tick();
 assert(!rows()[0].classList.contains('over') && Math.abs(wOf(rows()[0]) - (141 / 154) * 100) < 0.01, 'its own length again');
 
-// ---- the golden cookie chart's effect bars: the same colours
+// ---- the golden cookie chart's effect bars: the same colors
 const cyc = doc.createElement('div');
 cyc.innerHTML = CA.UI.SpawnView.cycleChart('golden', CA.Timers.distribution('golden', 60), CA.Timers.buffs());
 const lane = [...cyc.querySelectorAll('.ca-sp-lane.ca-sp-tinted')].find((g) => /Frenzy/.test(g.textContent) && !/Click/.test(g.textContent));
-assert(lane && lane.style.getPropertyValue('--c') === CA.UI.EffectTimers.COLORS.frenzy, 'the cycle chart tints each effect in its Effect timers colour');
+assert(lane && lane.style.getPropertyValue('--c') === CA.UI.EffectTimers.COLORS.frenzy, 'the cycle chart tints each effect in its Effect timers color');
 
 // ---- settings: what to show, the order
 inst.stats = ['mult'];

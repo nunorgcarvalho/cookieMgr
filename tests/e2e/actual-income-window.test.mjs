@@ -41,7 +41,7 @@ const later = () => (offset += 6000); // past the 5 s memo
 
 // ---- one actual mode
 assert(P.modes().map((m) => m.id).join() === 'rawCps,cps,cpsClicking,actualIncome', `one actual-income mode (${P.modes().map((m) => m.id)})`);
-assert(P.modeOf('actualIncome').label === 'Actual income', 'labelled Actual income');
+assert(P.modeOf('actualIncome').label === 'Actual income', 'labeled Actual income');
 ['actual', 'actual15m', 'actual1h', 'actual3h', 'actualIncome15m', 'actualIncome1h', 'actualIncome3h'].forEach((n) => assert(P.modeOf(n).id === 'actualIncome', `${n} names it`));
 assert(['actualIncome15m', 'actualIncome1h', 'actualIncome3h'].every((id) => !CA.Stats.get(id)), 'the fixed-window statistics are gone');
 

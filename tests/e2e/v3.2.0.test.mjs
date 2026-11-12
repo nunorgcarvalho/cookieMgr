@@ -1,5 +1,5 @@
 // v3.2.0: the auto-gardener in two layers, picked separately — a layout (a garden profile, or the
-// built-in Current garden: what's planted, kept as it is) and a gardener (its behaviour, as code:
+// built-in Current garden: what's planted, kept as it is) and a gardener (its behavior, as code:
 // the built-in Effect maximizer, Weed collector and Mutation tracker, or your own). (v3.3: four
 // layers and profiles — the page and the save are in v3.3.0's test.)
 import { IDBFactory, IDBKeyRange } from 'fake-indexeddb';

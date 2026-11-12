@@ -24,7 +24,7 @@ CA.Alerts = (() => {
     { v: 'cymbal', label: 'cymbal', file: 'snd/cymbalRev.mp3' },
     { v: 'tick', label: 'tick', file: 'snd/tick.mp3' },
   ];
-  const COLOURS = [
+  const COLORS = [
     { v: 'gold', label: 'gold', css: 'rgba(255, 215, 90, 0.55)' },
     { v: 'red', label: 'red', css: 'rgba(255, 80, 60, 0.55)' },
     { v: 'green', label: 'green', css: 'rgba(120, 255, 120, 0.45)' },
@@ -42,8 +42,8 @@ CA.Alerts = (() => {
   // ---- outputs ------------------------------------------------------------------------------------
 
   /** Flashes the screen in a color (a full-screen layer that fades out). */
-  function flash(colour) {
-    const c = COLOURS.find((x) => x.v === colour) || COLOURS[0];
+  function flash(color) {
+    const c = COLORS.find((x) => x.v === color) || COLORS[0];
     if (typeof document === 'undefined' || !document.body || !document.createElement) return 0;
     const el = document.createElement('div');
     el.className = 'ca-alert-flash';
@@ -112,12 +112,12 @@ CA.Alerts = (() => {
   // ---- built-ins -----------------------------------------------------------------------------------
 
   const ALERTS = [
-    { id: 'alertGolden', name: 'Golden cookie alert', cond: 'shimmer', params: { type: 'golden' }, colour: 'gold', sound: 'chime', text: 'A golden cookie!', icon: [10, 14], desc: 'When a golden cookie appears: a gold flash, a chime, and a note in the event log (pick a desktop notification on its card to hear about it from another tab).' },
-    { id: 'alertWrath', name: 'Wrath cookie alert', cond: 'shimmer', params: { type: 'wrath' }, colour: 'red', sound: 'cymbal', text: 'A wrath cookie!', icon: [15, 5], desc: 'When a wrath cookie appears: a red flash and a sound.' },
-    { id: 'alertReindeer', name: 'Reindeer alert', cond: 'shimmer', params: { type: 'reindeer' }, colour: 'green', sound: 'jingle', text: 'A reindeer!', icon: [12, 9], desc: 'When a reindeer runs by (Christmas): a green flash and a jingle.' },
-    { id: 'alertFortune', name: 'Fortune alert', cond: 'fortune', params: {}, colour: 'purple', sound: 'fortune', text: 'A fortune cookie in the news!', icon: [29, 8], desc: 'When the news ticker has a fortune cookie to click: a purple flash and a sound.' },
-    { id: 'alertMagic', name: 'Magic full alert', cond: 'magicPct', params: { op: '>=', value: 100 }, colour: 'blue', sound: 'spell', text: 'The Grimoire’s magic is full.', icon: [21, 11], desc: 'When the Grimoire’s magic is full: a blue flash and a sound.' },
-    { id: 'alertLump', name: 'Sugar lump alert', cond: 'lumpRipe', params: {}, colour: 'white', sound: 'tick', text: 'The sugar lump is ripe.', icon: [29, 14], desc: 'When the sugar lump is ripe (harvesting it always pays).' },
+    { id: 'alertGolden', name: 'Golden cookie alert', cond: 'shimmer', params: { type: 'golden' }, color: 'gold', sound: 'chime', text: 'A golden cookie!', icon: [10, 14], desc: 'When a golden cookie appears: a gold flash, a chime, and a note in the event log (pick a desktop notification on its card to hear about it from another tab).' },
+    { id: 'alertWrath', name: 'Wrath cookie alert', cond: 'shimmer', params: { type: 'wrath' }, color: 'red', sound: 'cymbal', text: 'A wrath cookie!', icon: [15, 5], desc: 'When a wrath cookie appears: a red flash and a sound.' },
+    { id: 'alertReindeer', name: 'Reindeer alert', cond: 'shimmer', params: { type: 'reindeer' }, color: 'green', sound: 'jingle', text: 'A reindeer!', icon: [12, 9], desc: 'When a reindeer runs by (Christmas): a green flash and a jingle.' },
+    { id: 'alertFortune', name: 'Fortune alert', cond: 'fortune', params: {}, color: 'purple', sound: 'fortune', text: 'A fortune cookie in the news!', icon: [29, 8], desc: 'When the news ticker has a fortune cookie to click: a purple flash and a sound.' },
+    { id: 'alertMagic', name: 'Magic full alert', cond: 'magicPct', params: { op: '>=', value: 100 }, color: 'blue', sound: 'spell', text: 'The Grimoire’s magic is full.', icon: [21, 11], desc: 'When the Grimoire’s magic is full: a blue flash and a sound.' },
+    { id: 'alertLump', name: 'Sugar lump alert', cond: 'lumpRipe', params: {}, color: 'white', sound: 'tick', text: 'The sugar lump is ripe.', icon: [29, 14], desc: 'When the sugar lump is ripe (harvesting it always pays).' },
   ];
 
   function init() {
@@ -142,7 +142,7 @@ CA.Alerts = (() => {
     });
     const A = CA.Actions.register;
     const opts = (list) => () => list.map(({ v, label }) => ({ v, label }));
-    A({ id: 'alert.flash', name: 'Flash the screen', icon: 'bell', group: 'Alerts', unit: 'flashes', params: [{ key: 'colour', label: 'Colour', type: 'select', default: 'gold', options: opts(COLOURS) }], run: (p) => flash(p.colour) });
+    A({ id: 'alert.flash', name: 'Flash the screen', icon: 'bell', group: 'Alerts', unit: 'flashes', params: [{ key: 'color', alias: 'colour', label: 'Color', type: 'select', default: 'gold', options: opts(COLORS) }], run: (p) => flash(p.color) });
     A({ id: 'alert.sound', name: 'Play a sound', icon: 'bell', group: 'Alerts', unit: 'sounds', params: [{ key: 'sound', label: 'Sound', type: 'select', default: 'chime', options: opts(SOUNDS) }], run: (p) => sound(p.sound) });
     A({
       id: 'alert.notify',
@@ -166,12 +166,12 @@ CA.Alerts = (() => {
         every: 250,
         when: { all: [{ cond: a.cond, params: a.params }], edge: 'rise' },
         steps: [
-          { action: 'alert.flash', params: { colour: a.colour } },
+          { action: 'alert.flash', params: { color: a.color } },
           { action: 'alert.sound', params: { sound: a.sound } },
           { action: 'alert.notify', params: { text: a.text, where: 'log' } },
         ],
         options: [
-          { step: 0, key: 'colour' },
+          { step: 0, key: 'color' },
           { step: 1, key: 'sound' },
           { step: 2, key: 'where' },
         ],
@@ -183,5 +183,5 @@ CA.Alerts = (() => {
     setInterval(tab, 500);
   }
 
-  return { init, flash, sound, notify, onScreen, tab, ALERTS, SOUNDS, COLOURS };
+  return { init, flash, sound, notify, onScreen, tab, ALERTS, SOUNDS, COLORS };
 })();

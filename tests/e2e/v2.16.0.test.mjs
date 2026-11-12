@@ -1,4 +1,4 @@
-// v2.16.0: the Garden growth chart — snapshots of seed × stage counts, stacked bars coloured by
+// v2.16.0: the Garden growth chart — snapshots of seed × stage counts, stacked bars colored by
 // seed and shaded by stage, the Show choice, merged tooltip rows, unlock markers, persistence.
 import { IDBFactory, IDBKeyRange } from 'fake-indexeddb';
 import { boot, sleep, waitFor, makeAssert } from '../harness/game.mjs';
@@ -53,7 +53,7 @@ const keys = d.data.series.map((s) => s.key);
 assert(keys.includes('thumbcorn:0') && keys.includes('thumbcorn:3') && keys.includes('bakerWheat:3'), `series per seed × stage (${keys})`);
 assert(keys.indexOf('thumbcorn:3') < keys.indexOf('thumbcorn:0'), 'mature at the bottom of each seed');
 const sw = (k) => d.data.series.find((s) => s.key === k).color;
-assert(sw('thumbcorn:3') === CA.GardenHistory.colorOf('thumbcorn') && sw('thumbcorn:0') !== sw('thumbcorn:3'), 'seed colour, darker when young');
+assert(sw('thumbcorn:3') === CA.GardenHistory.colorOf('thumbcorn') && sw('thumbcorn:0') !== sw('thumbcorn:3'), 'seed color, darker when young');
 assert(d.data.series.find((s) => s.key === 'thumbcorn:3').merge.name === 'Thumbcorn', 'tooltip rows merged per seed');
 const early = d.data.bars.find((b) => b.parts['thumbcorn:0'] === 4);
 const later = d.data.bars.find((b) => b.parts['thumbcorn:3'] === 2);

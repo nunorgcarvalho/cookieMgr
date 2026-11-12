@@ -83,9 +83,9 @@ assert(page.querySelector('[data-macro-row="bigCookie"]').classList.contains('on
 click(w, page.querySelector('[data-macro-row="bigCookie"] [data-ca="macro-toggle"]'));
 assert(page.querySelector('[data-macro-row="sellAll"] [data-ca="macro-run"]'), 'once macros get a Run button');
 
-// favourites
+// favorites
 click(w, page.querySelector('[data-macro-row="golden"] [data-ca="macro-fav"]'));
-assert(CA.Macros.isFav('golden'), 'favourite star');
+assert(CA.Macros.isFav('golden'), 'favorite star');
 
 // ---- editor: new "when" macro
 const pg = () => doc.querySelector('[data-page="clickers"]');
@@ -192,7 +192,7 @@ CA.Macros.set(mine[0].id, true);
 Game.WriteSave();
 const saved = Game.modSaveData.CookieMgr;
 const data = JSON.parse(saved);
-assert(Array.isArray(data.macros.custom) && data.macros.custom.length === 1 && data.macros.prefs.golden.fav, 'save holds your macros and favourites');
+assert(Array.isArray(data.macros.custom) && data.macros.custom.length === 1 && data.macros.prefs.golden.fav, 'save holds your macros and favorites');
 assert(data.running.includes(mine[0].id) && data.running.includes('stockTrader'), 'save holds running macros');
 w.localStorage.clear();
 g.window.close();
@@ -203,7 +203,7 @@ const CB = g2.window.CookieMgr;
 const m2 = CB.Macros.list().filter((m) => !m.builtin);
 assert(m2.length === 1 && m2[0].name === 'Frenzy clicker' && m2[0].steps.length === 2, 'custom macro survives a reload');
 assert(CB.Macros.isOn(m2[0].id) && CB.Macros.isOn('stockTrader'), 'running macros restored');
-assert(CB.Settings.getHotkey(`macro.${m2[0].id}`) === 'Shift+KeyM' && CB.Macros.isFav('golden'), 'its hotkey and favourites too');
+assert(CB.Settings.getHotkey(`macro.${m2[0].id}`) === 'Shift+KeyM' && CB.Macros.isFav('golden'), 'its hotkey and favorites too');
 g2.window.close();
 
 assert(g.errors.length === 0 && g2.errors.length === 0, 'no runtime errors' + (g.errors.length ? `: ${g.errors.slice(0, 3).join(' | ')}` : '') + (g2.errors.length ? `: ${g2.errors[0]}` : ''));

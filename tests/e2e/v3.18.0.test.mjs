@@ -1,6 +1,6 @@
 // v3.18.0: bank warnings, compact. A purchase that would take the bank below what a Lucky! (red),
-// Conjure Baked Goods (orange) or a Lucky! in a Frenzy (yellow) needs gets a small coloured "!" on
-// its store item — the colour of the smallest bank it breaks — and one tooltip line of tags naming
+// Conjure Baked Goods (orange) or a Lucky! in a Frenzy (yellow) needs gets a small colored "!" on
+// its store item — the color of the smallest bank it breaks — and one tooltip line of tags naming
 // each bank it breaks and how far under; warnings(price) stays data.
 import { IDBFactory, IDBKeyRange } from 'fake-indexeddb';
 import { boot, sleep, makeAssert } from '../harness/game.mjs';
@@ -55,7 +55,7 @@ const at = (p) => ({ kind: 'building', name: 'Grandma', r: { price: p, bonus: 1,
 const ids = (ws) => ws.map((x) => x.id.replace('warn', '').toLowerCase()).join();
 // just over a Lucky!'s bank: a Grandma (≈100) tips it under, a Cursor (15) doesn't
 const ws = SI.warnings(CA.Stats.contextOf('Grandma'));
-assert(ws.length === 1 && ws[0].id === 'warnLucky' && ws[0].colour === 'red', `structured: ${JSON.stringify(ws.map((x) => x.id))}`);
+assert(ws.length === 1 && ws[0].id === 'warnLucky' && ws[0].color === 'red', `structured: ${JSON.stringify(ws.map((x) => x.id))}`);
 assert(ws[0].html === `−${CA.Format.beautify(price('Grandma') - 50)}`, `how far under (${ws[0].html})`);
 assert(SI.warnings(CA.Stats.contextOf('Cursor')).length === 0, 'a cheaper buy keeps the bank');
 await sleep(50);
@@ -74,7 +74,7 @@ const all = SI.warnings(at(frenzy + 10 - lucky + 1));
 assert(ids(all) === 'lucky,conjure,frenzy', `all three, smallest first: ${ids(all)}`);
 // a bank only the Frenzy one breaks: yellow
 const only = SI.warnings(at(20));
-assert(only.length === 1 && only[0].colour === 'yellow', 'just over the Frenzy bank: yellow');
+assert(only.length === 1 && only[0].color === 'yellow', 'just over the Frenzy bank: yellow');
 // banks you're already under don't warn
 Game.cookies = lucky - 1;
 assert(SI.warnings(at(1)).length === 0, 'already under every bank: no warnings');

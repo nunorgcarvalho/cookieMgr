@@ -321,7 +321,7 @@ CA.UI.Widgets = (() => {
       return (
         `<div class="ca-w ca-w-bare ca-w-${w.type}${glow(w)}" data-widget="${w.id}" data-w-drag style="${fs}">` +
         `<div class="ca-w-body" data-w-body>${safeHtml(t, w)}</div>` +
-        `<button type="button" class="ca-w-x" data-w-remove aria-label="${w.type === 'macro' ? 'Remove (un-favourites the macro)' : 'Remove widget'}">${I('close', 8)}</button>` +
+        `<button type="button" class="ca-w-x" data-w-remove aria-label="${w.type === 'macro' ? 'Remove (un-favorites the macro)' : 'Remove widget'}">${I('close', 8)}</button>` +
         `<button type="button" class="ca-w-x ca-w-gear" data-w-settings aria-label="Settings">${I('settings', 8)}</button>` +
         RESIZE +
         '</div>'

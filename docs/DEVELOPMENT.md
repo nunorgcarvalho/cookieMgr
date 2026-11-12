@@ -105,7 +105,7 @@ src/
     widgetTypes.js   what each widget shows (macro buttons, status bar, stats, events, minigames)
     wizardPage.js    the Grimoire page and the toolbar inside the game's Grimoire
     pantheonPage.js  the Pantheon page
-    codeEditor.js    the code editor (colouring, line numbers, problems, live lines) and its library
+    codeEditor.js    the code editor (coloring, line numbers, problems, live lines) and its library
     gardenPage.js    the Garden page: the plot against the active profile, the auto-gardener: profiles, its four layers and their editors
     storeBar.js      the store toolbar (building sort, rounding to multiples)
     storeInsight.js  the store with payback colors, and a cookieMgr block under the game's tooltips

@@ -1138,7 +1138,7 @@ cookie in the news, the Grimoire's magic full, the sugar lump ripe. Each is a bu
 switch on the ones you want) that, when it appears, flashes the screen, plays a sound and notes it — in the event log,
 or also as a game or desktop notification; its card picks the color, the sound and where. They're made of pieces
 your own macros can use: the conditions `fortune` and `lumpRipe` (with `shimmer` and `magicPct`), and the actions
-`alert.flash(colour)`, `alert.sound(sound)` and `alert.notify(text, where)`. And while a golden cookie is on screen
+`alert.flash(color)`, `alert.sound(sound)` and `alert.notify(text, where)`. And while a golden cookie is on screen
 the tab's title starts with ✦ (a wrath cookie: ⚠) and its icon becomes the cookie, so you see it from another tab
 (Events page → **Golden cookie in the tab**).
 

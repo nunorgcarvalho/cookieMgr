@@ -320,8 +320,9 @@ CA.Script = (() => {
       params[list[k].key] = v;
     });
     Object.keys(a.named).forEach((k) => {
-      if (!list.some((p) => p.key === k)) throw new Err(`${what} has no option “${k}” (it has: ${list.map((p) => p.key).join(', ') || 'none'})`);
-      params[k] = a.named[k];
+      const p = list.find((x) => x.key === k) || list.find((x) => x.alias && x.alias === k); // alias: an old spelling, still works
+      if (!p) throw new Err(`${what} has no option “${k}” (it has: ${list.map((x) => x.key).join(', ') || 'none'})`);
+      params[p.key] = a.named[k];
     });
     return params;
   }

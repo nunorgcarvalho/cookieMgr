@@ -52,7 +52,7 @@ export function plantPolicy(p, theta, ticks = 200000, rnd = Math.random) {
 }
 
 /** The 8 neighbors of every tile of a w × h plot. */
-export function neighbours(w, h) {
+export function neighbors(w, h) {
   return Array.from({ length: w * h }, (_, i) => {
     const x = i % w;
     const y = Math.floor(i / w);
@@ -88,7 +88,7 @@ export function cloverField(data, { layout, w, h, policy = 'steady', theta = 0.9
   const SOIL = { fert: { tick: data.soils.fertilizer.tick * 60, mult: data.soils.fertilizer.effMult }, clay: { tick: data.soils.clay.tick * 60, mult: data.soils.clay.effMult } };
   const die = { G: [], N: [] };
   for (const k of ['G', 'N']) for (let a = 0; a <= 100; a++) die[k][a] = decayChance(P[k], a);
-  const nb = neighbours(w, h);
+  const nb = neighbors(w, h);
   const age = new Array(N).fill(0);
   const alive = new Array(N).fill(true);
   const boost = new Array(N).fill(1);
@@ -201,7 +201,7 @@ export function cloverField(data, { layout, w, h, policy = 'steady', theta = 0.9
 /** For k nursetulips on a w × h plot: the placement that boosts the most clovers when all are mature (greedy + swaps, at boost strength s). */
 export function bestNurseLayout(w, h, k, s = 1) {
   const N = w * h;
-  const nb = neighbours(w, h);
+  const nb = neighbors(w, h);
   const score = (l) => {
     let v = 0;
     for (let i = 0; i < N; i++) {

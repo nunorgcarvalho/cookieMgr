@@ -23,7 +23,7 @@ CA.UI.Menu.close();
 click(w, W().querySelector(`[data-widget="${grim.id}"] [data-w-settings]`));
 const ed = () => doc.querySelector('[data-w-editor]');
 assert(ed() && scrolled === 1 && ed().classList.contains('ca-reveal'), 'the ⚙ opens its settings and scrolls them into view (with a flash)');
-assert(ed().classList.contains('ca-wtheme-grimoire'), 'header in the widget’s own colour');
+assert(ed().classList.contains('ca-wtheme-grimoire'), 'header in the widget’s own color');
 click(w, ed().querySelector('[data-w-preset="font"][data-val="130"]'));
 assert(grim.font === 130 && ed().querySelector('[data-w-preset="font"][data-val="130"]').classList.contains('on'), 'text size presets');
 click(w, ed().querySelector('[data-w-preset="scale"][data-val="150"]'));

@@ -33,7 +33,7 @@
 CA.Stats = (() => {
   const F = () => CA.Format;
   const esc = (s) => CA.Util.escapeHtml(s);
-  const COLOURS = ['blue', 'green', 'yellow', 'orange', 'red', 'purple', 'gray'];
+  const COLORS = ['blue', 'green', 'yellow', 'orange', 'red', 'purple', 'gray'];
   const SCOPES = ['building', 'upgrade', 'item', 'game'];
   const FORMATS = [
     { id: 'auto', name: 'as it reads', desc: 'a time for seconds, a chance for 0–1, else a number' },
@@ -105,7 +105,7 @@ if m > 0:
 if known(g) and g > 0:
   return "+" + fmt.number(g) + "/s"`,
     },
-    { id: 'payback', group: 'Payback', name: 'Payback period', label: 'Payback period', desc: 'in the payback mode in use, in its payback color', scope: 'item', format: 'payback', colour: 'payback', source: 'return item.payback()' },
+    { id: 'payback', group: 'Payback', name: 'Payback period', label: 'Payback period', desc: 'in the payback mode in use, in its payback color', scope: 'item', format: 'payback', color: 'payback', source: 'return item.payback()' },
     {
       id: 'actual',
       group: 'Payback',
@@ -320,14 +320,14 @@ n = building.toNextUpgrade(item)
 note = n + " more (" + fmt.number(building.priceOf(item, n)) + ")"
 return u`,
     },
-    { id: 'wins', group: 'Achievements', name: 'Wins', label: 'Wins', desc: 'the achievements buying it wins, in its payback color', scope: 'item', format: 'text', colour: 'payback', source: 'return item.wins()' },
+    { id: 'wins', group: 'Achievements', name: 'Wins', label: 'Wins', desc: 'the achievements buying it wins, in its payback color', scope: 'item', format: 'text', color: 'payback', source: 'return item.wins()' },
     // the bank warnings: buying it would take your bank below what a golden cookie (or a spell) needs
     // to pay its most — only when you have that bank now; keep: how many times that bank to keep
     ...[
       ['warnLucky', 'Lucky! bank', 'a Lucky!', 'bank.lucky', 'red'],
       ['warnConjure', 'Conjure bank', 'Conjure Baked Goods', 'bank.conjure', 'orange'],
       ['warnFrenzy', 'Frenzy Lucky! bank', 'a Lucky! in a Frenzy', 'bank.luckyFrenzy', 'yellow'],
-    ].map(([id, label, what, word, colour]) => ({
+    ].map(([id, label, what, word, color]) => ({
       id,
       group: 'Bank',
       name: label,
@@ -335,7 +335,7 @@ return u`,
       desc: `warns when buying it would take your bank below what ${what} needs to pay its most, and by how much`,
       scope: 'item',
       format: 'text',
-      colour,
+      color,
       warn: true,
       source: `# a warning when buying it takes your bank below what ${what} needs
 keep = 1   # times that bank
@@ -344,7 +344,7 @@ after = cookies() - item.price()
 if cookies() >= need and after < need:
   return "−" + fmt.number(need - after)`,
     })),
-  ].map((b) => ({ ...b, key: b.id, builtin: true, colour: b.colour || 'none' }));
+  ].map((b) => ({ ...b, key: b.id, builtin: true, color: b.color || 'none' }));
   const BUILTIN = Object.fromEntries(BUILTINS.map((b) => [b.id, b]));
 
   // ---- yours ---------------------------------------------------------------------------------
@@ -353,7 +353,7 @@ if cookies() >= need and after < need:
   let overrides = {}; // your changes to built-ins
   let favs = [];
 
-  const OVERRIDABLE = ['label', 'source', 'format', 'colour'];
+  const OVERRIDABLE = ['label', 'source', 'format', 'color'];
   /** A built-in as you have it (your changes on top). */
   function builtinAsIs(b) {
     const o = overrides[b.id];
@@ -384,7 +384,9 @@ if cookies() >= need and after < need:
     s.desc = String(s.desc || '');
     s.scope = SCOPES.includes(s.scope) ? s.scope : 'item';
     s.format = FORMATS.some((f) => f.id === s.format) ? s.format : 'auto';
-    s.colour = s.colour === 'payback' || COLOURS.includes(s.colour) ? s.colour : 'none';
+    if (s.color === undefined && s.colour !== undefined) s.color = s.colour; // the old British field name (saves, shared text)
+    delete s.colour;
+    s.color = s.color === 'payback' || COLORS.includes(s.color) ? s.color : 'none';
     s.source = String(s.source || '');
     s.group = GROUPS.includes(s.group) ? s.group : '';
     s.warn = (s.warn === true || s.warn === 'yes' || s.warn === 'true') && s.scope !== 'game';
@@ -454,8 +456,8 @@ if cookies() >= need and after < need:
   function duplicate(id) {
     const s = get(id);
     if (!s) return null;
-    const { label, desc, scope, format, colour, source, group, warn, mode } = s;
-    return add({ label: `${label} (copy)`, desc, scope, format, colour, source, group, warn, mode });
+    const { label, desc, scope, format, color, source, group, warn, mode } = s;
+    return add({ label: `${label} (copy)`, desc, scope, format, color, source, group, warn, mode });
   }
 
   // ---- running one ------------------------------------------------------------------------------
@@ -566,7 +568,7 @@ if cookies() >= need and after < need:
     if (f === 'chance') return `${(x * 100).toFixed(x < 0.1 ? 1 : 0)}%`;
     return Number.isFinite(x) ? F().beautify(x) : '∞';
   }
-  const colourClass = (c) => (COLOURS.includes(c) ? `ca-pp-${c}` : '');
+  const colorClass = (c) => (COLORS.includes(c) ? `ca-pp-${c}` : '');
 
   /**
    * A statistic as a tooltip line about `c`: [label html, value html, class] — or null when it has
@@ -579,21 +581,21 @@ if cookies() >= need and after < need:
     if (v === undefined || v === null || (v === '' && !s.showEmpty) || (Array.isArray(v) && !v.length)) return null;
     const vars = r.vars || {};
     const label = typeof vars.label === 'string' || typeof vars.label === 'number' ? String(vars.label) : s.label;
-    let colour = vars.color !== undefined ? vars.color : vars.colour !== undefined ? vars.colour : s.colour === 'payback' ? (c && c.r ? c.r.colour : '') : s.colour;
+    let color = vars.color !== undefined ? vars.color : vars.colour !== undefined ? vars.colour : s.color === 'payback' ? (c && c.r ? c.r.color : '') : s.color;
     let html;
     let cls = '';
     if (Array.isArray(v)) {
-      const cs = Array.isArray(colour) ? colour : v.map(() => colour);
+      const cs = Array.isArray(color) ? color : v.map(() => color);
       html = v
         .map((x, i) => {
           const one = format(x, s.format, s.wordDesc);
-          return typeof x === 'number' && !Number.isNaN(x) && colourClass(cs[i]) ? `<span class="${colourClass(cs[i])}">${one}</span>` : one;
+          return typeof x === 'number' && !Number.isNaN(x) && colorClass(cs[i]) ? `<span class="${colorClass(cs[i])}">${one}</span>` : one;
         })
         .join(' · ');
     } else {
       html = format(v, s.format, s.wordDesc);
-      if (Array.isArray(colour)) colour = colour[0];
-      cls = colourClass(colour);
+      if (Array.isArray(color)) color = color[0];
+      cls = colorClass(color);
     }
     if (vars.note !== undefined && vars.note !== '') html += ` <small>${esc(String(vars.note))}</small>`;
     return [esc(label), html, cls];
@@ -606,8 +608,8 @@ if cookies() >= need and after < need:
   function warning(s, c) {
     const row = line(s, c);
     if (!row) return null;
-    const colour = (row[2].match(/^ca-pp-(\w+)$/) || [])[1] || 'red';
-    return { id: s.id, label: row[0], html: row[1], colour };
+    const color = (row[2].match(/^ca-pp-(\w+)$/) || [])[1] || 'red';
+    return { id: s.id, label: row[0], html: row[1], color };
   }
 
   // ---- a value word as a statistic (a tooltip line that's one word: { word, fmt, label }) -----------
@@ -634,7 +636,7 @@ if cookies() >= need and after < need:
   // ---- as text: to share one (copy, paste) -----------------------------------------------------
 
   const TEXT_HEAD = '# cookieMgr statistic';
-  const TEXT_KEYS = ['label', 'key', 'desc', 'scope', 'format', 'colour', 'group', 'warn', 'mode'];
+  const TEXT_KEYS = ['label', 'key', 'desc', 'scope', 'format', 'color', 'group', 'warn', 'mode'];
   /** A statistic as text: a few "# field: value" lines, then its code. */
   function toText(s) {
     const val = (k) => (k === 'warn' || k === 'mode' ? (s[k] ? 'yes' : '') : s[k]);
@@ -648,8 +650,9 @@ if cookies() >= need and after < need:
     if (lines[0] && lines[0].trim().toLowerCase() === TEXT_HEAD.toLowerCase()) { // up to v3.47.0 the head had a capital C
       for (i = 1; i < lines.length; i++) {
         const m = lines[i].match(/^#\s*(\w+):\s?(.*)$/);
-        if (!m || !TEXT_KEYS.includes(m[1])) break;
-        def[m[1]] = m[2].trim();
+        const k = m && m[1] === 'colour' ? 'color' : m && m[1]; // shared under the old spelling
+        if (!m || !TEXT_KEYS.includes(k)) break;
+        def[k] = m[2].trim();
       }
     }
     def.source = lines.slice(i).join('\n').replace(/\s+$/, '');
@@ -696,7 +699,7 @@ if cookies() >= need and after < need:
     V('item.gainIn', `what it adds to your income in a payback mode: ${MODES} (cookies a second)`, (m) => (partsIn(m) || { gain: NaN }).gain, { params: ['mode'] });
     V('item.timeToAfford', `seconds until you can afford it at your income in a payback mode: ${MODES} (0: now) — a payback period's first part`, (m) => (partsIn(m) || { afford: NaN }).afford, { params: ['mode'] });
     V('item.earnBack', `seconds it takes to earn its price back, in a payback mode: ${MODES} — price ÷ gain, a payback period's second part`, (m) => (partsIn(m) || { earn: NaN }).earn, { params: ['mode'] });
-    const colorWord = () => (r() ? r().colour || '' : '');
+    const colorWord = () => (r() ? r().color || '' : '');
     V('item.color', 'its payback color: blue, green, yellow, orange, red, purple or gray', colorWord);
     V('item.colour', 'the same as item.color()', colorWord, { hidden: true }); // the old spelling, still works
     V('item.bulk', 'how many a click buys (an upgrade: 1)', () => (isB() ? r().n || 1 : cur ? 1 : NaN));
@@ -726,10 +729,10 @@ if cookies() >= need and after < need:
       if (!b) return null;
       const price = CA.Payback.sumPrice(b, k);
       const pp = CA.Payback.ppOf(price, CA.Payback.buildingWorth(cur.name, k));
-      return { pp, colour: cur.t.colourOf ? cur.t.colourOf(pp, price) : '' };
+      return { pp, color: cur.t.colorOf ? cur.t.colorOf(pp, price) : '' };
     };
     V('item.paybackOf', 'the payback period of n more of the building (seconds; an upgrade: NaN)', (n) => (bulkRow(n) || { pp: NaN }).pp, { params: ['n'] });
-    const colorOfWord = (n) => (bulkRow(n) || { colour: '' }).colour;
+    const colorOfWord = (n) => (bulkRow(n) || { color: '' }).color;
     V('item.colorOf', 'the payback color of n more of the building', colorOfWord, { params: ['n'] });
     V('item.colourOf', 'the same as item.colorOf(n)', colorOfWord, { params: ['n'], hidden: true }); // the old spelling, still works
   }
@@ -751,7 +754,7 @@ if cookies() >= need and after < need:
 
   function serialize() {
     if (!mine.length && !Object.keys(overrides).length && !favs.length) return undefined;
-    return { v: 1, mine: mine.map((s) => ({ id: s.id, key: s.key, label: s.label, desc: s.desc, scope: s.scope, format: s.format, colour: s.colour, source: s.source, group: s.group || undefined, warn: s.warn || undefined, mode: s.mode || undefined })), builtin: overrides, favs };
+    return { v: 1, mine: mine.map((s) => ({ id: s.id, key: s.key, label: s.label, desc: s.desc, scope: s.scope, format: s.format, color: s.color, source: s.source, group: s.group || undefined, warn: s.warn || undefined, mode: s.mode || undefined })), builtin: overrides, favs };
   }
   function load(data) {
     mine.forEach((s) => CA.Script.removeValue(`stat.${s.key}`));
@@ -773,6 +776,7 @@ if cookies() >= need and after < need:
           if (!BUILTIN[id] || !o || typeof o !== 'object') return;
           overrides[id] = {};
           OVERRIDABLE.forEach((k) => typeof o[k] === 'string' && (overrides[id][k] = o[k]));
+          if (typeof o.colour === 'string' && overrides[id].color === undefined) overrides[id].color = o.colour; // saved under the old spelling
         });
       if (Array.isArray(data.favs)) favs = data.favs.filter((x) => typeof x === 'string');
     }
@@ -805,5 +809,5 @@ if cookies() >= need and after < need:
     return { income: num(r && r.vars ? r.vars.income : NaN), gain: r && r.returned ? num(r.value) : NaN };
   }
 
-  return { init, modes, runMode, all, get, byKey, add, update, remove, duplicate, toText, fromText, run, line, warning, format, fromWord, compiled, contextOf, bestOf, pick, about, keyOf: camel, favs: () => favs.slice(), BUILTINS, FORMATS, SCOPES, GROUPS, COLOURS };
+  return { init, modes, runMode, all, get, byKey, add, update, remove, duplicate, toText, fromText, run, line, warning, format, fromWord, compiled, contextOf, bestOf, pick, about, keyOf: camel, favs: () => favs.slice(), BUILTINS, FORMATS, SCOPES, GROUPS, COLORS };
 })();

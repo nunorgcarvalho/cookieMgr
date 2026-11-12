@@ -1,5 +1,5 @@
-// v3.35.0: the store tooltip's lines in colour (Price / Affordable green or red; Next achievement in the
-// payback colour of buying that many; Wins in the item's), a "Next upgrade" line (the next upgrade
+// v3.35.0: the store tooltip's lines in color (Price / Affordable green or red; Next achievement in the
+// payback color of buying that many; Wins in the item's), a "Next upgrade" line (the next upgrade
 // buying more of the building unlocks, and how many more), and CookieMgr's upgrade info card —
 // what it does, costs, adds, its payback period, how it unlocks — on hover wherever the add-on
 // shows an upgrade (that line, the Stats page's missing upgrades, the Payback page's tiles).
@@ -56,7 +56,7 @@ const rows = (html) => {
 };
 
 CA.UI.StoreInsight.setLines(['bonus', 'actualGain', 'payback', 'actual', 'afford', 'share', 'next', 'nextUpgrade', 'wins']); // the lines before tooltip layouts changed the Default
-// ---- colours: affordable now green, not red
+// ---- colors: affordable now green, not red
 Game.cookies = 1e9;
 let r = rows(Game.Objects.Farm.tooltip());
 assert(r.Affordable && r.Affordable.textContent === 'now' && r.Affordable.className === 'ca-pp-green', `Affordable now: green (${r.Affordable && r.Affordable.className})`);
@@ -68,13 +68,13 @@ assert(priceLine && priceLine[2] === 'ca-pp-red', 'Price: red when you can’t a
 Game.cookies = 1e9;
 assert(CA.Stats.line(CA.Stats.get('price'), CA.Stats.contextOf('Farm', 'building'))[2] === 'ca-pp-green', '… green when you can');
 
-// the next achievement: in the payback colour of buying that many
+// the next achievement: in the payback color of buying that many
 r = rows(Game.Objects.Farm.tooltip());
 const ach = r['Next achievement'];
 const ctx = CA.Stats.contextOf('Farm', 'building');
-const want = CA.Stats.about(ctx, () => CA.Script.VALUES.find((v) => v.id === 'item.colourOf').get(45));
-assert(ach && /^45 more/.test(ach.textContent) && want && ach.className === `ca-pp-${want}`, `Next achievement: 45 more, in the colour of 45 more (${ach && ach.className} vs ${want})`);
-assert(CA.Stats.get('wins').colour === 'payback', 'Wins: in the payback colour');
+const want = CA.Stats.about(ctx, () => CA.Script.VALUES.find((v) => v.id === 'item.colorOf').get(45));
+assert(ach && /^45 more/.test(ach.textContent) && want && ach.className === `ca-pp-${want}`, `Next achievement: 45 more, in the color of 45 more (${ach && ach.className} vs ${want})`);
+assert(CA.Stats.get('wins').color === 'payback', 'Wins: in the payback color');
 
 // ---- the next upgrade
 assert(JSON.stringify(CA.UpgradeInfo.next('Farm')) === JSON.stringify({ name: 'Farmer grandmas', more: 10, at: 15 }), `the next: Farmer grandmas, 10 more (${JSON.stringify(CA.UpgradeInfo.next('Farm'))})`);
@@ -107,7 +107,7 @@ const card = (n) => {
 let c = card('Cookie trees');
 assert(/Locked/.test(c.querySelector('.ca-uptip-st').textContent) && /does a thing/.test(c.querySelector('.ca-uptip-desc').textContent), 'locked: its status, the game’s description');
 assert(/Unlocks with25 farms \(5 of 25\)/.test(c.textContent), `how it unlocks, and where you are (${c.textContent})`);
-assert(/Payback period/.test(c.textContent) && /if you had it now/.test(c.textContent) && c.querySelector('.ca-uptip-row b[class^="ca-pp-"]'), 'a payback period even locked, in its colour');
+assert(/Payback period/.test(c.textContent) && /if you had it now/.test(c.textContent) && c.querySelector('.ca-uptip-row b[class^="ca-pp-"]'), 'a payback period even locked, in its color');
 assert(/Adds\+/.test(c.textContent), 'what it would add');
 c = card('Cheap hoes');
 assert(/Owned/.test(c.textContent) && /Unlocked by1 farm ✓/.test(c.textContent) && !/Payback/.test(c.textContent), `owned: how it was unlocked, no payback (${c.textContent})`);

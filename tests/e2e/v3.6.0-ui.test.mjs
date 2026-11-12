@@ -1,7 +1,7 @@
 // v3.6.0 (the in-house Cookie Monster, release C): the displays —
-// the Payback page (best buy, the building table by ×1 / ×10 / ×100 in payback colours, buying from
+// the Payback page (best buy, the building table by ×1 / ×10 / ×100 in payback colors, buying from
 // it, the upgrades, the options), the Stats page (bank meters, golden cookie odds, prestige,
-// wrinklers, timers, what's left to collect), the store (price colours, upgrade dots, a CookieMgr
+// wrinklers, timers, what's left to collect), the store (price colors, upgrade dots, a CookieMgr
 // block under the game's tooltips with bank warnings — each with its option), and the Golden
 // cookies widget.
 import { IDBFactory, IDBKeyRange } from 'fake-indexeddb';
@@ -60,7 +60,7 @@ const cells = pg().querySelectorAll('.ca-pp-cell');
 assert(cells.length === 15 && pg().querySelectorAll('.ca-pp-cell.green').length === 1, `a cell per building and amount (${cells.length}), one green: the best building`);
 const t = CA.Payback.table();
 const g1 = pg().querySelector('.ca-pp-cell[data-pp-buy="Grandma"][data-n="1"]');
-assert(g1 && g1.classList.contains(t.buildings[1].Grandma.colour) && g1.querySelector('b').textContent === CA.Format.payback(t.buildings[1].Grandma.pp), 'a cell: its colour and payback period');
+assert(g1 && g1.classList.contains(t.buildings[1].Grandma.color) && g1.querySelector('b').textContent === CA.Format.payback(t.buildings[1].Grandma.pp), 'a cell: its color and payback period');
 const before = Game.Objects.Grandma.amount;
 click(w, pg().querySelector('.ca-pp-cell[data-pp-buy="Grandma"][data-n="10"]'));
 assert(Game.Objects.Grandma.amount === before + 10, 'clicking ×10 buys ten');
@@ -90,10 +90,10 @@ CA.UI.StatsPage.sync();
 assert(st().querySelector('.ca-meter.ok'), 'a bank that covers it: marked');
 Game.cookies = 1e7;
 
-// ---- the store: colours, the tooltip block, warnings, the options
+// ---- the store: colors, the tooltip block, warnings, the options
 CA.UI.StoreInsight.paint();
-const colourOf = (i) => [...doc.getElementById(`productPrice${i}`).classList].find((c) => c.startsWith('ca-pp-'));
-assert(colourOf(1) === `ca-pp-${CA.Payback.table().buildings[1].Grandma.colour}`, `a building’s price in its colour (${colourOf(1)})`);
+const colorOf = (i) => [...doc.getElementById(`productPrice${i}`).classList].find((c) => c.startsWith('ca-pp-'));
+assert(colorOf(1) === `ca-pp-${CA.Payback.table().buildings[1].Grandma.color}`, `a building’s price in its color (${colorOf(1)})`);
 assert(crate.querySelector('.ca-pp-updot.ca-pp-bg-blue'), 'an upgrade’s corner dot');
 const tip = Game.Objects.Grandma.tooltip();
 assert(/<div class="name">Grandma<\/div>/.test(tip) && /ca-tt/.test(tip) && /Bonus income/.test(tip) && /Payback period/.test(tip) && /Next achievement/.test(tip), 'the building tooltip: the game’s, then CookieMgr’s block');
@@ -109,12 +109,12 @@ CA.Settings.set('storeWarnings', false);
 assert(!/ca-tt-warn/.test(Game.Objects.Grandma.tooltip()), 'option off: no warnings');
 CA.Settings.set('storeTooltips', false);
 assert(!/ca-tt/.test(Game.Objects.Grandma.tooltip()), 'option off: the game’s tooltip alone');
-CA.Settings.set('storeColours', false);
+CA.Settings.set('storeColors', false);
 CA.UI.StoreInsight.paint();
-assert(!colourOf(1) && !crate.querySelector('.ca-pp-updot'), 'option off: no colours, no dots');
-['storeWarnings', 'storeTooltips', 'storeColours'].forEach((k) => CA.Settings.set(k, true));
+assert(!colorOf(1) && !crate.querySelector('.ca-pp-updot'), 'option off: no colors, no dots');
+['storeWarnings', 'storeTooltips', 'storeColors'].forEach((k) => CA.Settings.set(k, true));
 CA.UI.Menu.openPage('settings:store');
-assert(['storeColours', 'storeTooltips', 'storeWarnings'].every((k) => doc.querySelector(`[data-page="settings"] [data-key="${k}"]`)), 'the options, in Settings → Store');
+assert(['storeColors', 'storeTooltips', 'storeWarnings'].every((k) => doc.querySelector(`[data-page="settings"] [data-key="${k}"]`)), 'the options, in Settings → Store');
 
 // (the Golden cookies widget that was here went in v3.19: the Next golden cookie widget replaces it)
 
