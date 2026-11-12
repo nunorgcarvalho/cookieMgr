@@ -5,6 +5,10 @@ says which add-on version it was brought in step with.
 
 ## Unreleased
 
+## 0.8.1 — 2026-11-12 (add-on v4.40.2)
+
+- **American English:** the garden model's `neighbours()` is now `neighbors()`.
+
 ## 0.8.0 — 2026-11-12 (add-on v4.40.1)
 
 - **Score garden strategies for your game:** the Garden page's new *Score for your game* card takes a save and
