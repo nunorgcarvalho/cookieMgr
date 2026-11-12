@@ -357,7 +357,7 @@ export async function cachedIncomeCurve(opts) {
   const fs = await import('node:fs');
   const path = await import('node:path');
   const crypto = await import('node:crypto');
-  const { save, state = {}, fs: freqs, hours, seed } = opts;
+  const { save, state = {}, fs: freqs = [1, 1.25, 1.5, 1.75, 2, 2.25, 2.5, 2.75, 3], hours = 2000, seed = 1 } = opts;
   const key = crypto.createHash('sha1').update(JSON.stringify({ save, state, freqs, hours, seed, v: 1 })).digest('hex').slice(0, 16);
   const dir = new URL('../out/income/', import.meta.url).pathname;
   const file = path.join(dir, `${key}.json`);
