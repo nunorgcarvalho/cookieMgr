@@ -22,6 +22,8 @@ const tickIn = (s) => (M.nextStep = Date.now() + s * 1000);
 const young = () => tiles.filter(([x, y]) => at(x, y) && M.plot[y][x][1] === 0).length;
 Game.cookies = 1e12;
 LY.pick('profile', 'goldenCombos');
+LY.pick('gardener', 'cohort'); // the Full-garden replanter
+LY.pick('soil', 'cohort');
 LY.pick('seeds', 'bakerWheat');
 assert(/^plantWindow = 15\b/m.test(G.rulesOf()) && LY.get('gardener', 'cohort').data.knobs.plantWindow.unit === 's', 'plantWindow: a variable (with its knob, in seconds)');
 // (v3.9.1: replanting at the tick is the replantAtTick mode — what this release made the way)

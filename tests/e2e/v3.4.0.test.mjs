@@ -44,7 +44,9 @@ assert(LY.get('gardener', 'effects').name === 'Steady replanter' && LY.get('gard
 assert(LY.get('soil', 'effects').data.rules.includes('fertilizerAbove = 0.9') && LY.has('soil', 'cohort'), '“Fertilizer, then clay” at 0.9; the “Grow together, then clay” soil rule');
 ['cohort'].forEach((id) => assert(!G.compileRules(LY.get('gardener', id).data.rules).errors.length && !G.compileRules(LY.get('soil', id).data.rules).errors.length, 'they compile'));
 LY.pick('profile', 'goldenCombos');
-assert(LY.picked('gardener') === 'cohort' && LY.picked('soil') === 'cohort' && LY.picked('template') === 'fill' && LY.picked('seeds') === 'goldenClover', 'the Golden clover combos profile');
+assert(LY.picked('gardener') === 'tulipRounds' && LY.picked('soil') === 'clovers' && LY.picked('template') === 'fill' && LY.picked('seeds') === 'goldenClover', 'the Golden clover combos profile (rounds gardener since smart-clover-combos)');
+LY.pick('gardener', 'cohort');
+LY.pick('soil', 'cohort');
 LY.pick('seeds', 'bakerWheat'); // (golden clover isn't unlocked here)
 
 // ---- a round: planted together on fertilizer, held on clay, replanted together

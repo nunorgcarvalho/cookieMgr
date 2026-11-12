@@ -26,6 +26,8 @@ const clear = () => tiles.forEach(([x, y]) => set(x, y, null));
 const atTick = (on) => LY.set('gardener', 'cohort', { ...LY.get('gardener', 'cohort').data, rules: LY.get('gardener', 'cohort').data.rules.replace(/^replantAtTick = (true|false)/m, `replantAtTick = ${on}`) });
 Game.cookies = 1e12;
 LY.pick('profile', 'goldenCombos');
+LY.pick('gardener', 'cohort'); // the Full-garden replanter
+LY.pick('soil', 'cohort');
 LY.pick('seeds', 'bakerWheat');
 
 // ---- the knob: when a new round is planted — at once by default

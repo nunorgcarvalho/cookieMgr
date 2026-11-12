@@ -850,8 +850,8 @@ panel) is built from four layers, each picked on its own:
 | **Seeds** | which seed each letter is | As planted; Golden clover, Golden clover + nursetulip, Baker's wheat, Bakeberry, Whiskerbloom, Queenbeet; every two-parent **mutation recipe** in the game (→ Cronerice = A Baker's wheat, B Thumbcorn…) |
 
 A **profile** is one of each, picked together: **Max effects · current garden** (the default), **Golden clover
-field**, **Golden clover combos** (the field planted and replanted all together — the most golden cookies, in long
-high windows), **8 nursetulips together + clover combos** (two rows of four nursetulips among golden clovers, each
+field**, **Golden clover combos** (the field planted and replanted all together by the Tulip and clover rounds gardener, never
+during a short CpS boost — the most golden cookies, in long high windows, and the most income in simulated play), **8 nursetulips together + clover combos** (two rows of four nursetulips among golden clovers, each
 kind replanted all together on rounds of its own — a little more golden cookies on average, much higher peaks while
 the tulips are mature, CpS −11%), **Mutation hunt** (Mutation rows on wood chips — pick the recipe in Seeds), **Juicy queenbeet** (rings
 of queenbeets) and **Weed farm** — and yours.
