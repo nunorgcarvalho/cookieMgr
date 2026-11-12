@@ -825,23 +825,39 @@ export function exactIncome(P, { grid = 150, tol = 1e-8, maxIter = 1000, prune =
  * land on them: the noise left is the states' own, a few tenths of a percent over `pops` clicks.
  * Same answer as exactIncome where both run. { mult, se (its standard error, from batches), parts,
  * golden, effects, shares (with `shares`), pops }. `probe(state, outcomes, weight)` sees every click.
+ * `timer(seconds)` → { minTime, maxTime, weight }: a frequency that changes over game time (the
+ * timer as the game would set it then, and a factor on what's earned, such as a garden's CpS cost).
  */
-export function expectedIncome(P, { pops = 1000000, seed = 1, batches = 40, warmup = 2000, kMax = 4, shares = false, probe = null } = {}) {
+export function expectedIncome(P, { pops = 1000000, seed = 1, batches = 40, warmup = 2000, kMax = 4, shares = false, probe = null, timer = null } = {}) {
   if (!P.golden) return { ...noGolden(P), se: 0, pops: 0 };
   const { fps, stretches, after, popOnce, lastOf: lastFor, waitEarn } = machinery(P, { grid: 1, kMax, shares });
   const rnd = makeRng(seed * 7919 + 17);
   // the wait: P(T > u) frame by frame, and its running sum (what a rate earns, on average, before the next one)
-  const S = survivalTable(P.minTime, P.maxTime);
-  const CS = new Float64Array(S.length + 1);
-  for (let u = 0; u < S.length; u++) CS[u + 1] = CS[u] + S[u];
-  const meanT = CS[S.length] / fps; // seconds
-  const top = S.length;
+  const tables = new Map();
+  const table = (min, max) => {
+    const key = `${min},${max}`;
+    let t = tables.get(key);
+    if (!t) {
+      const S = survivalTable(min, max);
+      const CS = new Float64Array(S.length + 1);
+      for (let u = 0; u < S.length; u++) CS[u + 1] = CS[u] + S[u];
+      t = { min, max, CS, top: S.length, meanT: CS[S.length] / fps };
+      tables.set(key, t);
+    }
+    return t;
+  };
+  // the timer now: fixed, or (with `timer`) set at each click from the game time then, as the game
+  // sets it when a golden cookie goes; `cf` scales what's earned (a garden's CpS factor then)
+  let tab = table(P.minTime, P.maxTime);
+  let cf = 1;
+  let now = 0;
   const parts = new Float64Array(5); // cps, clicks, lucky, chain, storm (cookies, this batch)
   const combos = shares ? new Map() : null;
   // what the next wait earns from a state just after a click, weighed by w
-  const earn = (s, w) => waitEarn(s, CS, top, w, parts, combos);
-  const credit = (o, w) => {
+  const earn = (s, w) => waitEarn(s, tab.CS, tab.top, w * cf, parts, combos);
+  const credit = (o, w0) => {
     if (!o.parts) return;
+    const w = w0 * cf;
     parts[2] += w * o.parts.lucky;
     parts[3] += w * o.parts.chain;
     parts[0] += w * o.parts.cps;
@@ -862,9 +878,14 @@ export function expectedIncome(P, { pops = 1000000, seed = 1, batches = 40, warm
   // one walker's click from state s, its sums weighed by w: the state before its next click
   const step = (s, w) => {
     // this click, every way it can go
+    if (timer) {
+      const tm = timer(now);
+      tab = table(tm.minTime, tm.maxTime);
+      cf = tm.weight == null ? 1 : tm.weight;
+    }
     const outs = popOnce(s);
     if (probe) probe(s, outs, w);
-    secs += w * meanT;
+    secs += w * tab.meanT;
     for (const o of outs) {
       const second = P.pExtra > 0 && o.choice !== 'chain cookie' ? P.pExtra : 0;
       const q = w * o.p;
@@ -893,7 +914,9 @@ export function expectedIncome(P, { pops = 1000000, seed = 1, batches = 40, warm
       }
       if (rnd() < P.pExtra) post = pick(outs2).s;
     }
-    return after(settle(post), spawnFrame(P.minTime, P.maxTime, 0, rnd()));
+    const wait = spawnFrame(tab.min, tab.max, 0, rnd());
+    now += lead.secs + wait / fps;
+    return after(settle(post), wait);
   };
   const batch = [];
   const close = () => {
@@ -946,6 +969,26 @@ export function expectedAt(g, f, opts = {}) {
   Game.killBuffs();
   Game.killShimmers();
   const P = goldenParams(Game, { clicks: g.clicks, bank: opts.bank });
+  if (opts.schedule) {
+    // a frequency over game time: schedule(seconds) → { f, cps }, the game's timer at each f (kept)
+    const T = Game.shimmerTypes.golden;
+    const at = new Map();
+    const timerOf = (x) => {
+      const k = Math.round(x * 1e4);
+      if (!at.has(k)) {
+        g.setFrequency(k / 1e4);
+        at.set(k, { minTime: T.getMinTime({ wrath: 0 }), maxTime: T.getMaxTime({ wrath: 0 }) });
+      }
+      return at.get(k);
+    };
+    opts = {
+      ...opts,
+      timer: (secs) => {
+        const x = opts.schedule(secs);
+        return { ...timerOf(x.f), weight: x.cps == null ? 1 : x.cps };
+      },
+    };
+  }
   const r = opts.method === 'chain' ? { ...exactIncome(P, opts), se: 0 } : expectedIncome(P, opts);
   return { ...r, bank: P.bank };
 }

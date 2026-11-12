@@ -34,6 +34,10 @@ const G = g.Game;
   assert(Math.abs(sum - walk.mult) < 1e-9 * walk.mult, 'the parts add up to the income');
   const again = expectedIncome(P, { pops: 20000, seed: 7 });
   assert(again.mult === expectedIncome(P, { pops: 20000, seed: 7 }).mult, 'the same seed, the same answer');
+  const steady = expectedIncome(P, { pops: 20000, seed: 7, timer: () => ({ minTime: P.minTime, maxTime: P.maxTime }) });
+  assert(steady.mult === again.mult, 'a timer that never changes: the same answer');
+  const half = expectedIncome(P, { pops: 20000, seed: 7, timer: () => ({ minTime: P.minTime, maxTime: P.maxTime, weight: 0.5 }) });
+  assert(Math.abs(half.mult / again.mult - 0.5) < 1e-9, 'a CpS factor on the timer scales what is earned');
 }
 
 // --- what the game says, read back: buffs popped for real

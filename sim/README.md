@@ -85,6 +85,7 @@ pinned in `game/fetch.mjs`.
   npm run sim -- experiment golden-income --save mysave.txt --set "auras=Reaper of Fields,Radiant Appetite"
   npm run sim -- experiment golden-income --save mysave.txt --play --hours 2000    # played instead
   npm run sim -- experiment garden-score --save mysave.txt --level 9 --tulips 8,10 --state state.json
+  npm run sim -- experiment garden-score --save mysave.txt --follow   # each garden's own frequency over time, too
   ```
 - **Experiments** — each with its explanation and arguments; its output streams in as it runs.
 - **Vocabulary** — every action, value and condition a strategy can use (cookieMgr's library,
@@ -112,6 +113,19 @@ time (200–400× real time), depending on what's running. Runs are independent,
 them side by side in separate processes. For questions that need thousands of hours, there are fast
 models (`models/`) that reduce the game's rules to what matters for one question — use them to sweep
 parameters, then check the winner in the exact simulator.
+
+**Golden cookie income: the fast model first.** Two simulators answer "what does this game earn at this golden
+cookie frequency":
+
+- **Computed** (`models/goldenExpected.mjs`, the default everywhere): the game's golden cookie rules, read from the
+  game itself, as a Markov chain over what's running, walked with each golden cookie credited its expected
+  payoff. A million golden cookies in about 5 s, within a few tenths of a percent. It can also follow a frequency
+  that changes over game time (`expectedAt(g, 1, { schedule })`, `garden-score --follow`).
+- **Played** (`models/goldenIncome.mjs`, `--play`): the game's own golden cookies, popped event to event.
+  Minutes a point and ±5–25% (income is heavy-tailed), but nothing assumed beyond the game's code.
+
+New analyses use the computed model; play the game to check a result that matters, or anything the chain
+leaves out (spending the bank, spells, wrinklers).
 
 Lower frame rates (`--fps`) are faster but **not faithful**: the game rolls a golden cookie's
 appearance once per frame, so fewer frames mean fewer golden cookies.

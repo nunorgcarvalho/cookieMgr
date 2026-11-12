@@ -30,7 +30,8 @@ export const FINE = 0.01; // the score's bins (models/gardenScore.mjs): 1 point 
  * 1-point bins, each weighed by the CpS multiplier at the time: what models/gardenScore.mjs scores),
  * peak, zone: {
  * share, stretch (h), first (h), cloversMax (share of the zone's time with every clover mature) },
- * plantings: { G, N } per hour }.
+ * plantings: { G, N } per hour }. `onStretch(t, d, bonus, cps)` sees each stretch of game time (s)
+ * at a steady bonus and CpS multiplier.
  */
 export function runGarden(
   data,
@@ -47,6 +48,7 @@ export function runGarden(
     clayAt = 0.25,
     hours = 1000,
     seed = 1,
+    onStretch = null,
   }
 ) {
   const rnd = makeRng(seed);
@@ -135,6 +137,7 @@ export function runGarden(
       else cps *= 1 - 0.02 * s * boost[i]; // boosted by the nursetulips next to it too, as in the game
     }
     const d = to - t;
+    if (onStretch) onStretch(t, d, gc, cps);
     const b = Math.floor(gc / BIN + 1e-9);
     bins[b] = (bins[b] || 0) + d;
     const fb = Math.floor(gc / FINE + 1e-9);

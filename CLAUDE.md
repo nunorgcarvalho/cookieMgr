@@ -27,3 +27,9 @@ CI runs the full suite on every push (four shards, ~1.5 min). Locally, run `npm 
 Run everything (`npm test`) only for changes to `src/core/`, `tests/harness/` or `build.mjs`, or to chase a CI
 failure; don't re-run it after merging `main`. Keep new tests quick: `waitFor` instead of long sleeps, and close
 the menu around loops that fire hundreds of events. See [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md).
+
+## Simulator analyses: the computed golden cookie model by default
+
+For golden cookie income in `sim/` (curves, garden scores, any new experiment), use the computed model
+(`sim/models/goldenExpected.mjs`: `expectedAt`, `expectedIncome`): seconds, a few tenths of a percent. Play the
+game (`sim/models/goldenIncome.mjs`, `--play`) only to check a result, or for what the chain leaves out.

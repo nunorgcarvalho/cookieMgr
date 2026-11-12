@@ -18,6 +18,11 @@ bump: minor
   A computed curve goes through its points (a smooth monotone interpolation) instead of a fit. The bank is held
   at the save's (Lucky and chains read it); `golden-income --bank` sets another. `golden-income` and
   `garden-score` compute too (`--pops`), or play with `--play`.
+- **Following a frequency over time:** the computed walk can follow a golden cookie frequency (and CpS factor)
+  that changes over game time, the timer set at each golden cookie as the game sets it. `garden-score --follow`
+  scores each gardener that way too, from its own frequency over time, as a check on the curve (which treats the
+  frequency as steady at each moment): on a late-game save they agree within about 1% for the gardeners worth
+  having. The computed model is now the simulator's default for golden cookie income; playing (`--play`) checks it.
 - **Fixed, the played income model:** a free sugar lump no longer lifts CpS for the rest of a run (with Sugar
   baking each one added 1% against a baseline taken at the start: ~4% too much over 2,000 h), and the 1% second
   golden cookie now sees the first one's buff (it used CpS from before it).
