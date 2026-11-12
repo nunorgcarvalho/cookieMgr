@@ -1,11 +1,11 @@
 // Scores garden strategies for a save: the income each implies, in multiples of a baseline (unbuffed CpS + 20 clicks/s) — its frequency spread over time, through the save's income curve.
 //
-//   npm run sim -- experiment garden-score --save mysave.txt [--level 9] [--tulips 4,8] [--garden-hours 1000] [--seeds 3] [--hours 2000] [--state state.json] [--set key=value …] [--json]
+//   npm run sim -- experiment garden-score --save mysave.txt [--level 9] [--tulips 4,8] [--garden-hours 1000] [--seeds 3] [--pops 1000000 | --play --hours 2000] [--state state.json] [--set key=value …] [--json]
 //   npm run sim -- experiment garden-score --curve curve.json …     (a golden-income --json result)
 //
 // models/gardenScore.mjs: each gardener's golden cookie frequency and CpS over game time (the Garden
-// page's fast model, models/gardenFrequency.mjs), and the save's income curve (golden-income: fitted
-// once per save and state, then kept). The score is the time-average of CpS factor × income(f): an
+// page's fast model, models/gardenFrequency.mjs), and the save's income curve (golden-income:
+// computed, or with --play played and fitted, once per save and state, then kept). The score is the time-average of CpS factor × income(f): an
 // expected income over any long stretch of play (24 h or more), golden cookies clicked as they appear.
 // Also: the same over the first 24 h from an empty plot, and the share of the income by bonus band.
 import fs from 'node:fs';
@@ -27,6 +27,8 @@ else {
       save: fs.readFileSync(arg('save'), 'utf8').trim(),
       state: stateFromArgs(process.argv, (f) => fs.readFileSync(f, 'utf8')),
       hours: Number(arg('hours', 2000)),
+      expected: !process.argv.includes('--play'),
+      pops: Number(arg('pops', 1000000)),
       fs: String(arg('f', '1,1.25,1.5,1.75,2,2.25,2.5,2.75,3')).split(',').map(Number),
       jobs: Number(arg('jobs', 4)),
       onPoint: (p, done, total) => log(`  income curve ${done}/${total}: f ${p.f} ×${p.mult.toFixed(0)} (${((Date.now() - t0) / 1000).toFixed(0)} s)`),

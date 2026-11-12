@@ -1214,7 +1214,7 @@ buy.best(all)
 
   const GD = Object.assign({ level: 8, tulips: [4, 8], hours: 1000, seeds: 3 }, store.get('garden', {}), { study: null, error: '', loading: false, at: null });
   // the scores: a save, its game state (as read, and as edited), its income curve
-  const SC = { save: store.get('gardenSave', ''), saved: null, state: null, options: null, hours: store.get('scoreHours', 2000), job: null, progress: '', curve: null, error: '', reading: false };
+  const SC = { save: store.get('gardenSave', ''), saved: null, state: null, options: null, hours: store.get('scoreHow', 0), job: null, progress: '', curve: null, error: '', reading: false };
   const PLANT_ICON = { G: 5, N: 13 }; // gardenPlants.png rows: golden clover, nursetulip
   const PLOTS = { 1: '2×2', 2: '3×2', 3: '3×3', 4: '4×3', 5: '4×4', 6: '5×4', 7: '5×5', 8: '6×5', 9: '6×6' };
   const pc = (x, d = 1) => `${(x * 100).toFixed(d)}%`;
@@ -1326,8 +1326,14 @@ buy.best(all)
   }
 
   // ---- scores: the income a gardener implies for a game (models/gardenScore.mjs, as the page does it)
-  const curveAt = (c, f) => Math.exp(c.a + c.b * Math.log(f) + c.c * Math.log(f) ** 2);
-  const curveSlope = (c, f) => c.b + 2 * c.c * Math.log(f);
+  // a computed curve comes with its interpolation tabled (ln income every 0.01 of f); a played one is a fit
+  const tableLn = (t, f) => {
+    const x = Math.max(0, Math.min(t.ln.length - 1.000001, (f - t.f0) / t.step));
+    const i = Math.floor(x);
+    return t.ln[i] + (t.ln[i + 1] - t.ln[i]) * (x - i);
+  };
+  const curveAt = (c, f) => (c.table ? Math.exp(tableLn(c.table, f)) : Math.exp(c.a + c.b * Math.log(f) + c.c * Math.log(f) ** 2));
+  const curveSlope = (c, f) => (c.table ? (tableLn(c.table, f * 1.01) - tableLn(c.table, f / 1.01)) / (2 * Math.log(1.01)) : c.b + 2 * c.c * Math.log(f));
   /** A gardener's income ÷ baseline: its 1-point bins (time × CpS multiplier) through the curve. */
   const scoreOf = (r, c) => (r.fine || []).reduce((a, w, k) => a + (w ? w * curveAt(c, 1 + (k + 0.5) / 100) : 0), 0);
   const mult = (x) => (x >= 100 ? Math.round(x).toLocaleString() : x.toFixed(1));
@@ -1376,7 +1382,7 @@ buy.best(all)
           .map(([n, on]) => `<button type="button" class="ca-chip${on ? ' on' : ''}" data-gu="${esc(n)}">${esc(n)}</button>`)
           .join('')}</span></div>` +
         `<div class="sim-form">` +
-        `<label class="ca-field"><span class="ca-field-label">Play per frequency</span>${chips([[500, '500 h', 'Quick: about a minute, ±10–15%'], [2000, '2,000 h', 'A few minutes, ±5%'], [8000, '8,000 h', 'Ten minutes or more, ±2–3%']], 'data-ghrs', SC.hours)}</label>` +
+        `<label class="ca-field"><span class="ca-field-label">Income curve</span>${chips([[0, 'Computed', 'Seconds: every golden cookie credited its expected payoff, ±0.5%'], [2000, 'Played 2,000 h', 'A few minutes: the game played at each frequency, ±5%'], [8000, 'Played 8,000 h', 'Ten minutes or more, ±2–3%']], 'data-ghrs', SC.hours)}</label>` +
         C.button(`${I('play', 14)} Score the gardens`, 'data-gscore', 'ca-btn-on') +
         (Object.keys(changed).length ? C.button('Back to the save', 'data-greset', 'ca-btn-small') : '') +
         (SC.job ? `<span class="ca-hint">${I('refresh', 12)} ${esc(SC.progress || 'Starting…')}</span>` : '') +
@@ -1384,7 +1390,7 @@ buy.best(all)
     }
     return (
       `<div class="ca-card">${C.cardHead('Score for your game', 'cookie', SC.curve ? `<span class="ca-pill">no garden ×${mult(curveAt(SC.curve, 1))}</span>` : '')}` +
-      `<div class="ca-card-note">Each gardener’s expected income for one game, in multiples of unbuffed CpS + its clicks: the game’s own golden cookies played at steady frequencies for an income curve (${SC.hours.toLocaleString()} h each, a few minutes), then each gardener’s time at each frequency, CpS cost included, through it. Paste a save, then change any variable.</div>` +
+      `<div class="ca-card-note">Each gardener’s expected income for one game, in multiples of unbuffed CpS + its clicks: an income curve from the game’s own golden cookies at steady frequencies (${SC.hours ? `played, ${SC.hours.toLocaleString()} h each: a few minutes` : 'each one’s expected payoff, computed: seconds'}), then each gardener’s time at each frequency, CpS cost included, through it. Paste a save, then change any variable.</div>` +
       `<textarea class="sim-save" data-gsave placeholder="Paste your exported save here…">${esc(SC.save)}</textarea>` +
       (st ? '' : `<div class="sim-form">${C.button(SC.reading ? 'Reading…' : 'Read the save', 'data-gread', 'ca-btn-on')}</div>`) +
       (SC.error ? `<div class="sim-err">${esc(SC.error)}</div>` : '') +
@@ -1514,7 +1520,7 @@ buy.best(all)
     if (d.greset != null) SC.state = JSON.parse(JSON.stringify(SC.saved));
     if (d.gwrath != null) SC.state.elderWrath = Number(d.gwrath);
     if (d.gu != null) SC.state.upgrades[d.gu] = !SC.state.upgrades[d.gu];
-    if (d.ghrs != null) store.set('scoreHours', (SC.hours = Number(d.ghrs)));
+    if (d.ghrs != null) store.set('scoreHow', (SC.hours = Number(d.ghrs)));
     if (d.gscore != null) return scoreGardens();
     renderScore();
   });

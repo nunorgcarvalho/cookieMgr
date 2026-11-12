@@ -140,5 +140,6 @@
   "e2e/v3.53.0.test.mjs": 7.4,
   "e2e/v4.0.0.test.mjs": 9.7,
   "e2e/v4.0.2.test.mjs": 2.2,
-  "e2e/v4.1.0.test.mjs": 4.9
+  "e2e/v4.1.0.test.mjs": 4.9,
+  "sim/golden-expected.test.mjs": 25
 }

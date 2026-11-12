@@ -657,7 +657,7 @@ async function route(req, res) {
   }
 
   // --- the Garden page's scores: a save's game state (experiments/golden-state.mjs), its income curve
-  // (experiments/golden-income.mjs, a job: a few minutes, its progress streamed)
+  // (experiments/golden-income.mjs, a job: seconds computed, minutes played, its progress streamed)
   if (method === 'POST' && p === '/api/garden/state') {
     const b = await body(req);
     const files = scoreFiles(b);
@@ -670,9 +670,11 @@ async function route(req, res) {
   if (method === 'POST' && p === '/api/garden/income') {
     const b = await body(req);
     const files = scoreFiles(b);
-    const hours = Math.max(50, Math.min(20000, Math.round(Number(b.hours)) || 2000));
+    // hours 0: computed (models/goldenExpected.mjs); else played that many hours a frequency
+    const hours = Number(b.hours) ? Math.max(50, Math.min(20000, Math.round(Number(b.hours)))) : 0;
     const j = newJob('income', { hours });
-    const child = spawn(process.execPath, [path.join(ROOT, 'sim', 'cli.mjs'), 'experiment', 'golden-income', ...files.args, '--hours', String(hours), '--json'], { cwd: ROOT });
+    const how = hours ? ['--play', '--hours', String(hours)] : [];
+    const child = spawn(process.execPath, [path.join(ROOT, 'sim', 'cli.mjs'), 'experiment', 'golden-income', ...files.args, ...how, '--json'], { cwd: ROOT });
     j.child = child;
     let out = '';
     child.stdout.on('data', (d) => (out += d));

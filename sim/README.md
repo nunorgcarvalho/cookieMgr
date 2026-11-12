@@ -72,14 +72,18 @@ pinned in `game/fetch.mjs`.
   implies, in multiples of a baseline (unbuffed CpS + its clicks a second), golden cookies clicked as they
   appear. The save is read as a *game state*, the few variables that income depends on (buildings, clicks a
   second, a click's share of CpS, dragon auras, Grandmapocalypse, season, Pantheon, golden cookie upgrades),
-  each one changeable in the form. Then the game's own golden cookies are played at steady frequencies,
-  thousands of hours each, for the game's income curve (`models/goldenIncome.mjs`: it jumps from one event to
-  the next instead of playing every frame, a few minutes in all, kept once done), and each gardener's time at
-  each frequency, CpS cost included, goes through it (`models/gardenScore.mjs`). The same from the command line:
+  each one changeable in the form. Then the game's income curve, at steady golden cookie frequencies: computed
+  (`models/goldenExpected.mjs`: the game's golden cookie rules as a Markov chain over what's running, walked a
+  million golden cookies a frequency with each one credited its expected payoff — seconds in all, within a few
+  tenths of a percent), or played (`models/goldenIncome.mjs`: the game's own golden cookies, jumping from one
+  event to the next, thousands of hours a frequency, minutes in all and ±5%), kept once done. Each gardener's
+  time at each frequency, CpS cost included, goes through it (`models/gardenScore.mjs`). The same from the
+  command line:
 
   ```
   npm run sim -- experiment golden-state --save mysave.txt --out state.json     # the game state, to edit
   npm run sim -- experiment golden-income --save mysave.txt --set "auras=Reaper of Fields,Radiant Appetite"
+  npm run sim -- experiment golden-income --save mysave.txt --play --hours 2000    # played instead
   npm run sim -- experiment garden-score --save mysave.txt --level 9 --tulips 8,10 --state state.json
   ```
 - **Experiments** — each with its explanation and arguments; its output streams in as it runs.
