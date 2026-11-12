@@ -1257,9 +1257,14 @@ export function expectedIncome(P, { pops = 1000000, seed = 1, batches = 40, warm
       else groups.set(k, { s: n, p: o.p });
     }
     const t0 = now;
+    const tab0 = tab;
+    const cf0 = cf;
     const ends = [];
     for (const gr of groups.values()) {
+      // each from the cast's moment and timer (a followed frequency changes it at golden cookies)
       now = t0;
+      tab = tab0;
+      cf = cf0;
       // followed while what the spell changed lasts, HORIZON s at most (any horizon is unbiased: longer only
       // takes away more of the noise, for more work)
       let horizon = 0;
