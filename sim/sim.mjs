@@ -15,7 +15,7 @@
 import { bootGame } from './game/boot.mjs';
 
 /** The simulator's own version (it moves apart from the add-on's: sim-v* tags). */
-export const SIM_VERSION = '0.8.1';
+export const SIM_VERSION = '0.9.0';
 import { loadCookieMgr } from './mgr/host.mjs';
 import { ensureMod } from './game/fetch.mjs';
 
