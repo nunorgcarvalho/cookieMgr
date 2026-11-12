@@ -21,7 +21,7 @@ export async function exactGarden(data, { id, level = 8, tulips = [4, 8], hours 
   const { x0, y0, w, h } = plotAt(data, level);
   const g = gardeners(w, h, tulips).find((x) => x.id === id);
   if (!g) throw new Error(`No gardener "${id}"`);
-  const o = { clovers: 'steady', tulips: 'steady', soil: 'young', theta: 0.9, dyingOver: 0.5, replantBelow: 0.75, clayAt: 0.75, ...g };
+  const o = { clovers: 'steady', tulips: 'steady', soil: 'young', theta: 0.9, dyingOver: 0.5, replantBelow: 0.75, clayAt: 0.25, ...g };
 
   const sim = await createSim({ seed, fps, mgr: false, sampleEvery: 0 });
   const Game = sim.Game;

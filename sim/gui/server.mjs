@@ -10,6 +10,7 @@
 // add-on), and the game's pictures come from the game's CDN, cached under sim/.game/assets/.
 import http from 'node:http';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { spawn, exec } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
@@ -655,6 +656,47 @@ async function route(req, res) {
     return json(res, 200, await gardenStudies.get(key));
   }
 
+  // --- the Garden page's scores: a save's game state (experiments/golden-state.mjs), its income curve
+  // (experiments/golden-income.mjs, a job: a few minutes, its progress streamed)
+  if (method === 'POST' && p === '/api/garden/state') {
+    const b = await body(req);
+    const files = scoreFiles(b);
+    try {
+      return json(res, 200, JSON.parse(await runExperiment('golden-state', [...files.args, '--options'])));
+    } finally {
+      files.clean();
+    }
+  }
+  if (method === 'POST' && p === '/api/garden/income') {
+    const b = await body(req);
+    const files = scoreFiles(b);
+    const hours = Math.max(50, Math.min(20000, Math.round(Number(b.hours)) || 2000));
+    const j = newJob('income', { hours });
+    const child = spawn(process.execPath, [path.join(ROOT, 'sim', 'cli.mjs'), 'experiment', 'golden-income', ...files.args, '--hours', String(hours), '--json'], { cwd: ROOT });
+    j.child = child;
+    let out = '';
+    child.stdout.on('data', (d) => (out += d));
+    child.stderr.on('data', (d) => {
+      const text = String(d);
+      j.lines.push(text);
+      emit(j, 'out', text);
+    });
+    child.on('close', (code) => {
+      files.clean();
+      try {
+        if (code !== 0) throw new Error(j.lines.join('').trim().split('\n').pop() || `golden-income exited with ${code}`);
+        j.results = [JSON.parse(out)];
+        j.state = 'done';
+      } catch (e) {
+        j.state = 'failed';
+        j.lines.push(e.message);
+      }
+      j.finished = Date.now();
+      emit(j, 'done', { code, finished: j.finished, state: j.state, results: j.results, out: j.lines.join('') });
+    });
+    return json(res, 200, { id: j.id });
+  }
+
   if (parts[1] === 'jobs' && parts[2]) {
     const j = jobs.get(parts[2]);
     if (!j) return fail(res, 404, 'No such job');
@@ -689,6 +731,30 @@ function gardenStudy(args) {
         reject(e);
       }
     });
+  });
+}
+/** A save and a game state (the Garden page's score) in temporary files, as the experiments take them. */
+function scoreFiles(b) {
+  const save = String(b.save || '').trim();
+  if (!save) throw Object.assign(new Error('Paste a save first (Options → Export save in the game)'), { status: 400 });
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'cookiesim-score-'));
+  fs.writeFileSync(path.join(dir, 'save.txt'), save);
+  const args = ['--save', path.join(dir, 'save.txt')];
+  if (b.state && typeof b.state === 'object') {
+    fs.writeFileSync(path.join(dir, 'state.json'), JSON.stringify(b.state));
+    args.push('--state', path.join(dir, 'state.json'));
+  }
+  return { args, clean: () => fs.rmSync(dir, { recursive: true, force: true }) };
+}
+/** An experiment run to its end in a child process: its stdout. */
+function runExperiment(name, args) {
+  return new Promise((resolve, reject) => {
+    const child = spawn(process.execPath, [path.join(ROOT, 'sim', 'cli.mjs'), 'experiment', name, ...args], { cwd: ROOT });
+    let out = '';
+    let err = '';
+    child.stdout.on('data', (d) => (out += d));
+    child.stderr.on('data', (d) => (err += d));
+    child.on('close', (code) => (code === 0 ? resolve(out) : reject(new Error(err.trim().split('\n').pop() || `${name} exited with ${code}`))));
   });
 }
 function parseSpanSeconds(s) {

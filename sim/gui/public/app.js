@@ -1213,6 +1213,8 @@ buy.best(all)
   // =====================================================================================================
 
   const GD = Object.assign({ level: 8, tulips: [4, 8], hours: 1000, seeds: 3 }, store.get('garden', {}), { study: null, error: '', loading: false, at: null });
+  // the scores: a save, its game state (as read, and as edited), its income curve
+  const SC = { save: store.get('gardenSave', ''), saved: null, state: null, options: null, hours: store.get('scoreHours', 2000), job: null, progress: '', curve: null, error: '', reading: false };
   const PLANT_ICON = { G: 5, N: 13 }; // gardenPlants.png rows: golden clover, nursetulip
   const PLOTS = { 1: '2×2', 2: '3×2', 3: '3×3', 4: '4×3', 5: '4×4', 6: '5×4', 7: '5×5', 8: '6×5', 9: '6×6' };
   const pc = (x, d = 1) => `${(x * 100).toFixed(d)}%`;
@@ -1288,6 +1290,7 @@ buy.best(all)
       histogramSvg(r, scale, st.bin) +
       `<div class="sim-h-read" data-read>${gardenReadHtml(r, null, st.bin)}</div>` +
       `<div class="ca-stats sim-gstats">` +
+      (SC.curve ? tile('Income', `×${mult(scoreOf(r, SC.curve))}`, `×${(scoreOf(r, SC.curve) / curveAt(SC.curve, 1)).toFixed(1)} no garden’s`, 'Expected income over any long stretch of play, in multiples of the baseline (unbuffed CpS + clicks), for the game scored above') : '') +
       tile('Mean', bonus(r.mean), `best ${bonus(r.peak)}`, 'The golden cookie frequency bonus, averaged over game time') +
       tile('≥ +100%', pc(atLeast(r, 1, st.bin), 0), 'of the time', 'Golden cookies at least twice as often') +
       tile('CpS', `×${r.cps.toFixed(3)}`, r.cps < 1 ? 'the nursetulips' : 'nothing taken', 'The CpS multiplier, averaged over game time: a grown nursetulip takes 2% (on clay, 2.5%)') +
@@ -1306,17 +1309,125 @@ buy.best(all)
   }
 
   function gardenSummaryHtml(st) {
-    const best = Math.max(...st.results.map((r) => r.mean));
+    const c = SC.curve;
+    const key = (r) => (c ? scoreOf(r, c) : r.mean);
+    const best = Math.max(...st.results.map(key));
     return (
-      '<table class="sim-table"><tr><th>Gardener</th><th>Mean</th><th>≥ +50%</th><th>≥ +100%</th><th>≥ +125%</th><th>CpS</th><th>Golden zone</th><th>Plantings / h</th></tr>' +
+      `<table class="sim-table"><tr><th>Gardener</th>${c ? '<th data-tip="Expected income over any long stretch of play (24 h or more), in multiples of the baseline: unbuffed CpS + the clicks a second">Income</th><th>vs no garden</th>' : ''}<th>Mean</th><th>≥ +50%</th><th>≥ +100%</th><th>≥ +125%</th><th>CpS</th><th>Golden zone</th><th>Plantings / h</th></tr>` +
       st.results
         .map(
           (r) =>
-            `<tr class="${r.mean === best ? 'best' : ''}"><td><b>${esc(r.name)}</b></td><td>${bonus(r.mean)}</td><td>${pc(atLeast(r, 0.5, st.bin), 0)}</td><td>${pc(atLeast(r, 1, st.bin), 0)}</td><td>${pc(atLeast(r, 1.25, st.bin), 0)}</td><td>×${r.cps.toFixed(3)}</td>` +
+            `<tr class="${key(r) === best ? 'best' : ''}"><td><b>${esc(r.name)}</b></td>${c ? `<td>×${mult(scoreOf(r, c))}</td><td>×${(scoreOf(r, c) / curveAt(c, 1)).toFixed(1)}</td>` : ''}<td>${bonus(r.mean)}</td><td>${pc(atLeast(r, 0.5, st.bin), 0)}</td><td>${pc(atLeast(r, 1, st.bin), 0)}</td><td>${pc(atLeast(r, 1.25, st.bin), 0)}</td><td>×${r.cps.toFixed(3)}</td>` +
             `<td>${r.zone ? `${pc(r.zone.share, 0)} · ${hrs(r.zone.stretch)} at a stretch` : '—'}</td><td>${(r.plantings.G + r.plantings.N).toFixed(1)}</td></tr>`
         )
         .join('') +
       '</table>'
+    );
+  }
+
+  // ---- scores: the income a gardener implies for a game (models/gardenScore.mjs, as the page does it)
+  const curveAt = (c, f) => Math.exp(c.a + c.b * Math.log(f) + c.c * Math.log(f) ** 2);
+  const curveSlope = (c, f) => c.b + 2 * c.c * Math.log(f);
+  /** A gardener's income ÷ baseline: its 1-point bins (time × CpS multiplier) through the curve. */
+  const scoreOf = (r, c) => (r.fine || []).reduce((a, w, k) => a + (w ? w * curveAt(c, 1 + (k + 0.5) / 100) : 0), 0);
+  const mult = (x) => (x >= 100 ? Math.round(x).toLocaleString() : x.toFixed(1));
+  const WRATH = ['Pledged', 'Awoken', 'Displeased', 'Angered'];
+  const SLOTS = ['Diamond', 'Ruby', 'Jade'];
+
+  /** The variables that differ from the save's own: what the score's run is told to change. */
+  function stateChanges() {
+    const a = SC.state;
+    const b = SC.saved;
+    if (!a || !b) return {};
+    const out = {};
+    for (const k of ['clicks', 'elderWrath', 'season']) if (a[k] !== b[k]) out[k] = a[k];
+    if (Math.abs(a.clickVsCps - b.clickVsCps) > 1e-9) out.clickVsCps = a.clickVsCps;
+    if (a.auras.join('|') !== b.auras.join('|')) out.auras = a.auras;
+    if (a.gods.join('|') !== b.gods.join('|')) out.gods = a.gods;
+    for (const k of ['buildings', 'upgrades']) {
+      const d = Object.fromEntries(Object.entries(a[k]).filter(([n, v]) => v !== b[k][n]));
+      if (Object.keys(d).length) out[k] = d;
+    }
+    return out;
+  }
+
+  function scoreCardHtml() {
+    const st = SC.state;
+    const o = SC.options;
+    const sel = (attr, list, cur) => `<select data-gs="${attr}">${list.map(([v, label]) => `<option value="${esc(v)}"${v === cur ? ' selected' : ''}>${esc(label)}</option>`).join('')}</select>`;
+    const changed = stateChanges();
+    let form = '';
+    if (st) {
+      const auras = [['', 'No aura'], ...o.auras.map((n) => [n, n])];
+      const gods = [['', '—'], ...o.gods.map((g) => [g.id, g.name])];
+      form =
+        `<div class="sim-form sim-gstate">` +
+        `<label class="ca-field"><span class="ca-field-label">Clicks a second</span><input type="number" min="0" step="1" value="${esc(st.clicks)}" data-gs="clicks"></label>` +
+        `<label class="ca-field" data-tip="A click's cookies as a share of unbuffed CpS (the save's: ${pc(SC.saved.clickVsCps)}) — the mouse upgrades decide it"><span class="ca-field-label">A click is</span><input type="number" min="0" step="0.1" value="${(st.clickVsCps * 100).toFixed(2)}" data-gs="clickVsCps"> % of CpS</label>` +
+        `<label class="ca-field"><span class="ca-field-label">Grandmapocalypse</span>${chips(WRATH.map((w, i) => [i, w]), 'data-gwrath', st.elderWrath)}</label>` +
+        `<label class="ca-field"><span class="ca-field-label">Season</span>${sel('season', o.seasons.map((x) => [x.id, x.name]), st.season)}</label>` +
+        `<label class="ca-field"><span class="ca-field-label">Dragon auras</span>${sel('aura0', auras, st.auras[0])}${sel('aura1', auras, st.auras[1])}</label>` +
+        `<label class="ca-field"><span class="ca-field-label">Pantheon</span>${SLOTS.map((name, i) => `<span data-tip="${name}">${sel(`god${i}`, gods, st.gods[i] || '')}</span>`).join('')}</label>` +
+        '</div>' +
+        `<div class="sim-gbuildings">${Object.entries(st.buildings)
+          .map(([n, v]) => `<label class="ca-field${changed.buildings && n in changed.buildings ? ' sim-changed' : ''}"><span class="ca-field-label">${esc(n)}</span><input type="number" min="0" step="10" value="${v}" data-gb="${esc(n)}"></label>`)
+          .join('')}</div>` +
+        `<div class="sim-form"><span class="ca-field-label">Golden cookie upgrades</span><span class="ca-chipgroup">${Object.entries(st.upgrades)
+          .map(([n, on]) => `<button type="button" class="ca-chip${on ? ' on' : ''}" data-gu="${esc(n)}">${esc(n)}</button>`)
+          .join('')}</span></div>` +
+        `<div class="sim-form">` +
+        `<label class="ca-field"><span class="ca-field-label">Play per frequency</span>${chips([[500, '500 h', 'Quick: about a minute, ±10–15%'], [2000, '2,000 h', 'A few minutes, ±5%'], [8000, '8,000 h', 'Ten minutes or more, ±2–3%']], 'data-ghrs', SC.hours)}</label>` +
+        C.button(`${I('play', 14)} Score the gardens`, 'data-gscore', 'ca-btn-on') +
+        (Object.keys(changed).length ? C.button('Back to the save', 'data-greset', 'ca-btn-small') : '') +
+        (SC.job ? `<span class="ca-hint">${I('refresh', 12)} ${esc(SC.progress || 'Starting…')}</span>` : '') +
+        '</div>';
+    }
+    return (
+      `<div class="ca-card">${C.cardHead('Score for your game', 'cookie', SC.curve ? `<span class="ca-pill">no garden ×${mult(curveAt(SC.curve, 1))}</span>` : '')}` +
+      `<div class="ca-card-note">Each gardener’s expected income for one game, in multiples of unbuffed CpS + its clicks: the game’s own golden cookies played at steady frequencies for an income curve (${SC.hours.toLocaleString()} h each, a few minutes), then each gardener’s time at each frequency, CpS cost included, through it. Paste a save, then change any variable.</div>` +
+      `<textarea class="sim-save" data-gsave placeholder="Paste your exported save here…">${esc(SC.save)}</textarea>` +
+      (st ? '' : `<div class="sim-form">${C.button(SC.reading ? 'Reading…' : 'Read the save', 'data-gread', 'ca-btn-on')}</div>`) +
+      (SC.error ? `<div class="sim-err">${esc(SC.error)}</div>` : '') +
+      form +
+      (SC.curve ? curveHtml(SC.curve) : '') +
+      '</div>'
+    );
+  }
+
+  /** The income curve: each frequency's run (± its standard error) and the fit, on a log scale. */
+  function curveHtml(c) {
+    const W = 560;
+    const H = 220;
+    const P = { l: 54, r: 14, t: 12, b: 28 };
+    const fs = c.points.map((p) => p.f);
+    const f0 = Math.min(1, ...fs);
+    const f1 = Math.max(...fs);
+    const lo = Math.log10(Math.min(...c.points.map((p) => Math.max(1, p.mult - p.se)), curveAt(c, f0)));
+    const hi = Math.log10(Math.max(...c.points.map((p) => p.mult + p.se), curveAt(c, f1)));
+    const y0 = Math.floor(lo);
+    const y1 = Math.ceil(hi);
+    const X = (f) => P.l + ((f - f0) / (f1 - f0)) * (W - P.l - P.r);
+    const Y = (v) => P.t + (1 - (Math.log10(Math.max(v, 1e-9)) - y0) / (y1 - y0)) * (H - P.t - P.b);
+    let g = '';
+    for (let e = y0; e <= y1; e++) g += `<line class="sim-h-grid" x1="${P.l}" x2="${W - P.r}" y1="${Y(10 ** e)}" y2="${Y(10 ** e)}"/><text class="sim-h-tick" x="${P.l - 5}" y="${Y(10 ** e) + 3}" text-anchor="end">×${mult(10 ** e)}</text>`;
+    for (let f = f0; f <= f1 + 1e-9; f += 0.5) g += `<text class="sim-h-tick" x="${X(f)}" y="${H - P.b + 15}" text-anchor="middle">${bonus(f - 1)}</text>`;
+    let line = '';
+    for (let i = 0; i <= 60; i++) {
+      const f = f0 + ((f1 - f0) * i) / 60;
+      line += `${i ? 'L' : 'M'}${X(f).toFixed(1)},${Y(curveAt(c, f)).toFixed(1)}`;
+    }
+    const dots = c.points
+      .map(
+        (p) =>
+          `<line class="sim-c-err" x1="${X(p.f)}" x2="${X(p.f)}" y1="${Y(p.mult + p.se)}" y2="${Y(Math.max(1, p.mult - p.se))}"/><circle class="sim-c-dot" cx="${X(p.f)}" cy="${Y(p.mult)}" r="3.5"><title>${bonus(p.f - 1)}: ×${mult(p.mult)} ± ${mult(p.se)} · ${p.golden.toFixed(1)} golden cookies an hour · ${pc(p.parts.clicks / p.mult, 0)} from clicks</title></circle>`
+      )
+      .join('');
+    const ks = [1, 1.5, 2, 2.5].filter((f) => f <= f1).map((f) => `${bonus(f - 1)}: f^${curveSlope(c, f).toFixed(1)}`);
+    const s = c.state;
+    return (
+      `<svg class="sim-hist sim-curve" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet">${g}<line class="sim-h-axis" x1="${P.l}" x2="${W - P.r}" y1="${H - P.b}" y2="${H - P.b}"/><path class="sim-c-fit" d="${line}"/>${dots}</svg>` +
+      `<div class="sim-h-read">Income against the golden cookie frequency bonus (log scale; hover a dot). Steepness, income ∝ f^k: ${ks.join(' · ')}.` +
+      ` <span class="ca-hint">${s.auras.filter(Boolean).join(' + ') || 'no auras'} · ${s.season ? `season ${esc(s.season)}` : 'no season'} · ${WRATH[s.elderWrath]} · ${s.clicks} clicks/s · a click ${pc(s.clickVsCps)} of CpS${c.cached ? ' · kept from an earlier run' : ''}</span></div>`
     );
   }
 
@@ -1342,11 +1453,15 @@ buy.best(all)
         (GD.error ? `<div class="sim-err">${esc(GD.error)}</div>` : '') +
         (st ? gardenSummaryHtml(st) : '') +
         '</div>' +
+        `<div data-gscorecard>${scoreCardHtml()}</div>` +
         (st ? `<div class="sim-gcards">${st.results.map((r) => gardenCardHtml(r, st, scale)).join('')}</div>` : '')
       );
     },
     mount(root) {
       root.addEventListener('click', onGardenClick);
+      root.addEventListener('click', onScoreClick);
+      root.addEventListener('change', onScoreInput);
+      root.addEventListener('input', onScoreInput);
       root.addEventListener('mousemove', onGardenHover);
       root.addEventListener('mouseleave', onGardenHover);
       if (!GD.study && !GD.loading && !GD.error) loadGarden();
@@ -1354,6 +1469,9 @@ buy.best(all)
     unmount() {
       const root = main();
       root.removeEventListener('click', onGardenClick);
+      root.removeEventListener('click', onScoreClick);
+      root.removeEventListener('change', onScoreInput);
+      root.removeEventListener('input', onScoreInput);
       root.removeEventListener('mousemove', onGardenHover);
       root.removeEventListener('mouseleave', onGardenHover);
     },
@@ -1388,6 +1506,96 @@ buy.best(all)
     if (d.gseeds) GD.seeds = Number(d.gseeds);
     loadGarden();
   });
+  const onScoreClick = guard(async (e) => {
+    const t = e.target.closest('[data-gread],[data-gwrath],[data-gu],[data-ghrs],[data-gscore],[data-greset]');
+    if (!t) return;
+    const d = t.dataset;
+    if (d.gread != null) return readSave();
+    if (d.greset != null) SC.state = JSON.parse(JSON.stringify(SC.saved));
+    if (d.gwrath != null) SC.state.elderWrath = Number(d.gwrath);
+    if (d.gu != null) SC.state.upgrades[d.gu] = !SC.state.upgrades[d.gu];
+    if (d.ghrs != null) store.set('scoreHours', (SC.hours = Number(d.ghrs)));
+    if (d.gscore != null) return scoreGardens();
+    renderScore();
+  });
+  function onScoreInput(e) {
+    const t = e.target;
+    if (t.matches('[data-gsave]')) {
+      if (e.type !== 'input') return;
+      SC.save = t.value.trim();
+      store.set('gardenSave', SC.save);
+      // a new save: read it again
+      if (SC.state) {
+        SC.state = SC.saved = null;
+        renderScore();
+      }
+      return;
+    }
+    if (!SC.state || e.type !== 'change') return;
+    const d = t.dataset;
+    if (d.gs === 'clicks') SC.state.clicks = Math.max(0, Number(t.value) || 0);
+    else if (d.gs === 'clickVsCps') SC.state.clickVsCps = Math.max(0, Number(t.value) || 0) / 100;
+    else if (d.gs === 'season') SC.state.season = t.value;
+    else if (d.gs === 'aura0' || d.gs === 'aura1') SC.state.auras[Number(d.gs.slice(-1))] = t.value;
+    else if (d.gs && d.gs.startsWith('god')) SC.state.gods[Number(d.gs.slice(3))] = t.value;
+    else if (d.gb) SC.state.buildings[d.gb] = Math.max(0, Math.round(Number(t.value) || 0));
+    else return;
+    renderScore();
+  }
+  function renderScore() {
+    if (current !== 'garden') return;
+    const box = $('[data-gscorecard]', main());
+    if (box) morph(box, scoreCardHtml());
+  }
+  async function readSave() {
+    SC.reading = true;
+    SC.error = '';
+    renderScore();
+    try {
+      const r = await api.post('/api/garden/state', { save: SC.save });
+      SC.saved = r.state;
+      SC.state = JSON.parse(JSON.stringify(r.state));
+      SC.options = r.options;
+    } catch (e) {
+      SC.error = e.message;
+    } finally {
+      SC.reading = false;
+      renderScore();
+    }
+  }
+  async function scoreGardens() {
+    if (SC.job) return;
+    SC.error = '';
+    SC.progress = '';
+    const { id } = await api.post('/api/garden/income', { save: SC.save, state: stateChanges(), hours: SC.hours });
+    SC.job = id;
+    renderScore();
+    const es = new EventSource(`/api/jobs/${id}/stream`);
+    const take = (j) => {
+      if (j.state === 'running') {
+        const lines = String(j.out || '').trim().split('\n');
+        SC.progress = lines[lines.length - 1] || '';
+        return renderScore();
+      }
+      es.close();
+      SC.job = null;
+      if (j.state === 'done' && j.results && j.results[0]) SC.curve = j.results[0];
+      else SC.error = String(j.out || 'The score failed').trim().split('\n').pop();
+      if (current === 'garden') render();
+    };
+    let out = '';
+    es.addEventListener('state', (ev) => {
+      const j = JSON.parse(ev.data);
+      out = j.out || '';
+      take(j);
+    });
+    es.addEventListener('out', (ev) => {
+      out += JSON.parse(ev.data);
+      take({ state: 'running', out });
+    });
+    es.addEventListener('done', (ev) => take(JSON.parse(ev.data)));
+  }
+
   /** Hovering a histogram: the same bonus marked on every one, each saying its share of the time at it or more. */
   function onGardenHover(e) {
     const st = GD.study;
