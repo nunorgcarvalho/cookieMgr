@@ -4910,7 +4910,7 @@ else:
   const PROFILES = [
     { id: 'maxEffects', name: 'Max effects · current garden', desc: 'Keeps what you’ve planted, its effects as high as they go.', data: () => ({ gardener: 'effects', soil: 'effects', template: 'current', seeds: 'current' }) },
     { id: 'goldenClovers', name: 'Golden clover field', desc: 'Golden clover on every tile, for golden cookies.', data: () => ({ gardener: 'effects', soil: 'effects', template: 'fill', seeds: 'goldenClover' }) },
-    { id: 'goldenCombos', name: 'Golden clover combos', desc: 'Golden clover on every tile, planted and replanted all together in rounds, never bought during a short CpS boost: the field is mature at once, for the most golden cookies in long high windows. Earns the most of any garden in simulated play.', data: () => ({ gardener: 'tulipRounds', soil: 'clovers', template: 'fill', seeds: 'goldenClover' }) },
+    { id: 'goldenCombos', name: 'Golden clover combos', desc: 'Golden clover on every tile, planted and replanted all together: the field is mature at once, for the most golden cookies in long high windows.', data: () => ({ gardener: 'cohort', soil: 'cohort', template: 'fill', seeds: 'goldenClover' }) },
     {
       id: 'tulipCombos',
       name: '8 nursetulips together + clover combos',
