@@ -18,7 +18,8 @@
 // save's own dragon auras / Pantheon / upgrades / buildings unless the state sets them (gameState,
 // applyState), and an empty garden (its golden cookie frequency comes from f; a garden's CpS cost is
 // applied on top by the caller). The season stays as it is (the game ends one after 24 h). Seeds and
-// other spending are not counted: the bank only grows.
+// other spending are not counted: the bank only grows (or is held, `bank`); free sugar lumps are kept out.
+// models/goldenExpected.mjs computes the same income without playing (seconds, a few tenths of a percent).
 import { createSim } from '../sim.mjs';
 import { makeRng } from '../game/rng.mjs';
 
@@ -156,13 +157,16 @@ export async function goldenIncomeGame({ save, seed = 1, state = {} } = {}) {
     freq = f;
     return incomeAt(Game, { ...opts, clicks, base });
   };
-  return { sim, Game, state: st, base, cps: st.cps, click: st.click, clicks, at };
+  const setFrequency = (f) => {
+    freq = f;
+  };
+  return { sim, Game, state: st, base, cps: st.cps, click: st.click, clicks, at, setFrequency };
 }
 
 // P(the spawn timer fires on frame k, k = 1, 2, …), as Game.updateShimmers rolls it each frame:
 // the cumulative chance it hasn't yet, per (minTime, maxTime) — a table each, kept.
 const survival = new Map();
-function survivalTable(min, max) {
+export function survivalTable(min, max) {
   const key = `${min},${max}`;
   let S = survival.get(key);
   if (S) return S;
@@ -194,9 +198,11 @@ export function spawnFrame(min, max, after, u) {
 /**
  * `hours` of play at the frequency set on the game (see goldenIncomeGame): { mult (income ÷ (base ×
  * time)), se (its standard error, from batches), parts ({ cps, clicks, lucky, chain, storm } ÷ base
- * × time), golden (golden cookies an hour), effects ({ choice: count an hour }) }.
+ * × time), golden (golden cookies an hour), effects ({ choice: count an hour }) }. `bank` (cookies)
+ * holds the bank there at every click (else it grows from the save's); `onStretch(frames, Game)` sees
+ * every stretch between two events, with the buffs then running.
  */
-export function incomeAt(Game, { hours = 1000, seed = 1, clicks = 20, base, batches = 50 } = {}) {
+export function incomeAt(Game, { hours = 1000, seed = 1, clicks = 20, base, batches = 50, bank = null, onStretch = null } = {}) {
   const rnd = makeRng(seed * 7919 + 13);
   const fps = Game.fps;
   const T = Game.shimmerTypes.golden;
@@ -227,6 +233,7 @@ export function incomeAt(Game, { hours = 1000, seed = 1, clicks = 20, base, batc
   };
   const earnFor = (frames) => {
     if (frames <= 0) return;
+    if (onStretch) onStretch(frames, Game);
     const c = (cpsRate * frames) / fps;
     const k = (clickRate * frames) / fps;
     Game.Earn(c + k);
@@ -246,8 +253,13 @@ export function incomeAt(Game, { hours = 1000, seed = 1, clicks = 20, base, batc
     return any;
   };
   const pop = (s) => {
+    if (bank != null) Game.cookies = bank; // a bank held still (Lucky and chains read it)
     const before = Game.cookiesEarned;
+    const lumps = Game.lumps;
     s.pop();
+    // a free sugar lump is kept out: with Sugar baking each one would add 1% CpS for the rest of the
+    // run, against a baseline taken at its start
+    Game.lumps = lumps;
     const choice = s.force === '' && T.last ? T.last : T.last;
     effects[choice] = (effects[choice] || 0) + 1;
     const got = Game.cookiesEarned - before;
@@ -284,8 +296,13 @@ export function incomeAt(Game, { hours = 1000, seed = 1, clicks = 20, base, batc
       T.spawned = 1;
       golden++;
       pop(lead);
-      if (extra) pop(extra);
       dropDead(); // Dragonflight ends a Click frenzy
+      if (extra) {
+        // clicked a moment later, with the lead's buff already counted (the game works out CpS anew each frame)
+        recalc();
+        pop(extra);
+        dropDead();
+      }
       // popping the lead reset the timer (die()): time 0, its new min / max
       next = frame + spawnFrame(T.minTime, T.maxTime, 0, rnd());
       changed = true;
@@ -309,11 +326,14 @@ export function incomeAt(Game, { hours = 1000, seed = 1, clicks = 20, base, batc
 }
 
 /**
- * The income curve for a save: incomeAt at each of `fs`, each in its own process (`jobs` at a time),
- * fitted (models/gardenScore.mjs fitCurve). Returns { state (gameState), base, hours, points:
- * [{ f, mult, se, parts, golden, effects }], a, b, c }. `onPoint(point, done, total)` as each comes in.
+ * The income curve for a save: at each of `fs`, computed (`expected`, models/goldenExpected.mjs: `pops`
+ * golden cookies' expected payoffs, the bank held at the save's or `bank`, the same seed at every f so
+ * the points' little noise runs together) or played (incomeAt, `hours` each), each in its own process
+ * (`jobs` at a time). Returns { state (gameState), base, hours, expected, points: [{ f, mult, se,
+ * parts, golden, effects }], a, b, c (models/gardenScore.mjs fitCurve: the smoothing a played curve
+ * needs; a computed one goes through its points) }. `onPoint(point, done, total)` as each comes in.
  */
-export async function incomeCurve({ save, state = {}, fs = [1, 1.25, 1.5, 1.75, 2, 2.25, 2.5, 2.75, 3], hours = 2000, seed = 1, jobs = 4, onPoint } = {}) {
+export async function incomeCurve({ save, state = {}, fs = [1, 1.25, 1.5, 1.75, 2, 2.25, 2.5, 2.75, 3], hours = 2000, seed = 1, jobs = 4, expected = false, pops = 1000000, bank = null, onPoint } = {}) {
   const { spawn } = await import('node:child_process');
   const { fitCurve } = await import('./gardenScore.mjs');
   const worker = new URL('./goldenIncomePoint.mjs', import.meta.url).pathname;
@@ -321,7 +341,7 @@ export async function incomeCurve({ save, state = {}, fs = [1, 1.25, 1.5, 1.75, 
   let head = null;
   const one = (f, i) =>
     new Promise((resolve, reject) => {
-      const child = spawn(process.execPath, [worker], { stdio: ['pipe', 'pipe', 'pipe'] });
+      const child = spawn(process.execPath, ['--max-old-space-size=4096', worker], { stdio: ['pipe', 'pipe', 'pipe'] });
       let out = '';
       let err = '';
       child.stdout.on('data', (d) => (out += d));
@@ -334,7 +354,7 @@ export async function incomeCurve({ save, state = {}, fs = [1, 1.25, 1.5, 1.75, 
           reject(e);
         }
       });
-      child.stdin.end(JSON.stringify({ save, state, f, hours, seed: seed * 1000 + i }));
+      child.stdin.end(JSON.stringify({ save, state, f, hours, seed: expected ? seed : seed * 1000 + i, expected, pops, bank }));
     });
   let next = 0;
   const run = async () => {
@@ -349,7 +369,7 @@ export async function incomeCurve({ save, state = {}, fs = [1, 1.25, 1.5, 1.75, 
   await Promise.all(Array.from({ length: Math.max(1, Math.min(jobs, fs.length)) }, run));
   points.sort((a, b) => a.f - b.f);
   const { a, b, c } = fitCurve(points);
-  return { ...head, hours, points, a, b, c };
+  return { ...head, hours: expected ? null : hours, expected, pops: expected ? pops : null, points, a, b, c };
 }
 
 /** incomeCurve, kept in sim/out/income/ by its inputs, so the same save and state fit once. */
@@ -357,8 +377,9 @@ export async function cachedIncomeCurve(opts) {
   const fs = await import('node:fs');
   const path = await import('node:path');
   const crypto = await import('node:crypto');
-  const { save, state = {}, fs: freqs = [1, 1.25, 1.5, 1.75, 2, 2.25, 2.5, 2.75, 3], hours = 2000, seed = 1 } = opts;
-  const key = crypto.createHash('sha1').update(JSON.stringify({ save, state, freqs, hours, seed, v: 1 })).digest('hex').slice(0, 16);
+  const { save, state = {}, fs: freqs = [1, 1.25, 1.5, 1.75, 2, 2.25, 2.5, 2.75, 3], hours = 2000, seed = 1, expected = false, pops = 1000000, bank = null } = opts;
+  const inputs = expected ? { save, state, freqs, expected, pops, seed, bank, v: 2 } : { save, state, freqs, hours, seed, v: 1 };
+  const key = crypto.createHash('sha1').update(JSON.stringify(inputs)).digest('hex').slice(0, 16);
   const dir = new URL('../out/income/', import.meta.url).pathname;
   const file = path.join(dir, `${key}.json`);
   if (!opts.fresh && fs.existsSync(file)) return { ...JSON.parse(fs.readFileSync(file, 'utf8')), cached: true };
