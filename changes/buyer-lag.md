@@ -1,5 +1,5 @@
 ---
-bump: patch
+bump: minor
 ---
 
 - **Fixed:** heavy lag from the Auto buyer, worst right after an ascension. A rule whose condition reads
