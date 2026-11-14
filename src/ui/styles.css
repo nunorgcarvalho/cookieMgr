@@ -6520,6 +6520,10 @@ body.ca-has-storebar #products {
   color: #f0a0a0;
   border-color: #a04848;
 }
+#CookieMgrMenu .ca-ab-badge.ach {
+  color: #e6c3ff;
+  border-color: #8a5fb0;
+}
 #CookieMgrMenu .ca-ab-badge.prio {
   color: #ffd27a;
   border-color: #b08a3a;

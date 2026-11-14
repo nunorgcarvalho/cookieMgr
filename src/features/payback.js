@@ -769,7 +769,10 @@ CA.Payback = (() => {
       bs = bs.filter(([name, n]) => affordable(sumPrice(buildingNamed(name), n)));
       us = us.filter((u) => affordable(upgradeCost(u).price));
     }
-    ensure(c, bs, []);
+    // to the next achievement: each building's count up to the next one it wins (within 100), measured
+    // beside its bulk — a building a few short of a tier can be worth more bought up to it
+    const toNext = opts.toAchievement && kind !== 'upgrade' ? new Map(bs.map(([name, n]) => [name, nextAchievement(name).n]).filter(([name, k], i) => k <= 100 && k !== bs[i][1])) : new Map();
+    ensure(c, bs.concat([...toNext]), []);
     if (opts.top && us.length) {
       const bestB = bs.reduce((m, [name, n]) => Math.min(m, ppOf(sumPrice(buildingNamed(name), n), buildingWorth(name, n, c), opts.mode)), Infinity);
       if (Number.isFinite(bestB)) us = us.filter((u) => timeTo(upgradeCost(u).price, opts.mode) < bestB);
@@ -782,14 +785,22 @@ CA.Payback = (() => {
     // colors come from the full table — when it's been worked out for this state (the store, the Payback page)
     const t = memo && memo.c === c ? memo.t : null;
     const out = [];
-    bs.forEach(([name, n]) => {
+    const buildingRow = (name, n) => {
       const b = buildingNamed(name);
       const price = sumPrice(b, n);
       const worth = buildingWorth(name, n, c);
       const x = parts(price, worth, opts.mode);
       const v = x.pp;
       const row = t && t.buildings[n] && t.buildings[n][name];
-      out.push({ kind: 'building', name, n, label: n > 1 ? `${n} × ${b.dname || name}` : b.dname || name, price, bonus: worth.bonus, gain: x.gain, pp: v, won: worth.won || [], color: row ? row.color : t ? t.colorOf(v, price) : null });
+      return { kind: 'building', name, n, label: n > 1 ? `${n} × ${b.dname || name}` : b.dname || name, price, bonus: worth.bonus, gain: x.gain, pp: v, won: worth.won || [], color: row ? row.color : t ? t.colorOf(v, price) : null };
+    };
+    bs.forEach(([name, n]) => {
+      const bulk = buildingRow(name, n);
+      // up to the next achievement instead, when its payback period is better (and, skipping, it's affordable)
+      const k = toNext.get(name);
+      const alt = k ? buildingRow(name, k) : null;
+      const better = alt && alt.pp < bulk.pp && (!opts.skip || affordable(alt.price));
+      out.push(better ? { ...alt, toAchievement: true, color: t ? t.colorOf(alt.pp, alt.price) : null } : bulk);
     });
     us.forEach((u) => {
       const w = upgradeWorth(u.name, c);
