@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 4.41.1 — 2026-11-14
+
+- **Guide:** the Auto buyer section covers the To next achievement profile setting.
+
 ## 4.41.0 — 2026-11-14
 
 - **Auto buyer, To next achievement** (profile setting, on by default): besides its bulk, each building is also
