@@ -10,7 +10,8 @@ bump: minor
 - **Grimoire plans:** `models/grimoire.mjs` describes when to cast the way the add-on's cast tiers do (combos of
   running buffs, each with a magic threshold), with named plans (never, whenever affordable, at a full bar, the
   add-on's Default, regulars only at 0% / 50%, singles, Stretch Time, Diminish Ineptitude, Conjure Baked Goods) and
-  a sweep over thresholds.
+  a sweep over thresholds; combo tiers by size (3x combos, 2x click combos, 2x combos, any 3x) at several
+  thresholds.
 - **`grimoire-plans` experiment and Grimoire page:** scores each plan on a save across golden cookie frequencies
   and for the add-on's two garden profiles, with the walk following the garden's frequency and CpS over time
   (`--follow`), so garden and Grimoire are scored together. The GUI's new Grimoire page shows the scores, income
