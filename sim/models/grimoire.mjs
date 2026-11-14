@@ -42,6 +42,16 @@ export const TRIPLES = [
   ['frenzy', 'click frenzy', 'dragon harvest'],
   ['frenzy', 'dragonflight', 'dragon harvest'],
 ];
+// any three of Frenzy, Click frenzy, Dragonflight, building specials (each counts) and Dragon Harvest
+export const TRIPLES_ANY = [
+  ...TRIPLES,
+  ['frenzy', 'building special', 'building special'],
+  ['building special', 'building special', 'click frenzy'],
+  ['building special', 'building special', 'dragonflight'],
+  ['building special', 'building special', 'dragon harvest'],
+  ['building special', 'click frenzy', 'dragon harvest'],
+  ['building special', 'dragonflight', 'dragon harvest'],
+];
 const tier3 = (pct) => ({ name: '3x combos', pct, combos: TRIPLES });
 const tier2c = (pct) => ({ name: '2x click combos', pct, combos: STRONGEST });
 const tier2 = (pct) => ({ name: '2x combos', pct, combos: REGULAR });
@@ -86,6 +96,13 @@ export const PLANS = [
     const desc = `3x combos (F+CF+BS, F+DF+BS, F+BS+DH, F+CF+DH, F+DF+DH) at ${a}%` + (b == null ? '' : `, 2x click combos (F+CF, F+DF, BS+CF, BS+DF) at ${b}%`) + (c == null ? '' : `, 2x combos (F+BS, BS+BS, EF) at ${c}%`) + '.';
     return { id, group: 'Combo tiers', name: parts.join(' · '), desc, spec: { tiers } };
   }),
+  ...[0, 100].map((a) => ({
+    id: `x3any_${a}`,
+    group: 'Combo tiers',
+    name: `Any 3x ${a}%`,
+    desc: `Any three of Frenzy, Click frenzy, Dragonflight, building specials (each counts) and Dragon Harvest, at ${a}%: the 3x combos plus F+BS+BS, BS+BS+CF, BS+BS+DF, BS+BS+DH, BS+CF+DH, BS+DF+DH.`,
+    spec: { tiers: [{ name: 'Any 3x combos', pct: a, combos: TRIPLES_ANY }] },
+  })),
 ];
 export const planById = (id) => PLANS.find((p) => p.id === id) || null;
 
