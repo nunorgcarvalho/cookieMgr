@@ -155,6 +155,11 @@ CA.Payback = (() => {
   }
   /** The achievements of the game's own checks that the state as it is now reaches (main.js Logic; CM CheckOtherAchiev). */
   function otherWins(win) {
+    countWins(win);
+    setWins(win);
+  }
+  /** The part of otherWins that building counts decide (totals, the least of any, Mathematician, Base 10…). */
+  function countWins(win) {
     let total = 0;
     let min = Infinity;
     let math = !hasAchiev('Mathematician');
@@ -174,10 +179,13 @@ CA.Payback = (() => {
     UPGRADE_ACHIEVS.forEach(([k, a]) => ups >= k && win(a));
     if (total >= 4000 && ups >= 300) win('Polymath');
     if (total >= 8000 && ups >= 400) win('Renaissance baker');
+    if (Game.Objects.Cursor && Game.Objects.Grandma && Game.Objects.Cursor.amount + Game.Objects.Grandma.amount >= 777) win('The elder scrolls');
+  }
+  /** The part of otherWins that building counts don't change (sets of upgrades owned, synergies…). */
+  function setWins(win) {
     const grandmas = (Game.GrandmaSynergies || []).filter(has).length;
     if (grandmas >= 7) win('Elder');
     if (grandmas >= 14) win('Veteran');
-    if (Game.Objects.Cursor && Game.Objects.Grandma && Game.Objects.Cursor.amount + Game.Objects.Grandma.amount >= 777) win('The elder scrolls');
     if (SPOOKY.every(has)) win('Spooky cookies');
     if (SNOW.every(has)) win('Let it snow');
     if (has('Fortune cookies') && Game.Tiers && Game.Tiers.fortune && Game.Tiers.fortune.upgrades.every((u) => has(u.name))) win('O Fortuna');
@@ -896,17 +904,33 @@ CA.Payback = (() => {
   function toNextAchievement(name) {
     const b = buildingNamed(name);
     if (!b) return 101;
-    for (let k = 1; k <= 100; k++) {
-      let any = false;
-      const win = (what) => {
-        if (Array.isArray(what)) return what.forEach(win);
-        const a = Game.Achievements && Game.Achievements[what];
-        if (a && !a.won) any = true;
-      };
+    let any = false;
+    const win = (what) => {
+      if (Array.isArray(what)) return what.forEach(win);
+      const a = Game.Achievements && Game.Achievements[what];
+      if (a && !a.won) any = true;
+    };
+    // what building counts don't change is the same at every count: checked once (with one more); the
+    // rest is won at a count reaching some threshold (each only ever won by more), so only those are tried
+    const a0 = Math.max(0, b.amount || 0);
+    const total = objects().reduce((t, o) => t + (o.amount || 0), 0);
+    const n = (Game.ObjectsById || objects()).length;
+    const own = (b.name === 'Cursor' ? CURSOR_ACHIEVS.filter(([, x]) => !hasAchiev(x)).map(([k]) => k) : Object.values(b.tieredAchievs || {}).filter((x) => !x.won && Game.Tiers && Game.Tiers[x.tier]).map((x) => Game.Tiers[x.tier].achievUnlock))
+      .concat(MIN_ACHIEVS.filter(([, x]) => !hasAchiev(x)).map(([k]) => k))
+      .concat([Math.min(128, Math.pow(2, n - b.id - 1)), (n - b.id) * 10]);
+    const ks = new Set([1]);
+    own.forEach((t) => ks.add(t - a0));
+    TOTAL_ACHIEVS.filter(([, x]) => !hasAchiev(x))
+      .map(([k]) => k)
+      .concat([4000, 8000])
+      .forEach((t) => ks.add(t - total));
+    if ((b.name === 'Cursor' || b.name === 'Grandma') && Game.Objects.Cursor && Game.Objects.Grandma) ks.add(777 - Game.Objects.Cursor.amount - Game.Objects.Grandma.amount);
+    for (const k of [...ks].filter((x) => Number.isFinite(x) && x >= 1 && x <= 100).sort((x, y) => x - y)) {
       b.amount += k;
       try {
         tierWins(b, win);
-        otherWins(win);
+        countWins(win);
+        if (k === 1) setWins(win);
       } finally {
         b.amount -= k;
       }

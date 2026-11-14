@@ -13,8 +13,10 @@
 //               the golden cookie income the grown plants add (Actual income less CpS + clicking,
 //               × the garden's golden cookie frequency gain) — bought by planting it
 //   cheap ×100  seconds of unbuffed CpS (0: off; default 1): a building whose next 100 cost less than
-//               that, and that the budget affords, is bought 100 at a time ahead of the queue — no
-//               ranking by payback period for what costs next to nothing
+//               that, and that the budget affords, is bought 100 at a time ahead of the queue, cheapest
+//               first — no ranking by payback period for what costs next to nothing; while there is one,
+//               nothing else is measured (the queue is just those, and Buy all upgrades when a rule puts
+//               it first): right after an ascension, hundreds of them in a row, without lag
 //   to next achievement  on (default) / off: a building may also be bought up to the next achievement it
 //               wins (within 100) instead of in its bulk, when that has the better payback period —
 //               the achievement's milk spread over the whole buy (badge "to next achievement")
@@ -365,7 +367,15 @@ CA.AutoBuyer = (() => {
   /** What its thresholds placed first keep: what nothing in the queue may spend. */
   const keepFirst = (x) => reserveParts(x).reduce((m, q) => (q.at === 'first' ? Math.max(m, q.amount) : m), 0);
   /** What a profile's buyer may spend on what it buys next: the bank less what's kept ahead of it. */
-  const budget = (x) => (Game.cookies || 0) - (find(x) ? queue(x).keep : 0);
+  // (asked while its own queue is being worked out — a rule's "when" reading buyer.budget(): what the
+  // queue's front may spend at most, the bank less the thresholds placed first; asking the queue then
+  // would work it out again, inside itself, over and over)
+  const budget = (x) => {
+    const p = find(x);
+    if (!p) return Game.cookies || 0;
+    return building.has(p.id) ? building.get(p.id) : (Game.cookies || 0) - queue(x).keep;
+  };
+  const building = new Map(); // profile id → its budget before the walk, while its queue is worked out
 
   /** n of a building, re-priced and re-measured (a cap that cuts a bulk short). */
   function resized(x, n, p) {
@@ -417,6 +427,36 @@ CA.AutoBuyer = (() => {
     // what anything may spend at most: the bank less the thresholds placed first (one placed at a
     // score holds back only what's below it — the walk sees to that)
     const b = (Game.cookies || 0) - keepFirst(p.id);
+    building.set(p.id, b);
+    try {
+      return rank(p, kind, kinds, mode, b, thresholds);
+    } finally {
+      building.delete(p.id);
+    }
+  }
+  function rank(p, kind, kinds, mode, b, thresholds) {
+    const rules = p.rules.filter((r) => r.on);
+    // cheap ×100 (right after an ascension: dozens of them): bought first anyway, so nothing else is
+    // measured while there are any — the payback ranking (a CpS computation per thing) comes back after
+    const fast = kinds.includes('building') ? cheapFirst(p, b, rules) : [];
+    if (fast.length) {
+      // Buy all upgrades a rule puts first (the seeded one: 20 or more): ahead of them — one measurement
+      const all = p.kinds.allUpgrades ? P().allUpgrades({ budget: b, mode }) : null;
+      if (all && all.n >= 2) {
+        const r = { ...all, key: thingKey(all), ipp: all.pp, first: false, rules: [] };
+        let never = false;
+        for (const rule of rules) {
+          if (!matches(rule, r) || !when(rule, r.key)) continue;
+          if (rule.effect === 'never') never = true;
+          else if (rule.effect === 'first') {
+            r.first = true;
+            r.rules.push(effectText(rule));
+          }
+        }
+        if (r.first && !never && Number.isFinite(r.pp)) fast.unshift(r);
+      }
+      return place(p, fast, [], NaN, thresholds, { fast: true });
+    }
     const ranked = kind ? P().ranking(kind, { bulk: p.bulk, mode, all: true, skip: p.skip, budget: b, toAchievement: p.toAchievement }) : [];
     const items = [];
     const held = [];
@@ -427,15 +467,8 @@ CA.AutoBuyer = (() => {
       else held.push({ ...all, key: thingKey(all), ipp: NaN, score: NaN, first: false, rules: [], why: all.n ? 'affords only one upgrade: the same as buying it' : 'affords no upgrades', color: 'gray' });
     }
     if (p.kinds.garden) gardenThings().forEach((g) => (g.why ? held : ranked).push(g));
-    const rules = p.rules.filter((r) => r.on);
-    // cheap ×100: what the next 100 of a building may cost at most (0: off)
-    const cheap = p.cheapBulk > 0 ? rawCps() * p.cheapBulk : 0;
     ranked.forEach((r0) => {
       let r = { ...r0, key: thingKey(r0), ipp: r0.pp, first: false, rules: r0.toAchievement ? [TO_ACHIEVEMENT_TEXT] : [] };
-      if (cheap > 0 && r.kind === 'building') {
-        const price = P().sumPrice(buildingNamed(r.name), 100);
-        if (price <= cheap && price <= b) r = { ...(r.n === 100 ? r : resized(r, 100, p)), key: r.key, first: true, rules: [cheapBulkText(p)], why: 'cheap' };
-      }
       // a CpS-scaled upgrade while a short effect runs: priced as once it's over, and waited out
       let why = r.waits ? 'an effect makes it more expensive: waits it out' : Number.isFinite(r.pp) ? '' : 'never pays back';
       for (const rule of rules) {
@@ -477,6 +510,45 @@ CA.AutoBuyer = (() => {
     const best = items.reduce((m, x) => (!x.first && Number.isFinite(x.ipp) && x.ipp >= 0 ? Math.min(m, x.ipp) : m), Infinity);
     const bestOk = Number.isFinite(best) ? best : NaN;
     items.forEach((x) => (x.score = scoreOf(x.ipp, bestOk)));
+    return place(p, items, held, bestOk, thresholds);
+  }
+  /**
+   * The cheap ×100 buildings — the next 100 under the profile's Cheap ×100 seconds of raw CpS, within
+   * the budget — by price alone, nothing measured: the cheapest first, rules (never, a cap) applied.
+   */
+  function cheapFirst(p, b, rules) {
+    const cheap = p.cheapBulk > 0 ? rawCps() * p.cheapBulk : 0;
+    if (!(cheap > 0)) return [];
+    const out = [];
+    Object.values(Game.Objects || {}).forEach((o) => {
+      if (o.locked) return;
+      // 100 more cost at least 100 × the next one (less its rounding up): most buildings are ruled out
+      // without adding up 100 prices
+      const limit = Math.min(cheap, b);
+      if (!((P().sumPrice(o, 1) - 1) * 100 <= limit)) return;
+      let n = 100;
+      let price = P().sumPrice(o, n);
+      if (!(price <= limit)) return;
+      const r = { kind: 'building', name: o.name, n, price, pp: NaN, ipp: NaN, gain: NaN, bonus: NaN, won: [], first: true, rules: [cheapBulkText(p)], why: 'cheap', unmeasured: true };
+      r.key = thingKey(r);
+      for (const rule of rules) {
+        if (rule.effect !== 'never' && rule.effect !== 'cap') continue;
+        if (!matches(rule, r) || !when(rule, r.key)) continue;
+        if (rule.effect === 'never') return;
+        const room = rule.n - o.amount;
+        if (room <= 0) return;
+        if (room < n) {
+          n = room;
+          price = P().sumPrice(o, n);
+        }
+        r.rules.push(effectText(rule));
+      }
+      out.push({ ...r, n, price, label: n > 1 ? `${n} × ${o.dname || o.name}` : o.dname || o.name });
+    });
+    return out.sort((x, y) => x.price - y.price);
+  }
+  /** The thresholds placed among a queue's things, and the walk (see walk). */
+  function place(p, items, held, bestOk, thresholds, extra = {}) {
     // the thresholds, each in its place: first ones ahead of everything (the smallest first: the
     // one the bank reaches first), one at a score right after what scores at least that
     const out = items.slice();
@@ -501,7 +573,7 @@ CA.AutoBuyer = (() => {
         while (i < out.length && out[i].kind === 'bank' && out[i].at !== 'first' && out[i].at >= t.at) i++;
         out.splice(i, 0, bankItem(t, bestOk));
       });
-    return walk(p, out, held, bestOk);
+    return { ...walk(p, out, held, bestOk), ...extra };
   }
   /** Whether a threshold row of the queue holds a thing back (the garden's own banks don't hold garden things). */
   const holdsBack = (bank, x) => bank.kind === 'bank' && !(x && x.kind === 'garden' && GARDEN_BANKS.includes(bank.name));

@@ -94,7 +94,7 @@ CA.UI.AutoBuyerCard = (() => {
     return (
       `<div class="ca-ab-next${pct >= 1 ? ' can' : ''}">` +
       `<div class="ca-ab-next-text"><b>Next: ${thingName(f)}</b>` +
-      `<span class="ca-hint">${f.first ? '' : `score ${Number.isFinite(f.score) ? Math.round(f.score) : '—'} · `}${esc(B().whyText(f, q))} · PP ${ppText(f.pp)} · +${F().short(f.gain)}/s · ${F().beautify(f.price)} · ${pct >= 1 ? 'affordable now' : `in ${when(need)}`}${keep > 0 ? ` · keeps ${F().short(keep)} in the bank (${esc(ahead.map((y) => y.label.replace(/^Keep /, '')).join(', '))})` : ''}</span>` +
+      `<span class="ca-hint">${f.first ? '' : `score ${Number.isFinite(f.score) ? Math.round(f.score) : '—'} · `}${esc(B().whyText(f, q))}${f.unmeasured ? '' : ` · PP ${ppText(f.pp)} · +${F().short(f.gain)}/s`} · ${F().beautify(f.price)} · ${pct >= 1 ? 'affordable now' : `in ${when(need)}`}${keep > 0 ? ` · keeps ${F().short(keep)} in the bank (${esc(ahead.map((y) => y.label.replace(/^Keep /, '')).join(', '))})` : ''}</span>` +
       `${bar(pct)}</div></div>`
     );
   }
@@ -197,6 +197,7 @@ CA.UI.AutoBuyerCard = (() => {
     const q = B().queue();
     const things = q.items.filter((x) => x.kind !== 'bank').length;
     const banks = q.items.length - things;
+    if (q.profile && q.fast) return `buying ${things} cheap building${things === 1 ? '' : 's'} first: the payback ranking comes back once none is cheap`;
     return q.profile ? `${things} in the queue${banks ? `, ${banks} kept in the bank` : ''}${q.held.length ? `, ${q.held.length} held back` : ''}` : '';
   }
   function queueCard() {
@@ -285,7 +286,7 @@ CA.UI.AutoBuyerCard = (() => {
       `<div class="ca-ab-row"><span class="ca-ab-lbl">Building bulk</span><span class="ca-pp-chips">${B()
         .BULKS.map((b) => chip('data-ab-bulk', b, b === 'auto' ? 'auto' : `×${b}`, p.bulk === b, b === 'auto' ? `The store’s minimum bulk (Options below), rounded up with Round to multiples — now ×${CA.Shop.minBulk()}` : ''))
         .join('')}</span></div>` +
-      `<div class="ca-ab-row"><span class="ca-ab-lbl">Cheap ×100</span><input type="number" min="0" step="0.5" class="ca-pp-num" value="${p.cheapBulk}" data-ab-f="cheapBulk" data-tip="${esc('A building whose next 100 cost less than this, and the budget affords, is bought 100 at a time ahead of the queue, whatever its payback period. 0: off')}"><span class="ca-hint">s of unbuffed CpS</span></div>` +
+      `<div class="ca-ab-row"><span class="ca-ab-lbl">Cheap ×100</span><input type="number" min="0" step="0.5" class="ca-pp-num" value="${p.cheapBulk}" data-ab-f="cheapBulk" data-tip="${esc('A building whose next 100 cost less than this, and the budget affords, is bought 100 at a time ahead of the queue (cheapest first), whatever its payback period. While there is one, nothing else is measured: right after an ascension it buys without lag. 0: off')}"><span class="ca-hint">s of unbuffed CpS</span></div>` +
       `<div class="ca-ab-row"><span class="ca-ab-lbl">To next achievement</span><span class="ca-pp-chips">${chip('data-ab-toach', 1, 'on', p.toAchievement, 'A building a few short of an achievement is also measured bought up to it (within 100), and bought that way when its payback period beats the bulk’s: the achievement’s milk counts across the whole buy')}${chip('data-ab-toach', 0, 'off', !p.toAchievement)}</span></div>` +
       `<div class="ca-ab-row"><span class="ca-ab-lbl">Can’t afford</span><span class="ca-pp-chips">${chip('data-ab-skip', 0, 'save up for the front', !p.skip)}${chip('data-ab-skip', 1, 'skip to what I can afford', p.skip)}</span></div>` +
       `<div class="ca-ab-row"><span class="ca-ab-lbl">Keeps</span><input type="number" min="0" step="1" class="ca-pp-num" value="${p.reserve}" data-ab-f="reserve"><span class="ca-hint">minutes of unbuffed CpS</span>` +

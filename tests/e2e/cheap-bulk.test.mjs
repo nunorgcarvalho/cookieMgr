@@ -33,9 +33,19 @@ let q = B.queue();
 const f = q.items[0];
 assert(f.key === 'building:Cursor' && f.n === 100 && f.first && f.price === hundred('Cursor'), `a cheap building: its next 100 at the front (${f.label})`);
 assert(f.label === '100 × Cursor' && f.rules[0] === `cheap: ×100 under ${cut} s`, `with a badge (${f.rules})`);
-assert(Math.abs(f.pp - P.parts(f.price, P.buildingWorth('Cursor', 100)).pp) < 1e-9 && f.ipp === f.pp, 'its PP is the 100’s (its implied PP: no weights)');
-assert(q.items.filter((x) => x.first).length === 1 && q.items.find((x) => x.key === 'building:Grandma').n !== 100, 'a building whose 100 cost more: ranked as usual');
-assert(q.items.filter((x) => x.key === 'building:Cursor').length === 1, 'one Cursor row, not two');
+// while one is cheap, nothing is measured: the queue is the cheap ones (the rest ranked once none is)
+assert(q.fast && f.unmeasured && Number.isNaN(f.pp), 'not measured: bought whatever its payback period');
+assert(q.items.filter((x) => x.kind !== 'bank').length === 1 && !q.items.some((x) => x.key === 'building:Grandma'), 'the queue: just the cheap one');
+const calls0 = P.calls();
+B.queue();
+Game.cookies += 1; // a new queue
+B.queue();
+assert(P.calls() === calls0, `no CpS computed for it (${P.calls() - calls0})`);
+Game.cookies -= 1;
+B.update('payback', { cheapBulk: 0 });
+q = B.queue();
+assert(!q.fast && q.items.find((x) => x.key === 'building:Grandma'), 'none cheap: everything ranked as usual');
+B.update('payback', { cheapBulk: cut });
 
 // the budget has to afford it
 Game.cookies = hundred('Cursor') - 1;
