@@ -32,6 +32,19 @@ export const STRONGEST = [
 ];
 export const REGULAR = [['frenzy', 'building special'], ['building special', 'building special'], ['elder frenzy']];
 const SINGLES = [['frenzy'], ['building special'], ['dragon harvest']];
+// combos by how many effects stack: 3x (Nuno's: Frenzy with two of Click frenzy, Dragonflight, a building
+// special, Dragon Harvest), 2x click (a pair with Click frenzy or Dragonflight: the Strongest combos) and
+// 2x (the other pairs: the Regular combos)
+export const TRIPLES = [
+  ['frenzy', 'click frenzy', 'building special'],
+  ['frenzy', 'dragonflight', 'building special'],
+  ['frenzy', 'building special', 'dragon harvest'],
+  ['frenzy', 'click frenzy', 'dragon harvest'],
+  ['frenzy', 'dragonflight', 'dragon harvest'],
+];
+const tier3 = (pct) => ({ name: '3x combos', pct, combos: TRIPLES });
+const tier2c = (pct) => ({ name: '2x click combos', pct, combos: STRONGEST });
+const tier2 = (pct) => ({ name: '2x combos', pct, combos: REGULAR });
 const DEFAULT_TIERS = [
   { name: 'Strongest combos', pct: 0, combos: STRONGEST },
   { name: 'Regular combos', pct: 100, combos: REGULAR },
@@ -53,6 +66,26 @@ export const PLANS = [
   { id: 'conjure', group: 'Other spells', name: 'Conjure Baked Goods', desc: 'Conjure Baked Goods whenever affordable (no Force the Hand of Fate).', spec: { conjure: { pct: 0 } } },
   { id: 'conjureCombos', group: 'Other spells', name: 'Conjure on combos', desc: 'Conjure Baked Goods only on a Strongest or Regular combo, as soon as affordable.', spec: { conjure: { pct: 0, combos: [...STRONGEST, ...REGULAR] } } },
   { id: 'defaultConjure', group: 'Other spells', name: 'Default + Conjure at full', desc: 'Default, and Conjure Baked Goods when the bar is full with no combo on.', spec: { tiers: DEFAULT_TIERS, conjure: { pct: 100 } } },
+  ...[
+    // combo tiers by size: [3x, 2x click, 2x] thresholds (null: not cast on). A combo counts when at least its
+    // effects are on, so a 3x combo is also a 2x one: the lowest threshold of the tiers it matches decides.
+    [100, null, null],
+    [0, null, null],
+    [100, 100, null],
+    [0, 100, null],
+    [0, 50, null],
+    [0, 0, null],
+    [100, 100, 100],
+    [0, 100, 100],
+    [0, 50, 100],
+    [0, 0, 100],
+  ].map(([a, b, c]) => {
+    const parts = [`3x ${a}%`, b == null ? null : `2x click ${b}%`, c == null ? null : `2x ${c}%`].filter(Boolean);
+    const id = `x3_${a}${b == null ? '' : `_c${b}`}${c == null ? '' : `_r${c}`}`;
+    const tiers = [tier3(a), ...(b == null ? [] : [tier2c(b)]), ...(c == null ? [] : [tier2(c)])];
+    const desc = `3x combos (F+CF+BS, F+DF+BS, F+BS+DH, F+CF+DH, F+DF+DH) at ${a}%` + (b == null ? '' : `, 2x click combos (F+CF, F+DF, BS+CF, BS+DF) at ${b}%`) + (c == null ? '' : `, 2x combos (F+BS, BS+BS, EF) at ${c}%`) + '.';
+    return { id, group: 'Combo tiers', name: parts.join(' · '), desc, spec: { tiers } };
+  }),
 ];
 export const planById = (id) => PLANS.find((p) => p.id === id) || null;
 
