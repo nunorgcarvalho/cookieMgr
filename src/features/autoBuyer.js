@@ -15,6 +15,9 @@
 //   cheap ×100  seconds of unbuffed CpS (0: off; default 1): a building whose next 100 cost less than
 //               that, and that the budget affords, is bought 100 at a time ahead of the queue — no
 //               ranking by payback period for what costs next to nothing
+//   to next achievement  on (default) / off: a building may also be bought up to the next achievement it
+//               wins (within 100) instead of in its bulk, when that has the better payback period —
+//               the achievement's milk spread over the whole buy (badge "to next achievement")
 //   skip        only what it can afford now (else it saves up for the front)
 //   reserve     minutes of unbuffed CpS it keeps
 //   banks       more banks it keeps, each picked on or off: lucky, conjure, luckyFrenzy (what a
@@ -121,13 +124,13 @@ CA.AutoBuyer = (() => {
   /** The rule profiles that buy upgrades come with (v3.50): lots of upgrades affordable → buy them all at once. */
   const BULK_RULE = { what: 'allUpgrades', effect: 'first', when: 'payback.allUpgradesCount(buyer.budget()) >= 20' };
   const SEEDS = [
-    { id: 'payback', name: 'Payback', kinds: { building: true, upgrade: true, allUpgrades: true }, bulk: 'auto', cheapBulk: 1, skip: false, reserve: 0, banks: [], mode: '', rules: [cleanRule(BULK_RULE)] },
-    { id: 'buildings', name: 'Buildings only', kinds: { building: true, upgrade: false, allUpgrades: false }, bulk: 'auto', cheapBulk: 1, skip: false, reserve: 0, banks: [], mode: '', rules: [] },
-    { id: 'upgrades', name: 'Upgrades only', kinds: { building: false, upgrade: true, allUpgrades: true }, bulk: 'auto', cheapBulk: 1, skip: false, reserve: 0, banks: [], mode: '', rules: [cleanRule(BULK_RULE)] },
+    { id: 'payback', name: 'Payback', kinds: { building: true, upgrade: true, allUpgrades: true }, bulk: 'auto', cheapBulk: 1, toAchievement: true, skip: false, reserve: 0, banks: [], mode: '', rules: [cleanRule(BULK_RULE)] },
+    { id: 'buildings', name: 'Buildings only', kinds: { building: true, upgrade: false, allUpgrades: false }, bulk: 'auto', cheapBulk: 1, toAchievement: true, skip: false, reserve: 0, banks: [], mode: '', rules: [] },
+    { id: 'upgrades', name: 'Upgrades only', kinds: { building: false, upgrade: true, allUpgrades: true }, bulk: 'auto', cheapBulk: 1, toAchievement: true, skip: false, reserve: 0, banks: [], mode: '', rules: [cleanRule(BULK_RULE)] },
     // v4.0: what Nunix late game buys with once it plays for golden cookie combos — ranked by actual
     // income, never below what a Lucky! and the garden's rounds need (the tulips first, the clovers'
     // round with a quarter on top: CpS bought only raises their price)
-    { id: 'combos', name: 'Golden cookie combos', kinds: { building: true, upgrade: true, allUpgrades: true, garden: true }, bulk: 'auto', cheapBulk: 1, skip: false, reserve: 0, banks: ['lucky', 'gardenRounds'], roundsMargin: 1.25, mode: 'actualIncome', rules: [cleanRule(BULK_RULE)] },
+    { id: 'combos', name: 'Golden cookie combos', kinds: { building: true, upgrade: true, allUpgrades: true, garden: true }, bulk: 'auto', cheapBulk: 1, toAchievement: true, skip: false, reserve: 0, banks: ['lucky', 'gardenRounds'], roundsMargin: 1.25, mode: 'actualIncome', rules: [cleanRule(BULK_RULE)] },
   ].map(cleanProfile);
   const copy = (x) => JSON.parse(JSON.stringify(x));
   let profiles = copy(SEEDS);
@@ -163,6 +166,8 @@ CA.AutoBuyer = (() => {
       bulk: BULKS.includes(x.bulk) ? x.bulk : BULKS.includes(Number(x.bulk)) ? Number(x.bulk) : 'auto',
       // cheap ×100: a profile saved before it gets the default (1 s)
       cheapBulk: x.cheapBulk === undefined ? 1 : Math.max(0, Number(x.cheapBulk) || 0),
+      // to the next achievement: a profile saved before it gets it (on)
+      toAchievement: x.toAchievement !== false,
       skip: !!x.skip,
       reserve: Math.max(0, Number(x.reserve) || 0),
       banks: BANKS.map((b) => b.id).filter((id) => Array.isArray(x.banks) && x.banks.includes(id)),
@@ -210,7 +215,7 @@ CA.AutoBuyer = (() => {
     changed();
     return p;
   }
-  /** Changes a profile's fields (name, kinds, bulk, cheapBulk, skip, reserve, banks, at, roundsMargin, mode, rules); returns it. */
+  /** Changes a profile's fields (name, kinds, bulk, cheapBulk, toAchievement, skip, reserve, banks, at, roundsMargin, mode, rules); returns it. */
   function update(id, fields) {
     const i = profiles.findIndex((p) => p.id === id);
     if (i < 0) return null;
@@ -282,6 +287,7 @@ CA.AutoBuyer = (() => {
     return `weight ×${r.k}`;
   }
   /** The cheap ×100 badge a building it takes gets. */
+  const TO_ACHIEVEMENT_TEXT = 'to next achievement';
   const cheapBulkText = (p) => `cheap: ×100 under ${p.cheapBulk} s`;
   const ruleText = (r) => `${whatText(r)} → ${effectText(r)}${r.when ? ` when ${r.when}` : ''}`;
 
@@ -411,7 +417,7 @@ CA.AutoBuyer = (() => {
     // what anything may spend at most: the bank less the thresholds placed first (one placed at a
     // score holds back only what's below it — the walk sees to that)
     const b = (Game.cookies || 0) - keepFirst(p.id);
-    const ranked = kind ? P().ranking(kind, { bulk: p.bulk, mode, all: true, skip: p.skip, budget: b }) : [];
+    const ranked = kind ? P().ranking(kind, { bulk: p.bulk, mode, all: true, skip: p.skip, budget: b, toAchievement: p.toAchievement }) : [];
     const items = [];
     const held = [];
     // Buy all upgrades: what the budget affords now, as one thing — fewer than two is just buying that one
@@ -425,7 +431,7 @@ CA.AutoBuyer = (() => {
     // cheap ×100: what the next 100 of a building may cost at most (0: off)
     const cheap = p.cheapBulk > 0 ? rawCps() * p.cheapBulk : 0;
     ranked.forEach((r0) => {
-      let r = { ...r0, key: thingKey(r0), ipp: r0.pp, first: false, rules: [] };
+      let r = { ...r0, key: thingKey(r0), ipp: r0.pp, first: false, rules: r0.toAchievement ? [TO_ACHIEVEMENT_TEXT] : [] };
       if (cheap > 0 && r.kind === 'building') {
         const price = P().sumPrice(buildingNamed(r.name), 100);
         if (price <= cheap && price <= b) r = { ...(r.n === 100 ? r : resized(r, 100, p)), key: r.key, first: true, rules: [cheapBulkText(p)], why: 'cheap' };
@@ -447,7 +453,7 @@ CA.AutoBuyer = (() => {
             r.rules.push(effectText(rule));
             break;
           }
-          if (room < r.n) r = { ...resized(r, room, p), key: r.key, ipp: NaN, first: r.first, rules: r.rules, why: r.why };
+          if (room < r.n) r = { ...resized(r, room, p), key: r.key, ipp: NaN, first: r.first, rules: r.rules.filter((x) => x !== TO_ACHIEVEMENT_TEXT), why: r.why, toAchievement: false };
           r.rules.push(effectText(rule));
         } else if (rule.effect === 'first') {
           r.first = true;
@@ -839,6 +845,7 @@ CA.AutoBuyer = (() => {
         rows: [
           ['bulk', p.bulk === 'auto' ? 'auto' : `×${p.bulk}`],
           ['cheap ×100', p.cheapBulk > 0 ? `next 100 under ${p.cheapBulk} s of CpS` : 'off'],
+          ['to next achievement', p.toAchievement ? 'on' : 'off'],
           ['reserve', reserveParts(p.id).length ? reserveParts(p.id).map((x) => x.label).join(', ') : 'none'],
           ['rules', String(p.rules.length)],
           ['front now', front ? front.name : '—'],

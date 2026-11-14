@@ -172,7 +172,7 @@ CA.UI.AutoBuyerCard = (() => {
       `<td class="ca-ab-badges">${badges}</td></tr>`
     );
   }
-  const badgeClass = (r) => (/^priority/.test(r) ? 'prio' : /^buy first|^cheap/.test(r) ? 'first' : /^weight/.test(r) ? 'weight' : /^up to/.test(r) ? 'cap' : 'never');
+  const badgeClass = (r) => (/^priority/.test(r) ? 'prio' : /^buy first|^cheap/.test(r) ? 'first' : /^weight/.test(r) ? 'weight' : /^up to/.test(r) ? 'cap' : /^to next achievement/.test(r) ? 'ach' : 'never');
   function queueHtml() {
     const q = B().queue();
     if (!q.profile) return '<div class="ca-card-note">No profile.</div>';
@@ -286,6 +286,7 @@ CA.UI.AutoBuyerCard = (() => {
         .BULKS.map((b) => chip('data-ab-bulk', b, b === 'auto' ? 'auto' : `×${b}`, p.bulk === b, b === 'auto' ? `The store’s minimum bulk (Options below), rounded up with Round to multiples — now ×${CA.Shop.minBulk()}` : ''))
         .join('')}</span></div>` +
       `<div class="ca-ab-row"><span class="ca-ab-lbl">Cheap ×100</span><input type="number" min="0" step="0.5" class="ca-pp-num" value="${p.cheapBulk}" data-ab-f="cheapBulk" data-tip="${esc('A building whose next 100 cost less than this, and the budget affords, is bought 100 at a time ahead of the queue, whatever its payback period. 0: off')}"><span class="ca-hint">s of unbuffed CpS</span></div>` +
+      `<div class="ca-ab-row"><span class="ca-ab-lbl">To next achievement</span><span class="ca-pp-chips">${chip('data-ab-toach', 1, 'on', p.toAchievement, 'A building a few short of an achievement is also measured bought up to it (within 100), and bought that way when its payback period beats the bulk’s: the achievement’s milk counts across the whole buy')}${chip('data-ab-toach', 0, 'off', !p.toAchievement)}</span></div>` +
       `<div class="ca-ab-row"><span class="ca-ab-lbl">Can’t afford</span><span class="ca-pp-chips">${chip('data-ab-skip', 0, 'save up for the front', !p.skip)}${chip('data-ab-skip', 1, 'skip to what I can afford', p.skip)}</span></div>` +
       `<div class="ca-ab-row"><span class="ca-ab-lbl">Keeps</span><input type="number" min="0" step="1" class="ca-pp-num" value="${p.reserve}" data-ab-f="reserve"><span class="ca-hint">minutes of unbuffed CpS</span>` +
       `<span class="ca-pp-chips">${B()
@@ -396,7 +397,7 @@ CA.UI.AutoBuyerCard = (() => {
 
   /** The page's clicks: true when it was one of these cards'. */
   function onClick(e) {
-    const t = e.target.closest('[data-ab-act],[data-ab-use],[data-ab-kind],[data-ab-bulk],[data-ab-skip],[data-ab-bank],[data-ab-mv],[data-ab-rm],[data-ab-rule-on]');
+    const t = e.target.closest('[data-ab-act],[data-ab-use],[data-ab-kind],[data-ab-bulk],[data-ab-skip],[data-ab-toach],[data-ab-bank],[data-ab-mv],[data-ab-rm],[data-ab-rule-on]');
     if (!t) return false;
     e.stopPropagation();
     const d = t.dataset;
@@ -410,6 +411,8 @@ CA.UI.AutoBuyerCard = (() => {
       B().update(p.id, { bulk: d.abBulk === 'auto' ? 'auto' : Number(d.abBulk) });
     } else if (d.abSkip !== undefined) {
       B().update(p.id, { skip: d.abSkip === '1' });
+    } else if (d.abToach !== undefined) {
+      B().update(p.id, { toAchievement: d.abToach === '1' });
     } else if (d.abBank) {
       B().update(p.id, { banks: p.banks.includes(d.abBank) ? p.banks.filter((b) => b !== d.abBank) : p.banks.concat(d.abBank) });
     } else if (d.abMv !== undefined) {
