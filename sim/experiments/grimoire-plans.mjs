@@ -16,6 +16,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
+import { fileURLToPath } from 'node:url';
 import { cachedIncomeCurve, goldenIncomeGame, stateFromArgs } from '../models/goldenIncome.mjs';
 import { expectedAt, goldenParams } from '../models/goldenExpected.mjs';
 import { PLANS, sweepPlans, planById } from '../models/grimoire.mjs';
@@ -84,7 +85,7 @@ if (process.argv.includes('--follow')) {
   const seeds = Number(arg('follow-seeds', 1));
   const fpops = Number(arg('follow-pops', 2000000));
   // each followed walk kept in sim/out/income/ (as the curves are), so the GUI shows a long run made once
-  const dir = new URL('../out/income/', import.meta.url).pathname;
+  const dir = fileURLToPath(new URL('../out/income/', import.meta.url));
   const followed = (gd, seed, spec, run) => {
     const inputs = { v: 1, kind: 'grimoire-follow', save, state, level, garden: gd.id, fh, seed, pops: fpops, spec };
     const file = path.join(dir, `follow-${crypto.createHash('sha1').update(JSON.stringify(inputs)).digest('hex').slice(0, 16)}.json`);

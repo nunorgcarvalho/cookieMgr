@@ -20,6 +20,7 @@
 // applied on top by the caller). The season stays as it is (the game ends one after 24 h). Seeds and
 // other spending are not counted: the bank only grows (or is held, `bank`); free sugar lumps are kept out.
 // models/goldenExpected.mjs computes the same income without playing (seconds, a few tenths of a percent).
+import { fileURLToPath } from 'node:url';
 import { createSim } from '../sim.mjs';
 import { makeRng } from '../game/rng.mjs';
 import { SLOTS, goldenParams } from './goldenExpected.mjs';
@@ -420,7 +421,7 @@ const SPELL_ID = { fthof: 'hand of fate', stretch: 'stretch time', adept: 'dimin
 export async function incomeCurve({ save, state = {}, fs = [1, 1.25, 1.5, 1.75, 2, 2.25, 2.5, 2.75, 3], hours = 2000, seed = 1, jobs = 4, expected = false, pops = 1000000, bank = null, grimoire = null, onPoint } = {}) {
   const { spawn } = await import('node:child_process');
   const { fitCurve } = await import('./gardenScore.mjs');
-  const worker = new URL('./goldenIncomePoint.mjs', import.meta.url).pathname;
+  const worker = fileURLToPath(new URL('./goldenIncomePoint.mjs', import.meta.url));
   const points = [];
   let head = null;
   const one = (f, i) =>
@@ -465,7 +466,7 @@ export async function cachedIncomeCurve(opts) {
   // a spell plan (models/grimoire.mjs) is part of the key, as of the model that casts (v 3)
   const inputs = expected ? { save, state, freqs, expected, pops, seed, bank, v: 2, ...(grimoire ? { grimoire, v: 3 } : {}) } : { save, state, freqs, hours, seed, v: 1, ...(grimoire ? { grimoire, v: 3 } : {}) };
   const key = crypto.createHash('sha1').update(JSON.stringify(inputs)).digest('hex').slice(0, 16);
-  const dir = new URL('../out/income/', import.meta.url).pathname;
+  const dir = fileURLToPath(new URL('../out/income/', import.meta.url));
   const file = path.join(dir, `${key}.json`);
   if (!opts.fresh && fs.existsSync(file)) return { ...JSON.parse(fs.readFileSync(file, 'utf8')), cached: true };
   const curve = await incomeCurve(opts);
