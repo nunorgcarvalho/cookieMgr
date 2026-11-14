@@ -377,7 +377,10 @@ ranks every building and upgrade by payback period (PP: time to afford it + pric
 periods](#payback-periods)), then by the profile's rules, into one list. Buildings come in the profile's bulk — auto is
 the store's **Minimum bulk** (Settings → Store, the store toolbar, or the Payback page): ×1, ×10 or ×100 at a time — up
 to the next multiple of it when Round to multiples is on (37 owned, ×10: 3, to 40) — ranked by the PP of exactly that
-many; auto (the default) is ×10 with Round to multiples on, else ×1. Switches (Elder Pledge, the Golden switch, season
+many; auto (the default) is ×10 with Round to multiples on, else ×1. With **To next achievement** (a profile setting,
+on by default) each building is also measured bought up to the next achievement it wins (within 100), and the queue
+takes that count when its PP is better: a building a few short of a tier gets credit for the tier's milk, spread over
+the whole buy, and its row says "to next achievement". Switches (Elder Pledge, the Golden switch, season
 biscuits…) have no payback period: they're never ranked and never bought. Upgrades that only make clicks stronger are
 judged by what they add per click × your clicks per second. A profile saves up for the front, or skips to what you
 can afford, and can keep a bank reserve. (It replaced Best building and Best upgrade in v3.44; old saves move over.)
