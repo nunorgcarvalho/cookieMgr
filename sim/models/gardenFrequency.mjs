@@ -272,9 +272,24 @@ export function gardeners(w, h, tulips = [4, 8]) {
         tulips: 'cohort',
         soil: 'clovers',
       });
+      list.push({
+        id: `tulips${k}TogetherFert`,
+        name: `${k} nursetulips together + clover combos, fertilizer for the tulips too`,
+        desc: `The nursetulips and the clovers each replanted all together, fertilizer while either is growing, clay once they're mature: the add-on's "${k === 8 ? '8 nursetulips together + clover combos' : 'nursetulips together'}" profile (Tulip rounds gardener, its soil rule).`,
+        layout,
+        clovers: 'cohort',
+        tulips: 'cohort',
+        soil: 'both',
+      });
     });
   return list;
 }
+
+/** The add-on's two golden cookie garden profiles, as the fast model's gardeners: Golden clover combos, 8 nursetulips together. */
+export const ADDON_GARDENS = [
+  { id: 'goldenCombos', profile: 'goldenCombos', name: 'Golden clover combos' },
+  { id: 'tulips8TogetherFert', profile: 'tulipCombos', name: '8 golden tulips (nursetulips together + clover combos)' },
+];
 
 /**
  * Every gardener at a Farm level, over `seeds` gardens of `hours` each, pooled: { level, w, h,

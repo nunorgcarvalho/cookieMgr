@@ -947,3 +947,87 @@ body {
   stroke: #000;
   stroke-width: 1;
 }
+
+/* the Grimoire page: income by plan, income against frequency, a plan's details */
+#CookieMgrMenu svg.sim-gr-bars,
+#CookieMgrMenu svg.sim-gr-curves {
+  max-width: 760px;
+  padding: 0 12px;
+  box-sizing: border-box;
+}
+.sim-gr-bars .sim-gr-row {
+  cursor: pointer;
+}
+.sim-gr-bars .sim-gr-hit {
+  fill: transparent;
+}
+.sim-gr-bars .sim-gr-row:hover .sim-gr-hit,
+.sim-gr-bars .sim-gr-row.on .sim-gr-hit {
+  fill: rgba(255, 224, 138, 0.08);
+}
+.sim-gr-bars .sim-gr-name {
+  fill: #e6dcc6;
+  font-size: 11px;
+}
+.sim-gr-bars .sim-gr-val {
+  fill: #ffeab0;
+  font-size: 11px;
+  font-weight: bold;
+}
+.sim-gr-bars .sim-gr-pct {
+  fill: #a99f8c;
+  font-weight: normal;
+}
+.sim-gr-curves .sim-gr-time {
+  fill: rgba(255, 255, 255, 0.07);
+}
+#CookieMgrMenu .sim-gr-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  padding: 4px 14px 10px;
+  font-size: 11px;
+  color: #ddd;
+}
+#CookieMgrMenu .sim-gr-key {
+  cursor: default;
+}
+#CookieMgrMenu .sim-gr-key[data-grshow] {
+  cursor: pointer;
+}
+#CookieMgrMenu .sim-gr-key i {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  margin-right: 5px;
+  border-radius: 2px;
+  vertical-align: -1px;
+}
+#CookieMgrMenu .sim-gr-key b {
+  color: #ffe08a;
+}
+#CookieMgrMenu .sim-gr-spec {
+  padding: 0 14px 6px;
+  line-height: 1.5;
+}
+#CookieMgrMenu .sim-gr-tables {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 0 10px;
+  align-items: start;
+}
+#CookieMgrMenu table.sim-table tr.sim-gr-tr {
+  cursor: pointer;
+}
+#CookieMgrMenu table.sim-table tr.sim-gr-tr:hover td,
+#CookieMgrMenu table.sim-table tr.sim-gr-tr.on td {
+  background: rgba(255, 224, 138, 0.06);
+}
+#CookieMgrMenu table.sim-table td.sim-gr-best::after {
+  content: ' ★';
+  color: #ffd36a;
+}
+#CookieMgrMenu .sim-gr-tables table.sim-table th,
+#CookieMgrMenu .sim-gr-tables table.sim-table td {
+  padding: 5px 8px;
+}

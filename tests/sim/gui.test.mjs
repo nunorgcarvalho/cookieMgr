@@ -54,6 +54,8 @@ const fromSave = await post('/api/sessions', { start: { kind: 'save', save }, se
 assert(fromSave.id, 'a new simulation from that save');
 const noSave = await post('/api/sessions', { start: { kind: 'save', save: '' } });
 assert(/Paste a save/.test(noSave.error || ''), 'an empty save says what to do');
+const noPlans = await post('/api/grimoire/plans', { save: '' });
+assert(/Paste a save/.test(noPlans.error || ''), 'the Grimoire page’s comparison asks for a save too');
 const img = await fetch(url + '/game/img/icons.png');
 assert(img.ok && (img.headers.get('content-type') || '').includes('png'), 'the game’s pictures, through the cache');
 
@@ -86,7 +88,7 @@ const ex = await post('/api/experiments/garden-clover-cohort', { args: '--hours 
 const exOut = await readStream(`/api/jobs/${ex.id}/stream`, (t) => /event: done/.test(t));
 assert(/steady/.test(exOut) && /cohort/.test(exOut), 'an experiment runs and streams its output');
 const gf = await post('/api/garden/frequency', { level: 8, tulips: [4], hours: 100, seeds: 1 });
-assert(gf.w === 6 && gf.h === 5 && gf.results.length === 5 && gf.results.every((r) => r.bins.length && Math.abs(r.bins.reduce((a, b) => a + b, 0) - 1) < 1e-6), `the Garden page's study: a level-8 plot (6×5), a histogram per gardener (${gf.results && gf.results.map((r) => r.id)})`);
+assert(gf.w === 6 && gf.h === 5 && gf.results.length === 6 && gf.results.every((r) => r.bins.length && Math.abs(r.bins.reduce((a, b) => a + b, 0) - 1) < 1e-6), `the Garden page's study: a level-8 plot (6×5), a histogram per gardener (${gf.results && gf.results.map((r) => r.id)})`);
 
 // ---- the page: its real scripts in jsdom, against this server
 const errors = [];
@@ -149,7 +151,7 @@ for (const s of streams) await s.push();
 await sleep(600);
 for (const s of streams) await s.push();
 await sleep(300);
-assert(/the simulator/.test($('[data-sim-versions]').textContent) && doc.querySelectorAll('[data-nav]').length === 6, 'the page: versions, six pages on the beam');
+assert(/the simulator/.test($('[data-sim-versions]').textContent) && doc.querySelectorAll('[data-nav]').length === 7, 'the page: versions, seven pages on the beam');
 assert($('[data-sim-runbar]') && /Speed/.test($('[data-sim-runbar]').textContent) && $('[data-sim-stats] .ca-stat'), 'Simulate: the run bar and the stats tiles');
 assert(doc.querySelectorAll('[data-sim-bld] .sim-bld').length >= 2 && /Cursor/.test($('[data-sim-bld]').textContent), `the buildings (${doc.querySelectorAll('[data-sim-bld] .sim-bld').length})`);
 assert(doc.querySelectorAll('[data-sim-macros] .sim-macro').length >= 3 && $('[data-sim-macros] .ca-switch'), 'CookieMgr’s macros, with switches');
@@ -182,7 +184,7 @@ await sleep(250);
 for (const s of streams) await s.push();
 await sleep(200);
 assert(doc.querySelectorAll('[data-ctable] tr').length === 2 && /cheapest/.test($('[data-ctable]').textContent) && $('[data-cchart]'), 'compare: a finished comparison — its table and chart');
-for (const page of ['compare', 'strategies', 'garden', 'experiments', 'vocab', 'sim']) {
+for (const page of ['compare', 'strategies', 'garden', 'grimoire', 'experiments', 'vocab', 'sim']) {
   w.location.hash = `#${page}`;
   await sleep(250);
   assert($('[data-sim-main]').children.length > 0 && $(`[data-nav="${page}"].selected`), `${page}: renders`);
@@ -208,6 +210,7 @@ for (const page of ['compare', 'strategies', 'garden', 'experiments', 'vocab', '
     assert(doc.querySelectorAll('.sim-table tr').length === cards.length + 1, 'garden: the summary table, a row per gardener');
   }
   if (page === 'experiments') assert(doc.querySelectorAll('[data-ex]').length >= 3 && $('[data-exrun]'), 'experiments: the list, and Run');
+  if (page === 'grimoire') assert($('[data-grrun]') && $('[data-grsave]') && doc.querySelectorAll('[data-grsweep]').length === 2 && /spell plan/i.test($('[data-sim-main]').textContent), 'grimoire: the save, the plans to compare, and Compare');
 }
 assert(errors.length === 0, `no errors in the page${errors.length ? ': ' + errors.slice(0, 3).join(' | ') : ''}`);
 

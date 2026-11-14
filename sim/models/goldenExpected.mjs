@@ -43,15 +43,44 @@
 //   - no wrath cookies (Elder Pledge on, no Scorn), no Sugar blessing.
 import { survivalTable, spawnFrame } from './goldenIncome.mjs';
 import { makeRng } from '../game/rng.mjs';
+import { makePlan } from './grimoire.mjs';
 
 // what a golden cookie can do (Elder Pledge on): the effects popFunc lists
 const CHOICES = ['frenzy', 'multiply cookies', 'chain cookie', 'cookie storm', 'everything must go', 'click frenzy', 'building special', 'free sugar lump', 'dragon harvest', 'dragonflight', 'blab'];
+// what a spell can bring on top: Force the Hand of Fate's storm drop and its backfires' wrath cookies
+// (models/grimoire.mjs), Conjure Baked Goods, Stretch Time and Diminish Ineptitude
+const CAST_CHOICES = ['cookie storm drop', 'clot', 'ruin cookies', 'cursed finger', 'blood frenzy'];
+const ALL_CHOICES = [...CHOICES, ...CAST_CHOICES];
+// what's earned, by part: `spell` is what a spell pays outright (Conjure Baked Goods)
+const PARTS = ['cps', 'clicks', 'lucky', 'chain', 'storm', 'spell'];
 // what the last effect can be: a storm's drops come at once and stay the last
-const PARTS = ['cps', 'clicks', 'lucky', 'chain', 'storm'];
 const LASTS = ['', ...CHOICES.filter((c) => c !== 'cookie storm'), 'cookie storm drop'];
 const LAST = Object.fromEntries(LASTS.map((n, i) => [n, i]));
-// a storm's drops and a blab are never on the list, so they bar nothing, like no last effect at all
-const lastOf = (choice) => (choice === 'cookie storm' || choice === 'cookie storm drop' || choice === 'blab' ? 0 : LAST[choice]);
+// a storm's drops, a blab and the wrath cookies' effects are never on the list, so they bar nothing,
+// like no last effect at all
+const lastOf = (choice) => (choice === 'cookie storm' || choice === 'cookie storm drop' || choice === 'blab' ? 0 : LAST[choice] || 0);
+// A state: [last, F, H, C, D, S, E, L, X, A, I, J, ...B (descending)] — the last effect and the time
+// left (frames) on Frenzy, Dragon Harvest, Click frenzy, Dragonflight, Cookie storm, Elder frenzy,
+// Clot, Cursed finger, Magic adept, Magic inept, J (1 right after a Force the Hand of Fate: what a
+// spell plan does next) and each building special. E to J only ever come from spells.
+const F_ = 1;
+const H_ = 2;
+const C_ = 3;
+const D_ = 4;
+const S_ = 5;
+const E_ = 6;
+const L_ = 7;
+const X_ = 8;
+const A_ = 9;
+const I_ = 10;
+const J_ = 11;
+const B0 = 12;
+export const SLOTS = { F: F_, H: H_, C: C_, D: D_, S: S_, E: E_, L: L_, X: X_, A: A_, I: I_, J: J_, B0 };
+const fresh = (last = 0) => {
+  const s = new Array(B0).fill(0);
+  s[0] = last;
+  return s;
+};
 
 /**
  * What the model needs from a game, read from it (with the frequency already set on it):
@@ -98,6 +127,20 @@ export function goldenParams(Game, { clicks = 20, bank } = {}) {
   const flight = buff('dragonflight', 'multClick');
   const storm = buff('cookie storm', 'power');
   const special = Object.values(Game.Objects).some((o) => o.amount >= 10) ? buff('building special', 'multCpS') : { frames: 0 };
+  // a backfired Force the Hand of Fate's wrath cookie: its effects' buffs, popped for real too
+  const wrathBuff = (type, field) => {
+    Game.killBuffs();
+    Game.CalculateGains();
+    new Game.shimmer('golden', { type, wrath: true }, 1).pop();
+    const b = Object.values(Game.buffs)[0];
+    const r = { frames: b.time, power: b[field] };
+    Game.killBuffs();
+    return r;
+  };
+  const elder = wrathBuff('blood frenzy', 'multCpS');
+  const clot = wrathBuff('clot', 'multCpS');
+  const cursed = wrathBuff('cursed finger', 'power');
+  cursed.power /= cps0; // seconds of CpS a click is worth (the CpS then, buffs and all)
   Game.killBuffs();
   Game.CalculateGains();
   const luckyMult = (pop('multiply cookies') - 13) / (cps0 * 900);
@@ -116,6 +159,10 @@ export function goldenParams(Game, { clicks = 20, bank } = {}) {
     flight,
     storm,
     special: { frames: special.frames, powers: buildings },
+    elder,
+    clot,
+    cursed,
+    grimoire: grimoireParams(Game),
     luckyMult,
     cpsShare,
     pChainStorm: Game.cookiesEarned >= 100000 ? 0.03 : 0,
@@ -138,6 +185,31 @@ export function goldenParams(Game, { clicks = 20, bank } = {}) {
   T.last = keep.last;
   T.chain = keep.chain;
   return P;
+}
+
+/**
+ * What spells need from a game with the Grimoire (null without it): { magicM, fail (a spell's chance
+ * to backfire, no buffs on), costs: { fthof, stretch, adept, conjure }, regen (magic after k frames
+ * from an empty bar, to full) }.
+ */
+function grimoireParams(Game) {
+  const M = Game.Objects['Wizard tower'] && Game.Objects['Wizard tower'].minigame;
+  if (!M || !M.spells || !Game.Objects['Wizard tower'].amount) return null;
+  M.computeMagicM();
+  const sp = M.spells;
+  const costs = { fthof: M.getSpellCost(sp['hand of fate']), stretch: M.getSpellCost(sp['stretch time']), adept: M.getSpellCost(sp['diminish ineptitude']), conjure: M.getSpellCost(sp['conjure baked goods']) };
+  // the game's refill, frame by frame (M.logic): from 0 to a full bar
+  const max = M.magicM;
+  const regen = [0];
+  for (let m = 0; m < max && regen.length < 5e6; ) {
+    m = Math.min(max, m + Math.max(0.002, Math.pow(m / Math.max(max, 100), 0.5)) * 0.002);
+    regen.push(m);
+  }
+  const n0 = Game.shimmerTypes.golden.n;
+  Game.shimmerTypes.golden.n = 0;
+  const fail = M.getFailChance(sp['hand of fate']);
+  Game.shimmerTypes.golden.n = n0;
+  return { magicM: max, fail, costs, regen: Float64Array.from(regen) };
 }
 
 /** The effect a golden cookie picks, given the last one and whether Dragonflight runs: [[choice, p]]. */
@@ -245,19 +317,18 @@ function meanMin(tab, a, b) {
 /**
  * The model's moving parts for a time grid of `grid` frames (1: exact frames): the state and what
  * happens to it — buffs running out (after), what's earned meanwhile (stretches, earnOver), and a
- * click's outcomes (popOnce, transitions). A state is [last, F, H, C, D, S, ...B (descending)]: the
- * last effect and the time left on Frenzy, Dragon Harvest, Click frenzy, Dragonflight, Cookie storm
- * and each building special, in grid steps.
+ * click's outcomes (popOnce, transitions), and a spell's (castOnce). A state is [last, F, H, C, D, S,
+ * E, L, X, A, I, J, ...B (descending)] (see SLOTS), times in grid steps.
  */
 function noGolden(P) {
-  const parts = { cps: P.cps0 / P.base, clicks: (P.clicks * P.click0) / P.base, lucky: 0, chain: 0, storm: 0 };
+  const parts = { cps: P.cps0 / P.base, clicks: (P.clicks * P.click0) / P.base, lucky: 0, chain: 0, storm: 0, spell: 0 };
   return { mult: parts.cps + parts.clicks, parts, golden: 0, effects: {} };
 }
 
 function machinery(P, { grid = 1, kMax = 4, shares = false } = {}) {
   const fps = P.fps;
   const unit = grid / fps; // seconds per grid step
-  const zero = { cps: 0, clicks: 0, lucky: 0, chain: 0, storm: 0 };
+  const zero = { cps: 0, clicks: 0, lucky: 0, chain: 0, storm: 0, spell: 0 };
   // a length in frames on the grid: its two neighbors, weighed to keep its mean ([[steps, p]])
   const split = (frames) => {
     const x = frames / grid;
@@ -275,6 +346,13 @@ function machinery(P, { grid = 1, kMax = 4, shares = false } = {}) {
   const pH = P.harvest.power;
   const pC = P.clickFrenzy.power;
   const pD = P.flight.power;
+  const wrath = P.elder || { frames: 0, power: 666 };
+  const dE = split(wrath.frames);
+  const pE = wrath.power;
+  const dL = split((P.clot || { frames: 0 }).frames);
+  const pL = P.clot ? P.clot.power : 0.5;
+  const cursed = P.cursed || { frames: 0, power: 0 };
+  const dX = split(cursed.frames);
   const pows = P.special.powers;
   const nB = pows.length;
   const kTop = Math.min(kMax, nB);
@@ -283,17 +361,25 @@ function machinery(P, { grid = 1, kMax = 4, shares = false } = {}) {
   const bank = P.bank;
   const chainStep = Math.max(1, Math.round(91 / grid)); // a chain's next cookie: 91 frames on (rounded to the grid)
 
-  // a state: [last, F, H, C, D, S, ...B (descending)], times in grid steps
   const keyOf = (s) => String.fromCharCode.apply(null, s);
-  const cpsMult = (fa, ha, k) => (fa ? pF : 1) * (ha ? pH : 1) * EB[k];
-  // cookies a second with these buffs on
-  const rates = (fa, ha, k, ca, da, sa) => {
-    const m = cpsMult(fa, ha, k);
-    const cps = P.cps0 * m;
-    const clicks = P.clicks * P.click0 * (1 - P.cpsShare + P.cpsShare * m) * (ca ? pC : 1) * (da ? pD : 1);
-    const storm = sa ? 0.5 * fps * 240 * P.luckyMult * cps : 0; // a drop each other frame, 1–7 minutes of CpS
-    return { cps, clicks, storm };
+  // the CpS multiplier at `at` steps on, but for the building specials (EB / SUB average them)
+  const flatMult = (s, at) => (s[X_] > at ? 0 : (s[F_] > at ? pF : 1) * (s[H_] > at ? pH : 1) * (s[E_] > at ? pE : 1) * (s[L_] > at ? pL : 1));
+  const specialsAt = (s, at) => {
+    let k = 0;
+    for (let i = B0; i < s.length; i++) if (s[i] > at) k++;
+    return k;
   };
+  // cookies a second at `at` steps on: { cps, clicks, storm }, and the mix's key (for shares)
+  const rateAt = (s, at) => {
+    const k = specialsAt(s, at);
+    const m = flatMult(s, at) * EB[k];
+    const cps = P.cps0 * m;
+    // with Cursed finger on, clicks are worth what the spell set (credited when it came): none here
+    const clicks = s[X_] > at ? 0 : P.clicks * P.click0 * (1 - P.cpsShare + P.cpsShare * m) * (s[C_] > at ? pC : 1) * (s[D_] > at ? pD : 1);
+    const storm = s[S_] > at ? 0.5 * fps * 240 * P.luckyMult * cps : 0; // a drop each other frame, 1–7 minutes of CpS
+    return { cps, clicks, storm, k };
+  };
+  const comboKey = (s, at, k) => `${+(s[F_] > at)} ${+(s[H_] > at)} ${k} ${+(s[C_] > at)} ${+(s[D_] > at)} ${+(s[S_] > at)}${s[E_] > at || s[L_] > at || s[X_] > at ? ` ${+(s[E_] > at)}${+(s[L_] > at)}${+(s[X_] > at)}` : ''}`;
   // the stretches of a state's future with the same buffs on: [{ from, to, rate, combo }]
   const stretches = (s) => {
     const cuts = new Set([0]);
@@ -302,21 +388,15 @@ function machinery(P, { grid = 1, kMax = 4, shares = false } = {}) {
     const out = [];
     for (let j = 0; j < xs.length; j++) {
       const at = xs[j];
-      let k = 0;
-      for (let i = 6; i < s.length; i++) if (s[i] > at) k++;
-      const fa = s[1] > at;
-      const ha = s[2] > at;
-      const ca = s[3] > at;
-      const da = s[4] > at;
-      const sa = s[5] > at;
-      out.push({ from: at, to: j + 1 < xs.length ? xs[j + 1] : Infinity, rate: rates(fa, ha, k, ca, da, sa), combo: shares ? `${+fa} ${+ha} ${k} ${+ca} ${+da} ${+sa}` : '' });
+      const r = rateAt(s, at);
+      out.push({ from: at, to: j + 1 < xs.length ? xs[j + 1] : Infinity, rate: r, combo: shares ? comboKey(s, at, r.k) : '' });
     }
     return out;
   };
   const after = (s, t) => {
     const n = [s[0]];
-    for (let i = 1; i < 6; i++) n.push(Math.max(0, s[i] - t));
-    for (let i = 6; i < s.length; i++) if (s[i] > t) n.push(s[i] - t);
+    for (let i = 1; i < B0; i++) n.push(Math.max(0, s[i] - t));
+    for (let i = B0; i < s.length; i++) if (s[i] > t) n.push(s[i] - t);
     return n;
   };
   // cookies earned over the next t steps, by part
@@ -341,10 +421,10 @@ function machinery(P, { grid = 1, kMax = 4, shares = false } = {}) {
     return odds.get(k);
   };
 
-  const lucky = (s) => {
-    const b = 900 * P.cps0 * (s[1] > 0 ? pF : 1) * (s[2] > 0 ? pH : 1);
-    return P.luckyMult * meanMin(SUB[s.length - 6], 0.15 * bank, b) + 13;
-  };
+  // what `secs` seconds of the CpS now are worth, capped at `share` of the bank (Lucky's and Conjure
+  // Baked Goods' rule), the building specials' boost averaged over which ones they are
+  const ofCps = (s, secs, share) => meanMin(SUB[s.length - B0], share * bank, secs * P.cps0 * flatMult(s, 0));
+  const lucky = (s) => P.luckyMult * ofCps(s, 900, 0.15) + 13;
 
   // a chain from this state: [{ steps, p, value }] (value: cookies, given that many steps)
   const chains = new Map();
@@ -354,16 +434,16 @@ function machinery(P, { grid = 1, kMax = 4, shares = false } = {}) {
     if (chainSpan === null) {
       // the most CpS there can be makes the longest chain (the cap only grows with CpS)
       const top = [...pows].sort((a, b) => b - a).slice(0, kTop);
-      const cap = Math.min(P.cps0 * pF * pH * top.reduce((a, b) => a * b, 1) * 21600, bank * 0.5) * P.luckyMult;
+      const cap = Math.min(P.cps0 * pF * pH * pE * top.reduce((a, b) => a * b, 1) * 21600, bank * 0.5) * P.luckyMult;
       let steps = 1;
       for (let c = c0; Math.max(7, Math.min(Math.floor((1 / 9) * Math.pow(10, c + 1) * 7 * P.luckyMult), cap)) < cap && steps < 400; c++) steps++;
       chainSpan = steps + 1;
     }
     // a buff matters to a chain only by the step it runs out on
     const at = (x) => Math.min(Math.ceil(x / chainStep), chainSpan);
-    const key = `${at(s[1])},${at(s[2])},${s[5] > 0 ? 1 : 0},${s.slice(6).map(at).join(',')}`;
+    const key = `${at(s[F_])},${at(s[H_])},${s[S_] > 0 ? 1 : 0},${at(s[E_])},${at(s[L_])},${at(s[X_])},${s.slice(B0).map(at).join(',')}`;
     if (chains.has(key)) return chains.get(key);
-    const rems = s.slice(6);
+    const rems = s.slice(B0);
     const k = rems.length;
     const byL = new Map();
     const run = (powsOf, weight) => {
@@ -371,13 +451,13 @@ function machinery(P, { grid = 1, kMax = 4, shares = false } = {}) {
       let value = 0;
       for (let j = 1, c = c0; j <= 400; j++, c++) {
         const at = (j - 1) * chainStep;
-        let m = (s[1] > at ? pF : 1) * (s[2] > at ? pH : 1);
+        let m = flatMult(s, at);
         m *= powsOf(at);
         const cpsB = P.cps0 * m;
         const cap = Math.min(cpsB * 21600, bank * 0.5) * P.luckyMult;
         const pay = (cc) => Math.max(7, Math.min(Math.floor((1 / 9) * Math.pow(10, cc) * 7 * P.luckyMult), cap));
         value += pay(c);
-        const forced = pay(c + 1) >= cap || s[5] > 0; // capped, or a storm drop breaks it
+        const forced = pay(c + 1) >= cap || s[S_] > 0; // capped, or a storm drop breaks it
         const pEnd = forced ? 1 : 0.01;
         const e = byL.get(j) || { p: 0, v: 0 };
         e.p += alive * pEnd;
@@ -410,78 +490,103 @@ function machinery(P, { grid = 1, kMax = 4, shares = false } = {}) {
     return out;
   };
 
+  // one effect `choice` (picked with probability p) landing on state s: pushes { s, p, parts, secs,
+  // golden, choice } for each way it goes. A golden cookie's own (popFunc), forced or not.
+  const effect = (s, choice, p, out) => {
+    const base = () => {
+      const n = [...s];
+      n[0] = lastOf(choice);
+      n[J_] = 0;
+      return n;
+    };
+    const push = (n, q, parts = null, secs = 0, golden = 1) => out.push({ s: n, p: p * q, parts, secs, golden, choice });
+    const gain = (slot, d) => {
+      for (const [x, q] of d) {
+        const n = base();
+        n[slot] += x;
+        push(n, q);
+      }
+    };
+    switch (choice) {
+      case 'frenzy':
+        return gain(F_, dF);
+      case 'dragon harvest':
+        return gain(H_, dH);
+      case 'click frenzy':
+        return gain(C_, dC);
+      case 'cookie storm':
+        return gain(S_, dS);
+      case 'blood frenzy':
+        return gain(E_, dE);
+      case 'clot':
+        return gain(L_, dL);
+      case 'cursed finger': {
+        // CpS stops; each click is worth the CpS then times the buff's seconds, all its clicks credited now
+        const secs = cursed.frames / fps;
+        const value = P.clicks * secs * cursed.power * P.cps0 * flatMult(s, 0) * EB[specialsAt(s, 0)];
+        for (const [x, q] of dX) {
+          const n = base();
+          n[X_] += x;
+          push(n, q, { ...zero, clicks: value });
+        }
+        return;
+      }
+      case 'dragonflight':
+        for (const [x, q] of dD) {
+          const n = base();
+          n[D_] += x;
+          push(n, 0.2 * q);
+          const m = [...n];
+          m[C_] = 0; // 80%: Click frenzy ends
+          push(m, 0.8 * q);
+        }
+        return;
+      case 'multiply cookies':
+        return push(base(), 1, { ...zero, lucky: lucky(s) });
+      case 'cookie storm drop':
+        // 1–7 minutes of CpS, 4 on average
+        return push(base(), 1, { ...zero, storm: 240 * P.luckyMult * P.cps0 * flatMult(s, 0) * EB[specialsAt(s, 0)] });
+      case 'building special': {
+        const n0 = base();
+        if (!nB) {
+          for (const [x, q] of dF) push([...n0.slice(0, F_), n0[F_] + x, ...n0.slice(F_ + 1)], q); // no building with 10: a Frenzy instead
+          return;
+        }
+        const rems = n0.slice(B0);
+        const k = rems.length;
+        const fresh = k >= kTop ? 0 : (nB - k) / nB;
+        for (const [x, q] of dB) {
+          for (let i = 0; i < k; i++) {
+            const r = [...rems];
+            r[i] += x;
+            r.sort((u, v) => v - u);
+            push([...n0.slice(0, B0), ...r], (q * (1 - fresh)) / k);
+          }
+          if (fresh > 0) push([...n0.slice(0, B0), ...[...rems, x].sort((u, v) => v - u)], q * fresh);
+        }
+        return;
+      }
+      case 'chain cookie': {
+        const st = stretches(s);
+        for (const o of chainOutcomes(s)) {
+          const t = (o.steps - 1) * chainStep;
+          const parts = { ...zero, chain: o.value };
+          earnOver(st, t, parts, 1);
+          const n = after(s, t);
+          n[0] = LAST['chain cookie'];
+          push(n, o.p, parts, t * unit, o.steps);
+        }
+        return;
+      }
+      default:
+        push(base(), 1); // nothing that pays: everything must go, a sugar lump, a blab, ruin (the bank is held)
+    }
+  };
+
   // one golden cookie clicked in state s: [{ s, p, parts, secs, golden, choice }]
   const popOnce = (s) => {
     const out = [];
-    for (const [choice, p] of oddsFor(s[0], s[4] > 0 ? 1 : 0)) {
-      const base = () => {
-        const n = [...s];
-        n[0] = lastOf(choice);
-        return n;
-      };
-      const push = (n, q, parts = null, secs = 0, golden = 1) => out.push({ s: n, p: p * q, parts, secs, golden, choice });
-      switch (choice) {
-        case 'frenzy':
-        case 'dragon harvest':
-        case 'click frenzy':
-        case 'cookie storm': {
-          const [slot, d] = { frenzy: [1, dF], 'dragon harvest': [2, dH], 'click frenzy': [3, dC], 'cookie storm': [5, dS] }[choice];
-          for (const [x, q] of d) {
-            const n = base();
-            n[slot] += x;
-            push(n, q);
-          }
-          break;
-        }
-        case 'dragonflight':
-          for (const [x, q] of dD) {
-            const n = base();
-            n[4] += x;
-            push(n, 0.2 * q);
-            const m = [...n];
-            m[3] = 0; // 80%: Click frenzy ends
-            push(m, 0.8 * q);
-          }
-          break;
-        case 'multiply cookies':
-          push(base(), 1, { ...zero, lucky: lucky(s) });
-          break;
-        case 'building special': {
-          const n0 = base();
-          if (!nB) {
-            for (const [x, q] of dF) push([n0[0], n0[1] + x, ...n0.slice(2)], q); // no building with 10: a Frenzy instead
-            break;
-          }
-          const rems = n0.slice(6);
-          const k = rems.length;
-          const fresh = k >= kTop ? 0 : (nB - k) / nB;
-          for (const [x, q] of dB) {
-            for (let i = 0; i < k; i++) {
-              const r = [...rems];
-              r[i] += x;
-              r.sort((u, v) => v - u);
-              push([...n0.slice(0, 6), ...r], (q * (1 - fresh)) / k);
-            }
-            if (fresh > 0) push([...n0.slice(0, 6), ...[...rems, x].sort((u, v) => v - u)], q * fresh);
-          }
-          break;
-        }
-        case 'chain cookie': {
-          const st = stretches(s);
-          for (const o of chainOutcomes(s)) {
-            const t = (o.steps - 1) * chainStep;
-            const parts = { ...zero, chain: o.value };
-            earnOver(st, t, parts, 1);
-            const n = after(s, t);
-            n[0] = LAST['chain cookie'];
-            push(n, o.p, parts, t * unit, o.steps);
-          }
-          break;
-        }
-        default:
-          push(base(), 1); // nothing that pays: everything must go, a sugar lump, a blab
-      }
-    }
+    for (const [choice, p] of oddsFor(s[0], s[D_] > 0 ? 1 : 0)) effect(s, choice, p, out);
     return out;
   };
 
@@ -503,7 +608,7 @@ function machinery(P, { grid = 1, kMax = 4, shares = false } = {}) {
         p *= 1 - P.pExtra;
       }
       // with a storm still running, its drops make the last effect "cookie storm drop"
-      const n = o.s[5] > 0 ? [lastOf('cookie storm drop'), ...o.s.slice(1)] : o.s;
+      const n = o.s[S_] > 0 ? [lastOf('cookie storm drop'), ...o.s.slice(1)] : o.s;
       add(res.posts, n, p);
       if (o.parts) for (const x in o.parts) res.parts[x] += o.p * o.parts[x];
       res.secs += o.p * o.secs;
@@ -515,11 +620,13 @@ function machinery(P, { grid = 1, kMax = 4, shares = false } = {}) {
     return res;
   };
 
-  // what a state earns, on average, until a wait whose survival P(T > u) sums to CS[u] (frames on
-  // this grid; CS stops at `top`), weighed by w, added to acc ([cps, clicks, lucky, chain, storm]):
-  // stretches' sums without their objects, for the walk's hot loop
-  const cuts = new Float64Array(16);
-  const waitEarn = (s, CS, top, w, acc, combos) => {
+  // what a state earns, on average, over the next `span` frames or until the next golden cookie,
+  // whichever comes first — the timer having run `age` frames already, its survival P(T > u) summing
+  // to CS[u] (frames on this grid; CS stops at `top`) — weighed by w, added to acc ([cps, clicks,
+  // lucky, chain, storm, spell]); returns the seconds it lasts on average (unweighed). Stretches'
+  // sums without their objects, for the walk's hot loop.
+  const cuts = new Float64Array(32);
+  const waitEarn = (s, CS, top, w, acc, combos, age = 0, span = Infinity) => {
     let n = 0;
     for (let i = 1; i < s.length; i++) {
       const v = s[i];
@@ -531,30 +638,137 @@ function machinery(P, { grid = 1, kMax = 4, shares = false } = {}) {
       }
       cuts[j] = v;
     }
+    const norm = age > 0 ? CS[age + 1] - CS[age] : 1; // P(T > age): what's left of the wait
+    const end = Math.min(top, age + span);
     let from = 0;
     for (let j = 0; j <= n; j++) {
       const to = j < n ? cuts[j] : Infinity;
       if (to <= from) continue;
-      const b = Math.min(to, top);
-      if (b > from) {
-        const secs = ((CS[b] - CS[from]) / fps) * w * grid;
-        let k = 0;
-        for (let i = 6; i < s.length; i++) if (s[i] > from) k++;
-        const m = (s[1] > from ? pF : 1) * (s[2] > from ? pH : 1) * EB[k];
+      const a = age + from;
+      const b = Math.min(age + to, end);
+      if (b > a) {
+        const secs = ((CS[b] - CS[a]) / norm / fps) * w * grid;
+        const k = specialsAt(s, from);
+        const m = flatMult(s, from) * EB[k];
         const cps = P.cps0 * m;
         acc[0] += cps * secs;
-        acc[1] += P.clicks * P.click0 * (1 - P.cpsShare + P.cpsShare * m) * (s[3] > from ? pC : 1) * (s[4] > from ? pD : 1) * secs;
-        if (s[5] > from) acc[4] += 0.5 * fps * 240 * P.luckyMult * cps * secs;
+        if (!(s[X_] > from)) acc[1] += P.clicks * P.click0 * (1 - P.cpsShare + P.cpsShare * m) * (s[C_] > from ? pC : 1) * (s[D_] > from ? pD : 1) * secs;
+        if (s[S_] > from) acc[4] += 0.5 * fps * 240 * P.luckyMult * cps * secs;
         if (combos) {
-          const key = `${+(s[1] > from)} ${+(s[2] > from)} ${k} ${+(s[3] > from)} ${+(s[4] > from)} ${+(s[5] > from)}`;
+          const key = comboKey(s, from, k);
           combos.set(key, (combos.get(key) || 0) + secs);
         }
       }
-      if (to >= top) break;
+      if (age + to >= end) break;
       from = to;
     }
+    return ((CS[end] - CS[Math.min(age, top)]) / norm / fps) * grid;
   };
-  return { fps, unit, zero, keyOf, rates, stretches, after, earnOver, popOnce, transitions, lastOf, waitEarn };
+
+  // ---- spells (models/grimoire.mjs plans them) --------------------------------------------------
+  const G = P.grimoire;
+  const fthofOdds = new Map();
+  // Force the Hand of Fate's golden cookie: [[choice, p]], as its win() builds the list (forced: the
+  // last effect doesn't count); its backfire's wrath cookie, as fail() does
+  const fthofWin = (flying) => {
+    if (fthofOdds.has(flying)) return fthofOdds.get(flying);
+    const out = new Map();
+    const add = (c, p) => out.set(c, (out.get(c) || 0) + p);
+    const pB = P.pBuilding > 0 ? 0.25 : 0;
+    for (const [storm, ps] of [[1, 0.1], [0, 0.9]])
+      for (const [bs, pb] of [[1, pB], [0, 1 - pB]])
+        for (const [drop, pd] of [[1, 0.15], [0, 0.85]])
+          for (const [lump, pl] of [[1, 0.0001], [0, 0.9999]]) {
+            const q = ps * pb * pd * pl;
+            if (!q) continue;
+            let l = ['frenzy', 'multiply cookies'];
+            if (!flying) l.push('click frenzy');
+            if (storm) l.push('cookie storm', 'cookie storm', 'blab');
+            if (bs) l.push('building special');
+            if (drop) l = ['cookie storm drop'];
+            if (lump) l.push('free sugar lump');
+            for (const c of l) add(c, q / l.length);
+          }
+    const r = [...out];
+    fthofOdds.set(flying, r);
+    return r;
+  };
+  const fthofFail = (() => {
+    const out = new Map();
+    const add = (c, p) => out.set(c, (out.get(c) || 0) + p);
+    for (const [more, pm] of [[1, 0.1], [0, 0.9]])
+      for (const [lump, pl] of [[1, 0.003], [0, 0.997]])
+        for (const [blab, pb] of [[1, 0.1], [0, 0.9]]) {
+          let l = ['clot', 'ruin cookies'];
+          if (more) l.push('cursed finger', 'blood frenzy');
+          if (lump) l.push('free sugar lump');
+          if (blab) l = ['blab'];
+          for (const c of l) add(c, (pm * pl * pb) / l.length);
+        }
+    return [...out];
+  })();
+  const failChance = (s) => Math.min(1, G.fail * (s[A_] > 0 ? 0.1 : 1) * (s[I_] > 0 ? 5 : 1));
+  const CLOT_SPELL = split(60 * 15 * fps); // Conjure Baked Goods' backfire: a 15-minute clot (its fail())
+  /**
+   * A spell cast in state s: [{ s, p, parts, secs, golden, choice }] (choice: the golden cookie's effect
+   * for Force the Hand of Fate, else the spell's id and whether it worked). Magic is the caller's.
+   */
+  const castOnce = (s, spell) => {
+    const out = [];
+    const fail = failChance(s);
+    const base = () => {
+      const n = [...s];
+      n[J_] = 0;
+      return n;
+    };
+    switch (spell) {
+      case 'fthof': {
+        for (const [c, p] of fthofWin(s[D_] > 0 ? 1 : 0)) effect(s, c, (1 - fail) * p, out);
+        for (const [c, p] of fthofFail) effect(s, c, fail * p, out);
+        for (const o of out) o.s[J_] = 1; // just cast: what a plan does next
+        return out;
+      }
+      case 'stretch': {
+        // every buff +10% of its full time (up to 5 minutes); backfired, −20% of what's left (up to 10)
+        const full = [0, dF, dH, dC, dD, dS, dE, dL, dX, [[300 * fps, 1]], [[600 * fps, 1]]].map((d) => (d ? d.reduce((a, [x, q]) => a + x * q, 0) : 0));
+        const win = base();
+        const lose = base();
+        for (let i = 1; i < s.length; i++) {
+          if (i === J_ || !(s[i] > 0)) continue;
+          const whole = Math.max(s[i], i >= B0 ? P.special.frames / grid : full[i]);
+          win[i] = s[i] + Math.round(Math.min((300 * fps) / grid, whole * 0.1));
+          lose[i] = Math.max(0, s[i] - Math.round(Math.min((600 * fps) / grid, s[i] * 0.2)));
+        }
+        out.push({ s: win, p: 1 - fail, parts: null, secs: 0, golden: 0, choice: 'stretch' }, { s: lose, p: fail, parts: null, secs: 0, golden: 0, choice: 'stretch backfired' });
+        return out;
+      }
+      case 'adept': {
+        const win = base();
+        win[A_] = (300 * fps) / grid;
+        win[I_] = 0;
+        win[J_] = 2; // just worked: the plan's Force the Hand of Fate comes next
+        const lose = base();
+        lose[I_] = (600 * fps) / grid;
+        lose[A_] = 0;
+        out.push({ s: win, p: 1 - fail, parts: null, secs: 0, golden: 0, choice: 'adept' }, { s: lose, p: fail, parts: null, secs: 0, golden: 0, choice: 'adept backfired' });
+        return out;
+      }
+      case 'conjure': {
+        // half an hour of CpS (the CpS then), capped at 15% of the bank; backfired, a 15-minute clot
+        // and cookies lost from the bank (it's held, and the cookies baked don't change)
+        out.push({ s: base(), p: 1 - fail, parts: { ...zero, spell: Math.max(7, ofCps(s, 1800, 0.15)) }, secs: 0, golden: 0, choice: 'conjure' });
+        for (const [x, q] of CLOT_SPELL) {
+          const n = base();
+          n[L_] += x;
+          out.push({ s: n, p: fail * q, parts: null, secs: 0, golden: 0, choice: 'conjure backfired' });
+        }
+        return out;
+      }
+      default:
+        throw new Error(`no spell "${spell}"`);
+    }
+  };
+  return { fps, unit, zero, keyOf, rateAt, stretches, after, earnOver, popOnce, castOnce, transitions, lastOf, waitEarn };
 }
 
 /**
@@ -665,7 +879,7 @@ export function exactIncome(P, { grid = 150, tol = 1e-8, maxIter = 1000, prune =
       const r = st[st.length - 1].rate;
       const extra = (tailQT[i] - tailQ[i] * maxRem) * unit;
       for (const k in earned) earned[k] += tailQ[i] * e[k] + r[k] * extra;
-      to.push(preId([s[0], 0, 0, 0, 0, 0]));
+      to.push(preId(fresh(s[0])));
       q.push(tailQ[i]);
     }
     node.to = Int32Array.from(to);
@@ -700,7 +914,7 @@ export function exactIncome(P, { grid = 150, tol = 1e-8, maxIter = 1000, prune =
   };
 
   let mass = [1];
-  postId([0, 0, 0, 0, 0, 0]);
+  postId(fresh());
   let prev = NaN;
   let calm = 0;
   let result = null;
@@ -827,10 +1041,19 @@ export function exactIncome(P, { grid = 150, tol = 1e-8, maxIter = 1000, prune =
  * golden, effects, shares (with `shares`), pops }. `probe(state, outcomes, weight)` sees every click.
  * `timer(seconds)` → { minTime, maxTime, weight }: a frequency that changes over game time (the
  * timer as the game would set it then, and a factor on what's earned, such as a garden's CpS cost).
+ *
+ * `plan` (models/grimoire.mjs makePlan): spells cast as the plan says, magic refilling as the game
+ * refills it. The walk then goes event to event — a golden cookie, or a spell when the plan's moment
+ * comes first (the timer keeps running through a spell; a spell's golden cookie doesn't reset it) —
+ * and each event is credited its expectation the same way, every outcome with what it earns until the
+ * next event. The result also has `casts` ({ spell: an hour }) and `spells` ({ "spell:effect": an
+ * hour }, and "why:<combo>" for what each Force the Hand of Fate was cast on).
  */
-export function expectedIncome(P, { pops = 1000000, seed = 1, batches = 40, warmup = 2000, kMax = 4, shares = false, probe = null, timer = null } = {}) {
-  if (!P.golden) return { ...noGolden(P), se: 0, pops: 0 };
-  const { fps, stretches, after, popOnce, lastOf: lastFor, waitEarn } = machinery(P, { grid: 1, kMax, shares });
+export function expectedIncome(P, { pops = 1000000, seed = 1, batches = 40, warmup = 2000, kMax = 4, shares = false, probe = null, timer = null, plan = null, follow = 120 } = {}) {
+  const HORIZON = follow;
+  if (!P.golden && !plan) return { ...noGolden(P), se: 0, pops: 0 };
+  if (plan && !P.grimoire) throw new Error('a spell plan needs the Grimoire (a Wizard tower with its minigame)');
+  const { fps, keyOf, stretches, after, popOnce, castOnce, lastOf: lastFor, waitEarn } = machinery(P, { grid: 1, kMax, shares });
   const rnd = makeRng(seed * 7919 + 17);
   // the wait: P(T > u) frame by frame, and its running sum (what a rate earns, on average, before the next one)
   const tables = new Map();
@@ -848,24 +1071,18 @@ export function expectedIncome(P, { pops = 1000000, seed = 1, batches = 40, warm
   };
   // the timer now: fixed, or (with `timer`) set at each click from the game time then, as the game
   // sets it when a golden cookie goes; `cf` scales what's earned (a garden's CpS factor then)
-  let tab = table(P.minTime, P.maxTime);
+  let tab = P.golden ? table(P.minTime, P.maxTime) : null;
   let cf = 1;
   let now = 0;
-  const parts = new Float64Array(5); // cps, clicks, lucky, chain, storm (cookies, this batch)
+  const parts = new Float64Array(PARTS.length); // cps, clicks, lucky, chain, storm, spell (cookies, this batch)
   const combos = shares ? new Map() : null;
-  // what the next wait earns from a state just after a click, weighed by w
-  const earn = (s, w) => waitEarn(s, tab.CS, tab.top, w * cf, parts, combos);
   const credit = (o, w0) => {
     if (!o.parts) return;
     const w = w0 * cf;
-    parts[2] += w * o.parts.lucky;
-    parts[3] += w * o.parts.chain;
-    parts[0] += w * o.parts.cps;
-    parts[1] += w * o.parts.clicks;
-    parts[4] += w * o.parts.storm;
+    for (let i = 0; i < PARTS.length; i++) parts[i] += w * (o.parts[PARTS[i]] || 0);
   };
   // with a storm still running, its drops make the last effect "cookie storm drop"
-  const settle = (n) => (n[5] > 0 ? [lastFor('cookie storm drop'), ...n.slice(1)] : n);
+  const settle = (n) => (n[S_] > 0 ? [lastFor('cookie storm drop'), ...n.slice(1)] : n);
   const pick = (outs) => {
     let u = rnd();
     for (const o of outs) if ((u -= o.p) < 0) return o;
@@ -873,57 +1090,210 @@ export function expectedIncome(P, { pops = 1000000, seed = 1, batches = 40, warm
   };
   const effects = new Map();
   const count = (choice, n) => effects.set(choice, (effects.get(choice) || 0) + n);
+  const spells = new Map();
+  const tally = (k, n) => spells.set(k, (spells.get(k) || 0) + n);
   let secs = 0;
   let golden = 0;
-  // one walker's click from state s, its sums weighed by w: the state before its next click
-  const step = (s, w) => {
-    // this click, every way it can go
-    if (timer) {
-      const tm = timer(now);
-      tab = table(tm.minTime, tm.maxTime);
-      cf = tm.weight == null ? 1 : tm.weight;
+
+  // ---- magic: the game's refill (P.grimoire.regen: magic after k frames from empty) ----
+  const R = plan ? P.grimoire.regen : null;
+  const top = R ? R.length - 1 : 0;
+  const posOf = (m) => {
+    if (m >= R[top]) return top;
+    let lo = 0;
+    let hi = top;
+    while (hi - lo > 1) {
+      const mid = (lo + hi) >> 1;
+      if (R[mid] <= m) lo = mid;
+      else hi = mid;
     }
-    const outs = popOnce(s);
-    if (probe) probe(s, outs, w);
-    secs += w * tab.meanT;
-    for (const o of outs) {
-      const second = P.pExtra > 0 && o.choice !== 'chain cookie' ? P.pExtra : 0;
-      const q = w * o.p;
-      credit(o, q);
-      earn(settle(o.s), q * (1 - second));
-      secs += q * o.secs;
-      golden += q * o.golden;
-      count(o.choice, q * (o.choice === 'chain cookie' ? o.golden : 1));
-      if (combos && o.secs) {
-        const k = stretches(s)[0].combo;
-        combos.set(k, (combos.get(k) || 0) + q * o.secs);
+    return lo + (m - R[lo]) / (R[hi] - R[lo]);
+  };
+  const magicAt = (pos) => {
+    if (pos >= top) return R[top];
+    const k = Math.floor(pos);
+    return R[k] + (R[k + 1] - R[k]) * (pos - k);
+  };
+  const magicAfter = (m, frames) => (frames > 0 ? magicAt(posOf(m) + frames) : m);
+  // the plan's next spell from (s, magic m, the timer `age` frames on): { u (frames on), spell, why } or null
+  const nextCast = (s, m, age) => {
+    if (!plan) return null;
+    const horizon = tab ? tab.top - age : Infinity;
+    const p0 = posOf(m);
+    // nothing casts below the lowest level a rule waits for: start there
+    const u0 = m >= plan.levels[0] ? 0 : Math.ceil(posOf(plan.levels[0]) - p0 - 1e-9);
+    if (u0 >= horizon) return null;
+    const us = [u0];
+    for (const L of plan.levels) if (L > m) us.push(Math.ceil(posOf(L) - p0 - 1e-9));
+    for (let i = 1; i < s.length; i++) if (s[i] > u0) us.push(s[i]);
+    us.sort((a, b) => a - b);
+    let last = -1;
+    for (const u of us) {
+      if (u === last || u < u0) continue;
+      if (u >= horizon) break;
+      last = u;
+      const d = plan.decide(s, u ? magicAt(p0 + u) : m, u);
+      if (d) return { u, ...d };
+    }
+    return null;
+  };
+  // what a state just after an event earns until the next one, weighed by w (its seconds counted)
+  const interval = (s, m, age, w) => {
+    if (!tab) {
+      // no golden cookies: spells only, and the time to the next one
+      const nc = nextCast(s, m, age);
+      const span = nc ? Math.max(1, nc.u) : 3600 * fps;
+      const acc = new Float64Array(PARTS.length);
+      const st = stretches(s);
+      const into = { cps: 0, clicks: 0, storm: 0 };
+      // earnOver isn't exported; a plain sum over the stretches
+      let left = span;
+      for (const x of st) {
+        if (left <= 0) break;
+        const len = Math.min(x.to, span) - x.from;
+        if (len <= 0) continue;
+        into.cps += (x.rate.cps * len) / fps;
+        into.clicks += (x.rate.clicks * len) / fps;
+        into.storm += (x.rate.storm * len) / fps;
+        left = span - x.to;
       }
+      acc[0] = into.cps;
+      acc[1] = into.clicks;
+      acc[4] = into.storm;
+      for (let i = 0; i < PARTS.length; i++) parts[i] += w * cf * acc[i];
+      secs += (w * span) / fps;
+      return;
     }
-    // the way it went
-    const lead = pick(outs);
-    let post = lead.s;
-    if (P.pExtra > 0 && lead.choice !== 'chain cookie') {
-      // the second golden cookie, 1% of the time: its expectation from the lead drawn (an unbiased share)
-      const outs2 = popOnce(lead.s);
-      for (const o of outs2) {
-        const q = w * P.pExtra * o.p;
+    const nc = nextCast(s, m, age);
+    const t = waitEarn(s, tab.CS, tab.top, w * cf, parts, combos, age, nc ? nc.u : Infinity);
+    if (plan) secs += w * t;
+  };
+
+  // the next event from a state just after one: the plan's spell, or the next golden cookie,
+  // whichever comes first (drawn) — the state before it ({ s, m, age, kind, why })
+  const next = (s1, mPost, age) => {
+    const nc = plan ? nextCast(s1, mPost, age) : null;
+    const T = tab ? spawnFrame(tab.min, tab.max, age, rnd()) : Infinity;
+    if (nc && age + nc.u < T) {
+      now += nc.u / fps;
+      return { s: after(s1, nc.u), m: magicAfter(mPost, nc.u), age: age + nc.u, kind: nc.spell, why: nc.why };
+    }
+    if (!tab) throw new Error('nothing happens: no golden cookies and no spell to cast');
+    const wait = T - age;
+    now += wait / fps;
+    return { s: after(s1, wait), m: plan ? magicAfter(mPost, wait) : 0, age: T, kind: 'gold' };
+  };
+  // one event from the state before it, its sums weighed by w: the state before the next. `branch`: a
+  // spell's outcomes each followed on their own while what they bring lasts (below)
+  const step = ({ s, m, age, kind, why }, w = 1, branch = true) => {
+    let post;
+    let mPost = m;
+    if (kind === 'gold') {
+      // a golden cookie, every way it can go
+      if (timer) {
+        const tm = timer(now);
+        tab = table(tm.minTime, tm.maxTime);
+        cf = tm.weight == null ? 1 : tm.weight;
+      }
+      const outs = popOnce(s);
+      if (probe) probe(s, outs, w);
+      if (!plan) secs += w * tab.meanT;
+      for (const o of outs) {
+        const second = P.pExtra > 0 && o.choice !== 'chain cookie' ? P.pExtra : 0;
+        const q = w * o.p;
         credit(o, q);
-        earn(settle(o.s), q);
+        interval(settle(o.s), plan ? magicAfter(m, o.secs * fps) : 0, 0, q * (1 - second));
         secs += q * o.secs;
+        golden += q * o.golden;
         count(o.choice, q * (o.choice === 'chain cookie' ? o.golden : 1));
+        if (combos && o.secs) {
+          const k = stretches(s)[0].combo;
+          combos.set(k, (combos.get(k) || 0) + q * o.secs);
+        }
       }
-      if (rnd() < P.pExtra) post = pick(outs2).s;
+      // the way it went
+      const lead = pick(outs);
+      post = lead.s;
+      if (P.pExtra > 0 && lead.choice !== 'chain cookie') {
+        // the second golden cookie, 1% of the time: its expectation from the lead drawn (an unbiased share)
+        const outs2 = popOnce(lead.s);
+        for (const o of outs2) {
+          const q = w * P.pExtra * o.p;
+          credit(o, q);
+          interval(settle(o.s), plan ? magicAfter(m, (lead.secs + o.secs) * fps) : 0, 0, q);
+          secs += q * o.secs;
+          count(o.choice, q * (o.choice === 'chain cookie' ? o.golden : 1));
+        }
+        if (rnd() < P.pExtra) post = pick(outs2).s;
+      }
+      now += lead.secs;
+      if (plan) mPost = magicAfter(m, lead.secs * fps);
+      return next(settle(post), mPost, 0);
     }
-    const wait = spawnFrame(tab.min, tab.max, 0, rnd());
-    now += lead.secs + wait / fps;
-    return after(settle(post), wait);
+    // a spell
+    const cost = plan.cost(kind);
+    mPost = Math.max(0, m - cost);
+    const outs = castOnce(s, kind);
+    tally(`cast:${kind}`, w);
+    if (why) tally(`why:${why}`, w);
+    for (const o of outs) {
+      credit(o, w * o.p);
+      tally(`${kind}:${o.choice}`, w * o.p);
+    }
+    if (!branch) {
+      for (const o of outs) interval(settle(o.s), mPost, age, w * o.p);
+      return next(settle(pick(outs).s), mPost, age);
+    }
+    // Which way a spell goes matters for minutes (a Click frenzy on a combo is most of the income):
+    // each distinct outcome is followed on its own, weighed by its odds, until what it brought has run
+    // out (every buff then on), and the walk goes on from one of them, picked by its odds — so the
+    // spell's luck is counted at its odds every time, not the few times the dice land on it.
+    const groups = new Map();
+    for (const o of outs) {
+      const n = settle(o.s);
+      const k = keyOf(n);
+      const e = groups.get(k);
+      if (e) e.p += o.p;
+      else groups.set(k, { s: n, p: o.p });
+    }
+    const t0 = now;
+    const tab0 = tab;
+    const cf0 = cf;
+    const ends = [];
+    for (const gr of groups.values()) {
+      // each from the cast's moment and timer (a followed frequency changes it at golden cookies)
+      now = t0;
+      tab = tab0;
+      cf = cf0;
+      // followed while what the spell changed lasts, HORIZON s at most (any horizon is unbiased: longer only
+      // takes away more of the noise, for more work)
+      let horizon = 0;
+      for (let i = 1; i < B0; i++) if (i !== J_ && gr.s[i] !== s[i] && gr.s[i] > horizon) horizon = gr.s[i];
+      if (gr.s.length !== s.length || gr.s.slice(B0).some((x, i) => x !== s[i + B0])) for (let i = B0; i < gr.s.length; i++) horizon = Math.max(horizon, gr.s[i]);
+      const until = t0 + Math.min(horizon, HORIZON * fps) / fps;
+      const q = w * gr.p;
+      interval(gr.s, mPost, age, q);
+      let at = next(gr.s, mPost, age);
+      for (let k = 0; k < 64 && now < until; k++) at = step(at, q, false);
+      ends.push({ p: gr.p, at, now, tab, cf });
+    }
+    const end = pick(ends);
+    now = end.now;
+    tab = end.tab;
+    cf = end.cf;
+    return end.at;
   };
   const batch = [];
   const close = () => {
-    batch.push({ income: parts.reduce((a, b) => a + b, 0), parts: Float64Array.from(parts), secs, golden, effects: new Map(effects), combos: combos && new Map(combos) });
+    batch.push({ income: parts.reduce((a, b) => a + b, 0), parts: Float64Array.from(parts), secs, golden, effects: new Map(effects), spells: new Map(spells), combos: combos && new Map(combos) });
   };
   const per = Math.max(1, Math.floor(pops / batches));
-  let s = [0, 0, 0, 0, 0, 0];
+  let at = { s: fresh(), m: plan ? P.grimoire.magicM : 0, age: 0, kind: tab ? 'gold' : 'conjure' };
+  if (!tab) {
+    const nc = nextCast(at.s, at.m, 0);
+    if (!nc) return { ...noGolden(P), se: 0, pops: 0 };
+    at = { ...at, kind: nc.spell, why: nc.why };
+  }
   for (let n = -warmup; n < per * batches; n++) {
     if (n >= 0 && n % per === 0) {
       if (n > 0) close();
@@ -931,9 +1301,10 @@ export function expectedIncome(P, { pops = 1000000, seed = 1, batches = 40, warm
       secs = 0;
       golden = 0;
       effects.clear();
+      spells.clear();
       if (combos) combos.clear();
     }
-    s = step(s, 1);
+    at = step(at);
   }
   close();
   // the ratio of sums, and its spread over the batches
@@ -942,14 +1313,25 @@ export function expectedIncome(P, { pops = 1000000, seed = 1, batches = 40, warm
   const mult = sum((b) => b.income) / (P.base * T);
   const bm = batch.map((b) => b.income / (P.base * b.secs));
   const sd = Math.sqrt(bm.reduce((a, x) => a + (x - mult) ** 2, 0) / (batch.length - 1));
+  const perHour = (key) => {
+    const all = new Map();
+    for (const b of batch) for (const [k, v] of b[key]) all.set(k, (all.get(k) || 0) + v);
+    return new Map([...all].map(([k, v]) => [k, (v * 3600) / T]));
+  };
+  const eff = perHour('effects');
   const out = {
     mult,
     se: sd / Math.sqrt(batch.length),
     parts: Object.fromEntries(PARTS.map((k, i) => [k, sum((b) => b.parts[i]) / (P.base * T)])),
     golden: (sum((b) => b.golden) * 3600) / T,
-    effects: Object.fromEntries(CHOICES.map((c) => [c, (sum((b) => b.effects.get(c) || 0) * 3600) / T]).filter(([, v]) => v > 0)),
+    effects: Object.fromEntries(ALL_CHOICES.map((c) => [c, eff.get(c) || 0]).filter(([, v]) => v > 0)),
     pops: per * batches,
   };
+  if (plan) {
+    const sp = perHour('spells');
+    out.casts = Object.fromEntries([...sp].filter(([k]) => k.startsWith('cast:')).map(([k, v]) => [k.slice(5), v]));
+    out.spells = Object.fromEntries([...sp].filter(([k]) => !k.startsWith('cast:')).sort((a, b) => b[1] - a[1]));
+  }
   if (shares) {
     const all = new Map();
     for (const b of batch) for (const [k, v] of b.combos) all.set(k, (all.get(k) || 0) + v);
@@ -989,6 +1371,8 @@ export function expectedAt(g, f, opts = {}) {
       },
     };
   }
+  // spells: a plan's spec (models/grimoire.mjs), the magic bar starting full
+  if (opts.grimoire) opts = { ...opts, plan: makePlan(opts.grimoire, P) };
   const r = opts.method === 'chain' ? { ...exactIncome(P, opts), se: 0 } : expectedIncome(P, opts);
   return { ...r, bank: P.bank };
 }
